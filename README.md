@@ -57,3 +57,5 @@ file cursor, to determine an absolute position from a relative position.
 
 - For a zip file, you know the final 22 bytes contain the "end of central directory record",
   so this is my test case for this library as proof of concept.
+
+Another server which supports range requests is... GitHub! But only for files in repos, not gists.
