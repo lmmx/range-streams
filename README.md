@@ -66,7 +66,7 @@ Another server which supports range requests is... GitHub! But only for files in
   - Note: for binary/compressed files, don't use `content` or `iter_content`
 
 
-Running the demo `example_range_request.py`
+Running the demo [`example_range_request.py`](example_range_request.py)
 
 ```
 No byte: r.raw.read()=b''
