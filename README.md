@@ -66,23 +66,17 @@ Another server which supports range requests is... GitHub! But only for files in
   - Note: for binary/compressed files, don't use `content` or `iter_content`
 
 
-Running the demo [`example_range_request.py`](example_range_request.py)
+Running the demo [`demo_range_request.py`](demo_range_request.py)
 
 ```
-No byte: r.raw.read()=b''
+No byte: bytes_range='-0' --> r.raw.read()=b''
 
 File length from response: r.headers["Content-Range"].split("/")[-1]='11'
 File length from file: len(Path("example_text_file.txt").read_bytes())=11
 
-First byte: r.raw.read()=b'P'
-First 2 bytes: r.raw.read()=b'P\x00'
-Last byte: r.raw.read()=b'K'
-No byte: r.raw.read()=b''
+First byte: bytes_range='0-0' --> r.raw.read()=b'P'
 
-File length from response: r.headers["Content-Range"].split("/")[-1]='11'
-File length from file: len(Path("example_text_file.txt").read_bytes())=11
+First 2 bytes: bytes_range='0-1' --> r.raw.read()=b'P\x00'
 
-First byte: r.raw.read()=b'P'
-First 2 bytes: r.raw.read()=b'P\x00'
-Last byte: r.raw.read()=b'K'
+Last byte: bytes_range='-1' --> r.raw.read()=b'K'
 ```
