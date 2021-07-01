@@ -64,3 +64,25 @@ Another server which supports range requests is... GitHub! But only for files in
 - When used with `stream=True`, the response does not actually retrieve the bytes in question until
   `raw.read()` or `iter_bytes()` is called on it
   - Note: for binary/compressed files, don't use `content` or `iter_content`
+
+
+Running the demo `example_range_request.py`
+
+```
+No byte: r.raw.read()=b''
+
+File length from response: r.headers["Content-Range"].split("/")[-1]='11'
+File length from file: len(Path("example_text_file.txt").read_bytes())=11
+
+First byte: r.raw.read()=b'P'
+First 2 bytes: r.raw.read()=b'P\x00'
+Last byte: r.raw.read()=b'K'
+No byte: r.raw.read()=b''
+
+File length from response: r.headers["Content-Range"].split("/")[-1]='11'
+File length from file: len(Path("example_text_file.txt").read_bytes())=11
+
+First byte: r.raw.read()=b'P'
+First 2 bytes: r.raw.read()=b'P\x00'
+Last byte: r.raw.read()=b'K'
+```
