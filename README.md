@@ -59,3 +59,8 @@ file cursor, to determine an absolute position from a relative position.
   so this is my test case for this library as proof of concept.
 
 Another server which supports range requests is... GitHub! But only for files in repos, not gists.
+
+- The response code returned is 206 (partial response)
+- When used with `stream=True`, the response does not actually retrieve the bytes in question until
+  `raw.read()` or `iter_bytes()` is called on it
+  - Note: for binary/compressed files, don't use `content` or `iter_content`
