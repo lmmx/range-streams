@@ -31,6 +31,8 @@ an existing `RangeResponse` without first exhausting all the bytes in its respon
 - If you request the complete range of a file, it will not be possible to take advantage of
   the 'streaming' behaviour, as any further ranges specified will already be spanned by the
   first "complete file range", and so the entire file will be loaded into memory
+- There is a strict one-to-one map per byte position to a particular response (if the position
+  is in the `RangeStream`)
 
 ### Option B: degenerate `RangeStream`
 
@@ -43,6 +45,10 @@ without first exhausting all the bytes in its response iterator.
   the 'streaming' behaviour, but any further ranges specified will already be spanned by the
   first "complete file range", and so the further ranges are effectively always duplicates
   (bandwidth inefficient, memory efficient)
+- There is no longer a one-to-one map of a particular byte position and a particular response
+  (for a position which is present in the `RangeStream`)
+  - Instead the mapping may be either one-to-one or one-to-many
+    [to use terminology similar to gene sequencing, varying 'read coverage']
 
 Review: option A is more principled, and would best suit a use with a known file format,
 as I had in mind (for zip files where the precise boundaries of files can be determined).
