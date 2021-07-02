@@ -38,7 +38,7 @@ sections (see my [notes](https://github.com/lmmx/devnotes/wiki/Structure-of-zip-
 
 People want various things from zip files:
 
-- the UK Department for International Trade [just want the files, and `pass` the central directory record entirely](https://github.com/uktrade/stream-unzip/blob/131767e806f09518cd51614ec7acd651099910bd/stream_unzip.py#L177-L181)),
+- the UK Department for International Trade [just want the files, and `pass` the central directory record entirely](https://github.com/uktrade/stream-unzip/blob/131767e806f09518cd51614ec7acd651099910bd/stream_unzip.py#L177-L181),
 - when surveying the Anaconda and Conda-Forge repositories of Python binaries,
   (using my tool [`impscan`](https://github.com/lmmx/impscan/)  parsing
   [`.conda` files](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/packages.html#conda-file-format)
