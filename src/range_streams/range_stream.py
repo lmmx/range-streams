@@ -1,10 +1,30 @@
-import requests
+from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
+from ranges import Range, RangeSet, RangeDict
 
-class ResponseStream:
-    def __init__(self, request_iterator):
+__all__ = ["RangeStream"]
+
+
+class RangeStream:
+    _length_checked = False
+
+    def __init__(
+        self,
+        url: str,
+        client: bool,
+        byte_range: Range | tuple[int, int] = Range("[0, 0)"),
+    ):
+        self._url = url
+        self._client = client
+        self._ranges = RangeDict()
         self._bytes = BytesIO()
-        self._iterator = request_iterator
+
+    @property
+    def total_bytes(self) -> int | None:
+        return self._length if self._length_checked else None
+
+    def make_iterator(self, target_range: Range):
+        iterator = request_iterator(target_range)
 
     def _load_all(self):
         self._bytes.seek(0, SEEK_END)
@@ -32,25 +52,13 @@ class ResponseStream:
 
         self._bytes.seek(left_off_at)
         return self._bytes.read(size)
-    
+
     def seek(self, position, whence=SEEK_SET):
         if whence == SEEK_END:
-            self._load_all()
+            if self._length_checked:
+                # Make first range with negative seek position
+                pass
+            else:
+                # Calculate seek position and check if in RangeDict
+                pass
         self._bytes.seek(position, whence)
-
-def main(url: str):
-    response = requests.get(url, stream=True)
-    h = response.headers
-    if "Content-Length" in h or "Transfer-Encoding" not in h or h["Transfer-Encoding"] != "chunked":
-        raise ValueError("Not a chunked stream")
-    stream = ResponseStream(response.iter_content(chunk_size=64))
-    # Read the first 50 bytes of the file without loading the rest of it
-    return stream.read(50)
-
-if __name__ == "__main__":
-    url = (
-        "https://raw.githubusercontent.com/lmmx/range-streams/"
-        "bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt"
-    )
-    print(f"{url=}")
-    main(url=url)
