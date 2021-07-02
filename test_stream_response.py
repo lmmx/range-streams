@@ -30,6 +30,9 @@ s = ResponseStream(it)
 s.seek(0,2)
 print(s.tell())
 
+# The same result is given if the 'stream=True' argument is not passed
+# as the request is not truly streamed as the server does not support
+# the {"Transfer-Encoding": "chunked"} header
 r = requests.get(url, stream=True)
 it = r.iter_content(chunk_size=4)
 s = ResponseStream(it)
