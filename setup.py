@@ -33,8 +33,11 @@ setup(
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",
         "Topic :: Internet :: WWW/HTTP"
+        "Programming Language :: Python :: 3.8"
+        "Programming Language :: Python :: 3.9"
+        "Programming Language :: Python :: 3.10"
     ],
-    include_package_data=True,  # no package data yet but no problem
+    include_package_data=False,  # only want Python files in repo
     use_scm_version={
         "write_to": "version.py",
         "version_scheme": version_scheme,
@@ -42,5 +45,5 @@ setup(
     },
     setup_requires=["setuptools_scm"],
     install_requires=reqs,
-    python_requires=">=3",
+    python_requires=">=3.8",
 )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
+from .range_utils import range_max
 
 __all__ = ["RangeStream"]
 
@@ -18,6 +19,7 @@ class RangeStream:
         self._client = client
         self._ranges = RangeDict()
         self._bytes = BytesIO()
+        self.handle_byte_range(byte_range)
 
     @property
     def total_bytes(self) -> int | None:
@@ -62,3 +64,21 @@ class RangeStream:
                 # Calculate seek position and check if in RangeDict
                 pass
         self._bytes.seek(position, whence)
+
+    def handle_byte_range(byte_range: Range | tuple[int, int] = Range("[0, 0)")):
+        complain_about_types = (
+            f"{byte_range=} must be a `Range` from the `python-ranges`"
+            " package or an integer 2-tuple"
+        )
+        if isinstance(byte_range, tuple):
+            if not all(map(lambda x: isinstance(x, int), byte_range)):
+                raise TypeError(complain_about_types)
+            if len(byte_range) != 2:
+                raise TypeError(complain_about_types)
+            byte_range = Range(*byte_range)
+        elif not isinstance(byte_range, Range):
+            raise TypeError(complain_about_types)
+        if byte_range.isempty():
+            ...
+        else:
+            r_max = range_max(byte_range)
