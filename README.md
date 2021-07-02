@@ -1,6 +1,6 @@
 # range-streams
 
-Testing the idea of streaming via range requests in Python
+Streaming via range requests in Python
 
 ## Outline of `RangeStream` data structure
 
@@ -24,5 +24,6 @@ Once initialised,
 
 ## See also
 
-- [Motivation.md](https://github.com/lmmx/range-streams/blob/master/Motivation.md)
-- [TODO.md](https://github.com/lmmx/range-streams/blob/master/TODO.md)
+- [Motivation.md](https://github.com/lmmx/range-streams/blob/master/docs/Motivation.md)
+- [TODO.md](https://github.com/lmmx/range-streams/blob/master/docs/TODO.md)
+- [CONDA\_SETUP.md](https://github.com/lmmx/range-streams/blob/master/docs/CONDA_SETUP.md)
