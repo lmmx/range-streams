@@ -12,9 +12,8 @@ A `RangeStream` is initialised by providing:
   - `ranges.Range` from the `python-ranges` package [recommended]
   - or a tuple of integers, presumed to be a half-open interval
     inclusive of start/exclusive of end as is common practice
-    in Python
-    - `[start, end)` in
-      [interval notation](https://en.wikipedia.org/wiki/Interval_(mathematics)#Notations_for_intervals)
+    in Python — `[start, end)` in
+    [interval notation](https://en.wikipedia.org/wiki/Interval_(mathematics)#Notations_for_intervals)
 
 If no range is provided then the empty range `[0,0)` is presumed, and no bytes are requested
 from the server: however since every range request returns the total content length, the resulting
