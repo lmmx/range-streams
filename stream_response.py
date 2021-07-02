@@ -40,10 +40,19 @@ class ResponseStream:
 
 def main(url: str):
     response = requests.get(url, stream=True)
+    h = response.headers
+    if "Content-Length" in h or "Transfer-Encoding" not in h or h["Transfer-Encoding"] != "chunked":
+        raise ValueError("Not a chunked stream")
     stream = ResponseStream(response.iter_content(chunk_size=64))
+    # Read the first 100 bytes of the file without loading the rest of it
+    return stream.read(100)
 
-    # Now we can read the first 100 bytes (for example) of the file
-    # without loading the rest of it. Of course, it's more useful when
-    # loading large files, like music images, or video. 😉
-    # Seek and tell will also work as expected; important for some applications.
-    stream.read(100)
+if __name__ == "__main__":
+    url = "https://httpbin.org/stream/20"
+    print(f"{url=}")
+    b = main(url=url)
+    print(b)
+    print()
+    url = "https://raw.githubusercontent.com/lmmx/range-streams/master/example_text_file.txt"
+    print(f"{url=}")
+    main(url=url)

@@ -17,6 +17,22 @@ header, which a server that supports this transfer encoding will respond to by r
 'chunks'. If the server doesn't support this, but does support range requests, then
 it should be possible to achieve a similar outcome with a little effort.
 
+Running `stream_response.py` demonstrates this for a chunk-capable and chunk-less URL:
+
+```
+url='https://httpbin.org/stream/20'
+b'{"url": "https://httpbin.org/stream/20", "args": {}, "headers": {"Host": "httpbin.org",
+"X-Amzn-Trac'
+
+url='https://raw.githubusercontent.com/lmmx/range-streams/master/example_text_file.txt'
+Traceback (most recent call last):
+  File "stream_response.py", line 58, in <module>
+    main(url=url)
+  File "stream_response.py", line 45, in main
+    raise ValueError("Not a chunked stream")
+ValueError: Not a chunked stream
+```
+
 An example of a filetype which this would suit is `.zip`, which has well-defined
 sections (see my [notes](https://github.com/lmmx/devnotes/wiki/Structure-of-zip-files)).
 
