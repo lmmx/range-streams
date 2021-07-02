@@ -1,4 +1,4 @@
-# range-requests
+# range-streams
 
 Testing the idea of streaming via range requests in Python
 
@@ -98,7 +98,8 @@ Last byte: bytes_range='-1' --> r.raw.read()=b'K'
 
 ## TODO
 
-- Firstly distinguish it by renaming to `RangeResponseStream`
+- Firstly distinguish it by renaming to `RangeStream` (it's no longer going to
+  comprise only a single response)
 
 Regarding how to extend `ResponseStream` classes to work with range requests:
 
