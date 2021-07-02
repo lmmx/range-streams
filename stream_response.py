@@ -36,8 +36,7 @@ class ResponseStream:
     def seek(self, position, whence=SEEK_SET):
         if whence == SEEK_END:
             self._load_all()
-        else:
-            self._bytes.seek(position, whence)
+        self._bytes.seek(position, whence)
 
 def main(url: str):
     response = requests.get(url, stream=True)

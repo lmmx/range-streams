@@ -12,6 +12,11 @@ what if you just wanted to download particular ranges, and
 avoid downloading bytes for the parts you don't care about
 (or defer downloading them until you do).
 
+In particular, "streaming" GET requests work by supplying the `"Transfer-Encoding": "chunked`
+header, which a server that supports this transfer encoding will respond to by returning
+'chunks'. If the server doesn't support this, but does support range requests, then
+it should be possible to achieve a similar outcome with a little effort.
+
 An example of a filetype which this would suit is `.zip`, which has well-defined
 sections (see my [notes](https://github.com/lmmx/devnotes/wiki/Structure-of-zip-files)).
 
