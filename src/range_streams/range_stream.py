@@ -48,6 +48,9 @@ def main(url: str):
     return stream.read(50)
 
 if __name__ == "__main__":
-    url = "https://raw.githubusercontent.com/lmmx/range-streams/master/example_text_file.txt"
+    url = (
+        "https://raw.githubusercontent.com/lmmx/range-streams/"
+        "bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt"
+    )
     print(f"{url=}")
     main(url=url)

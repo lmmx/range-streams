@@ -23,7 +23,7 @@ Running `stream_response.py` demonstrates this by retrieving a chunk-capable and
 url='https://httpbin.org/stream/20'
 b'{"url": "https://httpbin.org/stream/20", "args": {'
 
-url='https://raw.githubusercontent.com/lmmx/range-streams/master/example_text_file.txt'
+url='https://raw.githubusercontent.com/lmmx/range-streams/bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt'
 ValueError: Not a chunked stream
 ```
 
