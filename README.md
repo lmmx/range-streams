@@ -47,8 +47,7 @@ without first exhausting all the bytes in its response iterator.
   (bandwidth inefficient, memory efficient)
 - There is no longer a one-to-one map of a particular byte position and a particular response
   (for a position which is present in the `RangeStream`)
-  - Instead the mapping may be either one-to-one or one-to-many
-    [to use terminology similar to gene sequencing, varying 'read coverage']
+  - Instead the mapping may be either one-to-one or one-to-many [varying 'coverage']
 
 Review: option A is more principled, and would best suit a use with a known file format,
 as I had in mind (for zip files where the precise boundaries of files can be determined).
