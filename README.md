@@ -17,12 +17,11 @@ header, which a server that supports this transfer encoding will respond to by r
 'chunks'. If the server doesn't support this, but does support range requests, then
 it should be possible to achieve a similar outcome with a little effort.
 
-Running `stream_response.py` demonstrates this for a chunk-capable and chunk-less URL:
+Running `stream_response.py` demonstrates this by retrieving a chunk-capable and chunk-less URL:
 
 ```
 url='https://httpbin.org/stream/20'
-b'{"url": "https://httpbin.org/stream/20", "args": {}, "headers": {"Host": "httpbin.org",
-"X-Amzn-Trac'
+b'{"url": "https://httpbin.org/stream/20", "args": {'
 
 url='https://raw.githubusercontent.com/lmmx/range-streams/master/example_text_file.txt'
 ValueError: Not a chunked stream

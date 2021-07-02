@@ -44,8 +44,8 @@ def main(url: str):
     if "Content-Length" in h or "Transfer-Encoding" not in h or h["Transfer-Encoding"] != "chunked":
         raise ValueError("Not a chunked stream")
     stream = ResponseStream(response.iter_content(chunk_size=64))
-    # Read the first 100 bytes of the file without loading the rest of it
-    return stream.read(100)
+    # Read the first 50 bytes of the file without loading the rest of it
+    return stream.read(50)
 
 if __name__ == "__main__":
     url = "https://httpbin.org/stream/20"
