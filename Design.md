@@ -1,0 +1,74 @@
+When it comes to handling ranges, there are two main design choices for the core issue of
+overlapping ranges, which dictates what the structure looks like as well as the behaviour
+(or "form follows function").
+
+### Option A: strictly disjoint `RangeStream`
+
+The `RangeStream` _will not_ invoke any further range requests which overlap
+an existing `RangeResponse` without first exhausting all the bytes in its response iterator.
+
+- If you request the complete range of a file, it will not be possible to take advantage of
+  the 'streaming' behaviour, as any further ranges specified will already be spanned by the
+  first "complete file range", and so the entire file will be loaded into memory
+- There is a strict one-to-one map per byte position to a particular response (if the position
+  is in the `RangeStream`)
+
+### Option B: degenerate `RangeStream`
+
+The `RangeStream` _will_ invoke further range requests which overlap an existing `RangeResponse`
+without first exhausting all the bytes in its response iterator.
+
+- The same bytes will be downloaded again but in a separate response iterator, allowing them
+  to be consumed separately.
+- If you request the complete range of a file, it will be possible to take advantage of
+  the 'streaming' behaviour, but any further ranges specified will already be spanned by the
+  first "complete file range", and so the further ranges are effectively always duplicates
+  (bandwidth inefficient, memory efficient)
+- There is no longer a one-to-one map of a particular byte position and a particular response
+  (for a position which is present in the `RangeStream`)
+  - Instead the mapping may be either one-to-one or one-to-many [varying 'coverage']
+
+### `RangeStream` opts for strictly disjoint ranges
+
+Review: option A is more principled, and would best suit a use with a known file format,
+as I had in mind (for zip files where the precise boundaries of files can be determined).
+
+Rather than raising an error and borking on overlapping ranges, `RangeStream` takes the following
+approach:
+
+### Every byte in a range is either available or consumed
+
+Since it can only be consumed from the head, this is achieved by storing a positive offset
+for each range which is incremented on reading.
+
+### Every range has at most one associated "primary range"
+
+A second offset is stored for each range from its 'tail', indicating that the
+range can be considered "trimmed shorter" (i.e. any consumer should stop early).
+
+When an overlap would occur, this tail offset allows the overlapped positions to
+be re-assigned to be associated with the newer range.
+
+### Overlaps at the tail of a pre-existing `RangeResponse` erase the pre-existing tail
+
+Every range's tail offset starts at 0 (i.e. no early stopping when consuming).
+
+If a new range is registered on the same stream with overlapping bytes to a pre-existing
+range's tail, then the overlap is removed from the pre-existing tail by incrementing
+the tail offset. As already mentioned, any bytes in the intersection become associated
+with the newer range instead of the 'tail-trimmed' range.
+
+### Overlaps at the head of a pre-existing `RangeResponse` are reduced and chained
+
+If a new range overlaps at the 'head' of a pre-existing `RangeResponse`, the new
+range is shortened by the length of the overlap and the bytes that would have been
+requested are instead taken from the pre-existing head (note: only if the head is 
+unconsumed) by
+[splitting the iterable](https://docs.python.org/3/library/itertools.html#itertools.islice).
+
+- To do so, the standard access to the iterable is 'gated' by an attribute accessor
+  which redirects to the split iterable if one exists.
+
+Overlaps in the body of a pre-existing `RangeResponse` are treated equivalently to overlaps
+at a pre-existing head ('head' is simply understood to be the earliest unconsumed byte in the
+range).
