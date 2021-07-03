@@ -2,6 +2,7 @@ from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
 from .range_utils import range_max
+from .range_response import RangeResponse
 
 __all__ = ["RangeStream"]
 
@@ -12,14 +13,16 @@ class RangeStream:
     def __init__(
         self,
         url: str,
-        client: bool,
+        client: httpx.Client,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
     ):
         self._url = url
         self._client = client
         self._ranges = RangeDict()
-        self._bytes = BytesIO()
         self.handle_byte_range(byte_range)
+
+    def register_range(self, new_range: Range):
+        self._ranges.add(new_range, None)
 
     @property
     def total_bytes(self) -> int | None:
@@ -65,7 +68,7 @@ class RangeStream:
                 pass
         self._bytes.seek(position, whence)
 
-    def handle_byte_range(byte_range: Range | tuple[int, int] = Range("[0, 0)")):
+    def handle_byte_range(self, byte_range: Range | tuple[int, int] = Range("[0, 0)")):
         complain_about_types = (
             f"{byte_range=} must be a `Range` from the `python-ranges`"
             " package or an integer 2-tuple"

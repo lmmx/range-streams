@@ -6,22 +6,25 @@ Streaming via range requests in Python
 
 A `RangeStream` is initialised by providing:
 
-- a URL (to the file to be streamed)
+- a URL (the file to be streamed)
 - a client (e.g. `httpx.Client` or `requests.Session`)
 - (optionally) a range, as either:
   - `ranges.Range` from the `python-ranges` package [recommended]
   - or a tuple of integers, presumed to be a half-open interval
-    inclusive of start/exclusive of end as is common practice
-    in Python — `[start, end)` in
+    inclusive of start/exclusive of stop as is common practice
+    in Python — `[start, stop)` in
     [interval notation](https://en.wikipedia.org/wiki/Interval_(mathematics)#Notations_for_intervals)
 
-If no range is provided then the empty range `[0,0)` is presumed, and no bytes are requested
-from the server: however since every range request returns the total content length, the resulting
-`RangeStream` will be fully capable of seeking and calculating end-relative ranges.
+Since every range request returns the total content length, the `RangeStream` will
+become capable of seeking to negative-valued ranges (whose positions are in respect to the end)
+after fulfilling its first range request.
 
-Once initialised, either with a request for the default empty range or a non-empty range,
-this range becomes the first entry in the `RangeDict` stored on the `._ranges` attribute
-of the `RangeStream`.
+If no range is provided upon initialisation then the range defaults to `[0,0)`, the empty range,
+and a request will be sent to the server for this (valid) range, whose only result will be
+to set the total file length on the `RangeStream`.
+
+Once a request is made for a non-empty range, the `RangeStream` acquires the first entry in the
+`RangeDict` stored on the `._ranges` attribute.
 
 ## Requires
 
