@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ranges import Range
 
 __all__ = ["range_termini", "range_max"]
@@ -26,3 +27,20 @@ def range_max(r: Range) -> int:
     if r.isempty():
         raise ValueError("Empty range has no maximum")
     return range_termini(r)[1]
+
+def check_range(byte_range: Range | tuple[int, int], allow_empty: bool = True) -> Range:
+    complain_about_types = (
+        f"{byte_range=} must be a `Range` from the `python-ranges`"
+        " package or an integer 2-tuple"
+    )
+    if isinstance(byte_range, tuple):
+        if not all(map(lambda x: isinstance(x, int), byte_range)):
+            raise TypeError(complain_about_types)
+        if len(byte_range) != 2:
+            raise TypeError(complain_about_types)
+        byte_range = Range(*byte_range)
+    elif not isinstance(byte_range, Range):
+        raise TypeError(complain_about_types)
+    if not allow_empty and byte_range.isempty():
+        raise TypeError("Range is empty")
+    return byte_range

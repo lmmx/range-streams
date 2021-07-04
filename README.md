@@ -21,7 +21,8 @@ after fulfilling its first range request.
 
 If no range is provided upon initialisation then the range defaults to `[0,0)`, the empty range,
 and a request will be sent to the server for this (valid) range, whose only result will be
-to set the total file length on the `RangeStream`.
+to set the total file length on the `_length` attribute of `RangeStream` (accessed through the
+`total_bytes` property).
 
 Once a request is made for a non-empty range, the `RangeStream` acquires the first entry in the
 `RangeDict` stored on the `._ranges` attribute.

@@ -72,3 +72,13 @@ unconsumed) by
 Overlaps in the body of a pre-existing `RangeResponse` are treated equivalently to overlaps
 at a pre-existing head ('head' is simply understood to be the earliest unconsumed byte in the
 range).
+
+---
+
+The rest is pretty straightforward: the `RangeStream` gives a file-like object (commonly
+referred to in the Python standard library as `fp`), which is complicated by the fact that
+this means it must have a singular position to return from `tell()`, despite being composed
+of multiple ranges able to be iterated independently.
+
+By design this is disallowed, only a single range should be used at a time, so
+`tell()`, `read()`, and `seek()` will behave as expected for a file on disk.

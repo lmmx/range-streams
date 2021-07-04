@@ -1,14 +1,17 @@
 from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
-from .range_utils import range_max
+from .range_utils import range_max, check_range
 from .range_response import RangeResponse
+from .range_map import RangeMap
+from .range_request import RangeRequest
 
 __all__ = ["RangeStream"]
 
 
 class RangeStream:
     _length_checked = False
+    _active_range = None
 
     def __init__(
         self,
@@ -16,13 +19,16 @@ class RangeStream:
         client: httpx.Client,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
     ):
-        self._url = url
-        self._client = client
-        self._ranges = RangeDict()
-        self.handle_byte_range(byte_range)
+        self.url = url
+        self.client = client
+        # TODO replace RangeDict with RangeMap if repr is fixable?
+        self._ranges = RangeDict()# RangeMap(parent_stream=self)
+        self.handle_byte_range(byte_range=byte_range)
 
-    def register_range(self, new_range: Range):
-        self._ranges.add(new_range, None)
+    def register_range(self, rng: Range, value: RangeResponse):
+        self._ranges.register_range(rng=rng)
+        if self._active_range is None:
+            _active_range = rng
 
     @property
     def total_bytes(self) -> int | None:
@@ -68,20 +74,23 @@ class RangeStream:
                 pass
         self._bytes.seek(position, whence)
 
-    def handle_byte_range(self, byte_range: Range | tuple[int, int] = Range("[0, 0)")):
-        complain_about_types = (
-            f"{byte_range=} must be a `Range` from the `python-ranges`"
-            " package or an integer 2-tuple"
-        )
-        if isinstance(byte_range, tuple):
-            if not all(map(lambda x: isinstance(x, int), byte_range)):
-                raise TypeError(complain_about_types)
-            if len(byte_range) != 2:
-                raise TypeError(complain_about_types)
-            byte_range = Range(*byte_range)
-        elif not isinstance(byte_range, Range):
-            raise TypeError(complain_about_types)
-        if byte_range.isempty():
-            ...
-        else:
-            r_max = range_max(byte_range)
+    def send_request(self, byte_range: Range) -> RangeRequest:
+        return RangeRequest(client=self.client, url=self.url, byte_range=byte_range)
+
+    def handle_byte_range(
+        self, byte_range: Range | tuple[int, int] = Range("[0, 0)")
+    ) -> None:
+        # Validate byte_range and convert to `[a,b)` Range if given as integer tuple
+        byte_range = check_range(byte_range=byte_range, allow_empty=True)
+        # Do not send a request for an empty range if total length already checked
+        if not self._length_checked or not byte_range.isempty():
+            req = self.send_request(byte_range)
+            if not self._length_checked:
+                self._length = req.total_content_length
+            if not byte_range.isempty():
+                # bytes are available in the RangeRequest.response stream
+                resp = RangeResponse(stream=self, range_request=req)
+                self.register_range(rng=byte_range, value=resp)
+        # TODO: handle overlaps
+        #elif :
+        #    r_max = range_max(byte_range)

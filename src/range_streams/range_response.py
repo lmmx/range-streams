@@ -12,12 +12,23 @@ class RangeResponse:
     def __init__(
         self,
         stream: RangeStream,
-        url: str,
-        byte_range: Range,
+        range_request: RangeRequest
     ):
-        self._url = url
-        self._client = client
+        self.parent_stream = stream
+        self.request = range_request
         self._bytes = BytesIO()
+
+    @property
+    def _iterator(self):
+        return self.request._iterator
+
+    @property
+    def client(self):
+        return self.request.client
+
+    @property
+    def url(self) -> str:
+        return self.parent_stream.url
 
     def _load_all(self):
         self._bytes.seek(0, SEEK_END)
@@ -49,5 +60,4 @@ class RangeResponse:
     def seek(self, position, whence=SEEK_SET):
         if whence == SEEK_END:
             self._load_all()
-        else:
-            self._bytes.seek(position, whence)
+        self._bytes.seek(position, whence)
