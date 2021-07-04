@@ -3,7 +3,6 @@ from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
 from .range_utils import range_max, check_range
 from .range_response import RangeResponse
-from .range_map import RangeMap
 from .range_request import RangeRequest
 
 __all__ = ["RangeStream"]
@@ -21,14 +20,13 @@ class RangeStream:
     ):
         self.url = url
         self.client = client
-        # TODO replace RangeDict with RangeMap if repr is fixable?
-        self._ranges = RangeDict()# RangeMap(parent_stream=self)
+        self._ranges = RangeDict()
         self.handle_byte_range(byte_range=byte_range)
 
     def register_range(self, rng: Range, value: RangeResponse):
-        self._ranges.register_range(rng=rng)
+        self._ranges.add(rng=rng, value=value)
         if self._active_range is None:
-            _active_range = rng
+            self._active_range = rng
 
     @property
     def total_bytes(self) -> int | None:
