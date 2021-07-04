@@ -27,6 +27,26 @@ to set the total file length on the `_length` attribute of `RangeStream` (access
 Once a request is made for a non-empty range, the `RangeStream` acquires the first entry in the
 `RangeDict` stored on the `._ranges` attribute.
 
+## Example
+
+```py
+from range_streams import RangeStream, example_url
+import httpx
+from ranges import Range
+c = httpx.Client()
+s = RangeStream(url=example_url, client=c)
+rng = Range(0,3)
+s.handle_byte_range(rng)
+
+print(s._ranges)
+```
+⇣
+```
+RangeDict{
+  RangeSet{Range[0, 3)}: <range_streams.range_response.RangeResponse object>
+}
+```
+
 ## Requires
 
 - Python 3.8+
