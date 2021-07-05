@@ -38,12 +38,12 @@ s = RangeStream(url=example_url, client=c)
 rng = Range(0,3)
 s.handle_byte_range(rng)
 
-print(s._ranges)
+s._ranges
 ```
 ⇣
 ```
 RangeDict{
-  RangeSet{Range[0, 3)}: <range_streams.range_response.RangeResponse object>
+  RangeSet{Range[0, 3)}: RangeResponse ⠶ <[0, 3) @ "https://github.com/lmmx/range-streams/raw/bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt">
 }
 ```
 
