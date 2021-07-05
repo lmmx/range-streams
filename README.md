@@ -41,7 +41,7 @@ s.handle_byte_range(rng)
 s._ranges
 ```
 ⇣
-```
+```py
 RangeDict{
   RangeSet{Range[0, 3)}: RangeResponse ⠶ <[0, 3) @ "https://github.com/lmmx/range-streams/raw/bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt">
 }
