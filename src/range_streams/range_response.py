@@ -18,6 +18,9 @@ class RangeResponse:
         self.request = range_request
         self._bytes = BytesIO()
 
+    def __repr__(self):
+        return f'{self.__class__.__name__} ⠶ <{self.request.range} @ "{self.url}">'
+
     @property
     def _iterator(self):
         return self.request._iterator

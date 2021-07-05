@@ -1,7 +1,7 @@
 from __future__ import annotations
 from ranges import Range
 
-__all__ = ["range_termini", "range_max"]
+__all__ = ["range_termini", "range_min", "range_max", "validate_range"]
 
 
 def range_termini(r: Range) -> tuple[int, int]:
@@ -28,7 +28,8 @@ def range_max(r: Range) -> int:
         raise ValueError("Empty range has no maximum")
     return range_termini(r)[1]
 
-def check_range(byte_range: Range | tuple[int, int], allow_empty: bool = True) -> Range:
+def validate_range(byte_range: Range | tuple[int, int], allow_empty: bool = True) -> Range:
+    "Validate byte_range and convert to `[a,b)` Range if given as integer tuple"
     complain_about_types = (
         f"{byte_range=} must be a `Range` from the `python-ranges`"
         " package or an integer 2-tuple"
@@ -41,6 +42,14 @@ def check_range(byte_range: Range | tuple[int, int], allow_empty: bool = True) -
         byte_range = Range(*byte_range)
     elif not isinstance(byte_range, Range):
         raise TypeError(complain_about_types)
+    elif not all(map(lambda o: isinstance(o, int), [byte_range.start, byte_range.end])):
+        raise TypeError("Ranges must be discrete (use integers for start and end)")
     if not allow_empty and byte_range.isempty():
         raise TypeError("Range is empty")
     return byte_range
+
+def range_span(ranges: list[Range]) -> Range:
+    "Assumes input list of RangeSets are in ascending order"
+    min_start, _ = range_termini(ranges[0])
+    _, max_end = range_termini(ranges[-1])
+    return Range(min_start, max_end+1)

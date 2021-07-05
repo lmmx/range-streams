@@ -12,6 +12,8 @@ an existing `RangeResponse` without first exhausting all the bytes in its respon
   first "complete file range", and so the entire file will be loaded into memory
 - There is a strict one-to-one map per byte position to a particular response (if the position
   is in the `RangeStream`)
+  - As a result, `RangeDict` keys can be reliably expected to maintain their initialised values
+    (a singleton `RangeSet` containing only the provided `Range`)
 
 ### Option B: degenerate `RangeStream`
 
@@ -27,6 +29,12 @@ without first exhausting all the bytes in its response iterator.
 - There is no longer a one-to-one map of a particular byte position and a particular response
   (for a position which is present in the `RangeStream`)
   - Instead the mapping may be either one-to-one or one-to-many [varying 'coverage']
+  - As a result, `RangeDict` keys are subject to mutate
+    - e.g. a `RangeDict` initialised with the range `[0,3)` to which another range
+      `[1,2)` is added will split into a `RangeSet` of two `Range`s: `[0, 1)` and `[2, 3)`
+    - Note that the original `Range` will always be retained in the `RangeRequest` which is
+      stored as the value of each `RangeDict` item (so if a `RangeSet` key does degenerate
+      into multiple ranges, its initialised value can always be retrieved in `.request.range`).
 
 ### `RangeStream` opts for strictly disjoint ranges
 
@@ -82,3 +90,41 @@ of multiple ranges able to be iterated independently.
 
 By design this is disallowed, only a single range should be used at a time, so
 `tell()`, `read()`, and `seek()` will behave as expected for a file on disk.
+
+---
+
+## Range comparison
+
+There are 3 distinct ways of comparing ranges in a `RangeStream` (checking for membership):
+
+### `RangeStream._ranges`
+
+`RangeStream._ranges` is a `RangeDict` of all the `Range`s (the keys of which should be
+singleton `RangeSet`s containing only the initialised `Range` and values are `RangeRequest`
+objects storing the request sent and response received along with the initialised range.
+
+Comparing to the `_ranges` attribute therefore compares against the set of ranges requested
+so far from the file (note: not the union of these ranges, which is empty for any ranges
+which are not directly consecutive)
+
+### `RangeStream.spanning_range`
+
+`RangeStream.spanning_range` is a property defined once the first range request has been
+completed, and is either the initialised range (which may be the empty range) or if
+further ranges have been requested, the range which spans the minimum/maximum terminus of
+the "first and last" ranges in the `RangeStream._ranges` keys (i.e. ranges with lowest
+start/highest end positions).
+
+Comparing to the `spanning_range` property therefore compares against a set which is not
+necessarily fully covered by the ranges requested in the `RangeStream._ranges: RangeDict`,
+but merely is within the extremes of those ranges.
+
+### `RangeStream.total_range`
+
+`RangeStream.total_range` is a property defined once the first range request has been
+completed, and is simply the range from the start of the file (position 0) to the
+end of the file, i.e. `[0, RangeStream.total_bytes)`.
+
+Comparing to the `total_range` property therefore compares against a set which is not
+necessarily fully covered (or even at all: the `RangeStream` may be completely empty!)
+by the ranges requested in the `RangeStream._ranges: RangeDict`

@@ -1,9 +1,10 @@
 from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
-from .range_utils import range_max, check_range
+from .range_utils import validate_range, range_span # range_max
 from .range_response import RangeResponse
 from .range_request import RangeRequest
+from sys import stderr
 
 __all__ = ["RangeStream"]
 
@@ -23,7 +24,17 @@ class RangeStream:
         self._ranges = RangeDict()
         self.handle_byte_range(byte_range=byte_range)
 
+    def check_is_subrange(self, rng: Range):
+        if rng not in self.total_range:
+            raise ValueError(f"{rng} is not a sub-range of {self.total_range}")
+
     def register_range(self, rng: Range, value: RangeResponse):
+        if self._length_checked:
+            self.check_is_subrange(rng)
+        else:
+            raise ValueError("Stream length must be set before registering a range")
+        if rng in self._ranges:
+            raise NotImplementedError("Range overlap detected")
         self._ranges.add(rng=rng, value=value)
         if self._active_range is None:
             self._active_range = rng
@@ -31,6 +42,20 @@ class RangeStream:
     @property
     def total_bytes(self) -> int | None:
         return self._length if self._length_checked else None
+
+    def isempty(self):
+        return self._ranges.isempty()
+
+    @property
+    def spanning_range(self) -> Range:
+        return Range(0,0) if self.isempty() else range_span(self.list_ranges())
+
+    @property
+    def total_range(self) -> Range:
+        try:
+            return Range(0, self._length)
+        except AttributeError:
+            raise AttributeError("Cannot use total_range before setting _length")
 
     def make_iterator(self, target_range: Range):
         iterator = request_iterator(target_range)
@@ -75,16 +100,26 @@ class RangeStream:
     def send_request(self, byte_range: Range) -> RangeRequest:
         return RangeRequest(client=self.client, url=self.url, byte_range=byte_range)
 
+    def set_length(self, length: int):
+        self._length = length
+        self._length_checked = True
+    
+    def list_ranges(self) -> list[Range]:
+        """
+        Each `_ranges` RangeDict key is a RangeSet containing 1 Range. Retrieve
+        this list of RangeSet keys in ascending order, as a list of `Range`s.
+        """
+        return [rngset.ranges()[0] for rngset in self._ranges.ranges()]
+
     def handle_byte_range(
         self, byte_range: Range | tuple[int, int] = Range("[0, 0)")
     ) -> None:
-        # Validate byte_range and convert to `[a,b)` Range if given as integer tuple
-        byte_range = check_range(byte_range=byte_range, allow_empty=True)
+        byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not send a request for an empty range if total length already checked
         if not self._length_checked or not byte_range.isempty():
             req = self.send_request(byte_range)
             if not self._length_checked:
-                self._length = req.total_content_length
+                self.set_length(req.total_content_length)
             if not byte_range.isempty():
                 # bytes are available in the RangeRequest.response stream
                 resp = RangeResponse(stream=self, range_request=req)
