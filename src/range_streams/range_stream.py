@@ -4,7 +4,10 @@ from ranges import Range, RangeSet, RangeDict
 from .range_utils import validate_range, range_span # range_max
 from .range_response import RangeResponse
 from .range_request import RangeRequest
+from .overlaps import handle_overlap
 from sys import stderr
+from pathlib import Path
+from urllib.parse import urlparse
 
 __all__ = ["RangeStream"]
 
@@ -24,6 +27,15 @@ class RangeStream:
         self._ranges = RangeDict()
         self.handle_byte_range(byte_range=byte_range)
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__} ⠶ {self.__ranges_repr__()} @@ "
+            f"'{self.name}' from {self.domain}"
+        )
+
+    def __ranges_repr__(self) -> str:
+        return ", ".join(map(str, self.list_ranges()))
+
     def check_is_subrange(self, rng: Range):
         if rng not in self.total_range:
             raise ValueError(f"{rng} is not a sub-range of {self.total_range}")
@@ -34,10 +46,14 @@ class RangeStream:
         else:
             raise ValueError("Stream length must be set before registering a range")
         if rng in self._ranges:
-            raise NotImplementedError("Range overlap detected")
+            self.handle_overlap(rng)
         self._ranges.add(rng=rng, value=value)
         if self._active_range is None:
             self._active_range = rng
+
+    def handle_overlap(self, rng: Range):
+        handle_overlap(self, rng)
+        raise NotImplementedError("Range overlap detected")
 
     @property
     def total_bytes(self) -> int | None:
@@ -56,6 +72,14 @@ class RangeStream:
             return Range(0, self._length)
         except AttributeError:
             raise AttributeError("Cannot use total_range before setting _length")
+
+    @property
+    def name(self) -> str:
+        return Path(self.url).name
+
+    @property
+    def domain(self) -> str:
+        return urlparse(self.url).netloc
 
     def make_iterator(self, target_range: Range):
         iterator = request_iterator(target_range)
@@ -103,12 +127,20 @@ class RangeStream:
     def set_length(self, length: int):
         self._length = length
         self._length_checked = True
+
+    def check_range_integrity(self) -> None:
+        "Every `RangeSet` in the `_ranges: RangeDict` keys must contain 1 Range each"
+        if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
+            bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
+            raise ValueError(f"Each RangeSet must contain 1 Range: found {bad_rs=}")
     
     def list_ranges(self) -> list[Range]:
         """
-        Each `_ranges` RangeDict key is a RangeSet containing 1 Range. Retrieve
+        Each `_ranges` RangeDict key is a RangeSet containing 1 Range. Check
+        this assumption (singleton RangeSet "integrity") holds and retrieve
         this list of RangeSet keys in ascending order, as a list of `Range`s.
         """
+        self.check_range_integrity()
         return [rngset.ranges()[0] for rngset in self._ranges.ranges()]
 
     def handle_byte_range(

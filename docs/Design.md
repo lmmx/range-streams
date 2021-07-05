@@ -36,18 +36,40 @@ without first exhausting all the bytes in its response iterator.
       stored as the value of each `RangeDict` item (so if a `RangeSet` key does degenerate
       into multiple ranges, its initialised value can always be retrieved in `.request.range`).
 
-### `RangeStream` opts for strictly disjoint ranges
+### `RangeStream` opts for strictly disjoint ranges but mutates them carefully
 
 Review: option A is more principled, and would best suit a use with a known file format,
 as I had in mind (for zip files where the precise boundaries of files can be determined).
 
-Rather than raising an error and borking on overlapping ranges, `RangeStream` takes the following
-approach:
+However, under some conditions it may be better to not be too strict about repeated
+access to ranges: in particular when the bytes at the start of a newly requested range
+are at the tail end of a byte range already requested.
+
+In this case, to access these "tail" bytes would require loading the entirety of the first
+already-loaded range (i.e. reading the entire `RangeResponse` stream). Rather than forbidding
+this, the range request is not rejected, but the pre-existing range is trimmed so that the
+"primary range" (accessible by the position index on the `RangeStream._ranges: RangeDict`)
+remains with the new request (the one with these bytes at the head).
+
+On the other hand, if a newly requested range overlaps with the head of a pre-existing range,
+and these bytes have not yet been consumed, this simply means the request can be shortened
+(as some or all of the bytes required are already available and the response iterator from
+the response already received can provide them, with any remaining bytes to be requested
+simply chained onto the end of this iterator).
+
+Rather than simply raising an error and borking on overlapping ranges, `RangeStream`
+therefore takes the following approach:
 
 ### Every byte in a range is either available or consumed
 
 Since it can only be consumed from the head, this is achieved by storing a positive offset
-for each range which is incremented on reading.
+for each range which is incremented on reading, and the range is entirely "consumed"
+when the underlying `RangeRequest.range.length()` matches this offset (i.e. the
+response has been read from head to tail).
+
+- Specifically, the offset is given by `RangeResponse.tell()` (a method the
+  [`io.BytesIO`](https://docs.python.org/3.8/library/io.html#io.BytesIO) stream
+  [inherits](https://docs.python.org/3.8/library/io.html#io.IOBase.tell) from `io.IOBase`)
 
 ### Every range has at most one associated "primary range"
 

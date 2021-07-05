@@ -2,6 +2,7 @@ from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeDict
 from typing import TYPE_CHECKING
+from .range_utils import range_len
 
 if TYPE_CHECKING:
     from .range_stream import RangeStream
@@ -19,7 +20,10 @@ class RangeResponse:
         self._bytes = BytesIO()
 
     def __repr__(self):
-        return f'{self.__class__.__name__} ⠶ <{self.request.range} @ "{self.url}">'
+        return (
+            f"{self.__class__.__name__} ⠶ {self.request.range} @ "
+            f"'{self.parent_stream.name}' from {self.parent_stream.domain}"
+        )
 
     @property
     def _iterator(self):
@@ -32,6 +36,10 @@ class RangeResponse:
     @property
     def url(self) -> str:
         return self.parent_stream.url
+
+    @property
+    def name(self) -> str:
+        return self.parent_stream.name
 
     def _load_all(self):
         self._bytes.seek(0, SEEK_END)
@@ -64,3 +72,6 @@ class RangeResponse:
         if whence == SEEK_END:
             self._load_all()
         self._bytes.seek(position, whence)
+    
+    def is_consumed(self) -> bool:
+        return self.tell() - range_len(self.request.range) > 0

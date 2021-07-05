@@ -1,7 +1,7 @@
 from __future__ import annotations
 from ranges import Range
 
-__all__ = ["range_termini", "range_min", "range_max", "validate_range"]
+__all__ = ["range_termini", "range_min", "range_max", "validate_range", "range_span", "range_len"]
 
 
 def range_termini(r: Range) -> tuple[int, int]:
@@ -16,6 +16,9 @@ def range_termini(r: Range) -> tuple[int, int]:
     end = r.end if r.include_end else r.end - 1
     return start, end
 
+def range_len(rng: Range) -> int:
+    rmin, rmax = range_termini(rng)
+    return rmax - rmin
 
 def range_min(r: Range) -> int:
     if r.isempty():
