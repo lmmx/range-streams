@@ -56,6 +56,7 @@ RangeDict{
 - [Motivation.md](https://github.com/lmmx/range-streams/blob/master/docs/Motivation.md):
   background on the idea and why you would want to use this technique
 - [Design.md](https://github.com/lmmx/range-streams/blob/master/docs/Design.md):
-  technical overview on how disjoint ranges are represented and how intersecting ranges are handled
+  technical overview on how disjoint ranges are represented, how intersecting
+  ranges are handled, and the different ways of comparing ranges on a `RangeStream`
 - [TODO.md](https://github.com/lmmx/range-streams/blob/master/docs/TODO.md)
 - [CONDA\_SETUP.md](https://github.com/lmmx/range-streams/blob/master/docs/CONDA_SETUP.md)
