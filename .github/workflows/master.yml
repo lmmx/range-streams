@@ -45,7 +45,6 @@ jobs:
       - name: "Check out range-streams"
         uses: "actions/checkout@v2"
 
-      - name: "Setup Python"
       - name: "Setup conda"
         uses: "s-weigand/setup-conda@v1"
         with:
