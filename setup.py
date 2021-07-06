@@ -24,6 +24,10 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = Path("requirements.txt").read_text().splitlines()
 EXTRAS_REQUIRE = {"tests": ["pytest"]}
+EXTRAS_REQUIRE["dev"] = (
+    EXTRAS_REQUIRE["tests"]
+    # + ["pre-commit"]
+)
 PYTHON_REQUIRES = ">=3.8"
 LONG_DESCRIPTION = Path("README.md").read_text()
 PACKAGE_DATA = {"range_streams": ["py.typed"]}
