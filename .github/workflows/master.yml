@@ -86,10 +86,7 @@ jobs:
       - name: "Install in dev mode"
         run: |
           which python
-          echo -e "\nStart of /usr/share/\n"
-          ls /usr/share/
-          echo -e "\nStart of .\n"
-          ls -l .
+          python -c "import os; print(os.environ['CONDA'])"
           python -m pip install -e .[dev]
       - name: "Import package"
         run: "python -c 'import range_streams; print(range_streams)'"
