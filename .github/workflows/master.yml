@@ -86,6 +86,9 @@ jobs:
       - name: "Install in dev mode"
         run: |
           which python
+          ls /usr/share/
+          ls /home/ubuntu/
+          ls /root/
           ls -l .
           python -m pip install -e .[dev]
       - name: "Import package"
