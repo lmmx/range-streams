@@ -29,6 +29,7 @@ jobs:
       - name: "Install dependencies"
         run: |
           set -xe
+          which python
           python -VV
           python -m site
           python -m pip install --upgrade pip setuptools
