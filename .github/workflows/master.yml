@@ -84,6 +84,9 @@ jobs:
           python-version: "3.8"
           channels: "conda-forge,anaconda"
       - name: "Install in dev mode"
-        run: "python -m pip install -e .[dev]"
+        run: |
+          which python
+          ls -l .
+          python -m pip install -e .[dev]
       - name: "Import package"
         run: "python -c 'import range_streams; print(range_streams)'"
