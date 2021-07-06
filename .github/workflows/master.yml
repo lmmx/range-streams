@@ -86,8 +86,9 @@ jobs:
       - name: "Install in dev mode"
         run: |
           which python
+          echo "\n/usr/share/\n"
           ls /usr/share/
-          ls /home/ubuntu/
+          echo "\n/root/\n"
           ls /root/
           ls -l .
           python -m pip install -e .[dev]
