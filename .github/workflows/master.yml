@@ -93,4 +93,4 @@ jobs:
       - name: "Install in dev mode"
         run: "python -m pip install -e .[dev]"
       - name: "Import package"
-        run: "python -c 'import range_streams; print(range_streams.__version__)'"
+        run: "python -c 'import range_streams; print(range_streams)'"
