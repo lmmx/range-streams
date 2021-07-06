@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -ex
-
 if [[ -z $CONDA ]]; then
   echo "Error: no CONDA environment variable is set" 1>&2
   exit 5
