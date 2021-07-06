@@ -1,5 +1,9 @@
 # range-streams
 
+[![CI Status](https://github.com/lmmx/range-streams/workflows/CI/badge.svg?branch=master)](https://github.com/lmmx/range-streams/actions)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Streaming via range requests in Python
 
 ## Outline of `RangeStream` data structure
@@ -60,3 +64,9 @@ RangeDict{
   ranges are handled, and the different ways of comparing ranges on a `RangeStream`
 - [TODO.md](https://github.com/lmmx/range-streams/blob/master/docs/TODO.md)
 - [CONDA\_SETUP.md](https://github.com/lmmx/range-streams/blob/master/docs/CONDA_SETUP.md)
+- [CONTRIBUTING.md](https://github.com/lmmx/range-streams/blob/master/.github/CONTRIBUTING.md)
+
+> _range-streams_ is available from [PyPI](https://pypi.org/project/range-streams), and
+> the code is on [GitHub](https://github.com/lmmx/range-streams)
+
+- TODO: put up on PyPI!

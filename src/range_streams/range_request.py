@@ -6,6 +6,7 @@ from .http_utils import range_header
 
 __all__ = ["RangeRequest"]
 
+
 class RangeRequest:
     """
     Store a GET request and the response stream while keeping a reference to
@@ -13,6 +14,7 @@ class RangeRequest:
     [by default giving access to `iter_raw()`] on the underlying response,
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
+
     def __init__(self, client: httpx.Client, url: str, byte_range: Range):
         self.range = byte_range
         self.url = url
@@ -41,7 +43,7 @@ class RangeRequest:
         try:
             return self.response.headers["content-range"]
         except KeyError as e:
-            raise KeyError(f"Response was missing 'content-range' header""\n{e}")
+            raise KeyError(f"Response was missing 'content-range' header" "\n{e}")
 
     @property
     def total_content_length(self) -> int:

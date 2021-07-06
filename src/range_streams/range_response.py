@@ -9,12 +9,11 @@ if TYPE_CHECKING:
 
 __all__ = ["RangeResponse"]
 
+
 class RangeResponse:
-    def __init__(
-        self,
-        stream: RangeStream,
-        range_request: RangeRequest
-    ):
+    tail_mark = 0
+
+    def __init__(self, stream: RangeStream, range_request: RangeRequest):
         self.parent_stream = stream
         self.request = range_request
         self._bytes = BytesIO()
@@ -67,11 +66,11 @@ class RangeResponse:
 
         self._bytes.seek(left_off_at)
         return self._bytes.read(size)
-    
+
     def seek(self, position, whence=SEEK_SET):
         if whence == SEEK_END:
             self._load_all()
         self._bytes.seek(position, whence)
-    
+
     def is_consumed(self) -> bool:
         return self.tell() - range_len(self.request.range) > 0

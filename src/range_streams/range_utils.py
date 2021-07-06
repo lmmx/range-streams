@@ -1,7 +1,14 @@
 from __future__ import annotations
 from ranges import Range
 
-__all__ = ["range_termini", "range_min", "range_max", "validate_range", "range_span", "range_len"]
+__all__ = [
+    "range_termini",
+    "range_min",
+    "range_max",
+    "validate_range",
+    "range_span",
+    "range_len",
+]
 
 
 def range_termini(r: Range) -> tuple[int, int]:
@@ -16,9 +23,11 @@ def range_termini(r: Range) -> tuple[int, int]:
     end = r.end if r.include_end else r.end - 1
     return start, end
 
+
 def range_len(rng: Range) -> int:
     rmin, rmax = range_termini(rng)
     return rmax - rmin
+
 
 def range_min(r: Range) -> int:
     if r.isempty():
@@ -31,7 +40,10 @@ def range_max(r: Range) -> int:
         raise ValueError("Empty range has no maximum")
     return range_termini(r)[1]
 
-def validate_range(byte_range: Range | tuple[int, int], allow_empty: bool = True) -> Range:
+
+def validate_range(
+    byte_range: Range | tuple[int, int], allow_empty: bool = True
+) -> Range:
     "Validate byte_range and convert to `[a,b)` Range if given as integer tuple"
     complain_about_types = (
         f"{byte_range=} must be a `Range` from the `python-ranges`"
@@ -51,8 +63,9 @@ def validate_range(byte_range: Range | tuple[int, int], allow_empty: bool = True
         raise TypeError("Range is empty")
     return byte_range
 
+
 def range_span(ranges: list[Range]) -> Range:
     "Assumes input list of RangeSets are in ascending order"
     min_start, _ = range_termini(ranges[0])
     _, max_end = range_termini(ranges[-1])
-    return Range(min_start, max_end+1)
+    return Range(min_start, max_end + 1)

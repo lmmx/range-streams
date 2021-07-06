@@ -1,7 +1,7 @@
 from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeSet, RangeDict
-from .range_utils import validate_range, range_span # range_max
+from .range_utils import validate_range, range_span  # range_max
 from .range_response import RangeResponse
 from .range_request import RangeRequest
 from .overlaps import handle_overlap
@@ -52,8 +52,8 @@ class RangeStream:
             self._active_range = rng
 
     def handle_overlap(self, rng: Range):
+        # raise NotImplementedError("Range overlap detected")
         handle_overlap(self, rng)
-        raise NotImplementedError("Range overlap detected")
 
     @property
     def total_bytes(self) -> int | None:
@@ -64,7 +64,7 @@ class RangeStream:
 
     @property
     def spanning_range(self) -> Range:
-        return Range(0,0) if self.isempty() else range_span(self.list_ranges())
+        return Range(0, 0) if self.isempty() else range_span(self.list_ranges())
 
     @property
     def total_range(self) -> Range:
@@ -133,7 +133,7 @@ class RangeStream:
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
             bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
             raise ValueError(f"Each RangeSet must contain 1 Range: found {bad_rs=}")
-    
+
     def list_ranges(self) -> list[Range]:
         """
         Each `_ranges` RangeDict key is a RangeSet containing 1 Range. Check
@@ -157,5 +157,5 @@ class RangeStream:
                 resp = RangeResponse(stream=self, range_request=req)
                 self.register_range(rng=byte_range, value=resp)
         # TODO: handle overlaps
-        #elif :
+        # elif :
         #    r_max = range_max(byte_range)
