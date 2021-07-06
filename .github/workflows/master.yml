@@ -35,7 +35,9 @@ jobs:
           python -m pip install --upgrade tox "tox-conda<0.8" tox-gh-actions
 
       - name: "Run tox targets for ${{ matrix.python-version }}"
-        run: "python -m tox -v"
+        run: |
+          python -m pytest --version
+          python -m tox -v
 
   package:
     name: "Build & verify package"
