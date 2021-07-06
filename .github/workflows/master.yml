@@ -86,10 +86,9 @@ jobs:
       - name: "Install in dev mode"
         run: |
           which python
-          echo "\n/usr/share/\n"
+          echo -e "\nStart of /usr/share/\n"
           ls /usr/share/
-          echo "\n/root/\n"
-          ls /root/
+          echo -e "\nStart of .\n"
           ls -l .
           python -m pip install -e .[dev]
       - name: "Import package"
