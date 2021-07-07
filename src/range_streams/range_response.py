@@ -1,11 +1,11 @@
 from __future__ import annotations
 from io import BytesIO, SEEK_SET, SEEK_END
 from ranges import Range, RangeDict
-from typing import TYPE_CHECKING
 from .range_utils import range_len
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .range_stream import RangeStream
+    from .range_stream import RangeStream, RangeRequest
 
 __all__ = ["RangeResponse"]
 
