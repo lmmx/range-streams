@@ -1,7 +1,7 @@
 from __future__ import annotations
 import httpx
 from ranges import Range
-from typing import Generator
+from typing import Iterator
 from .http_utils import range_header
 
 __all__ = ["RangeRequest"]
@@ -49,7 +49,7 @@ class RangeRequest:
     def total_content_length(self) -> int:
         return int(self.content_range.split("/")[-1])
 
-    def iter_raw(self) -> Generator[bytes]:
+    def iter_raw(self) -> Iterator[bytes]:
         return self.response.iter_raw()
 
     def close(self) -> None:
