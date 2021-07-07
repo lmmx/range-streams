@@ -8,6 +8,7 @@ from .overlaps import handle_overlap
 from sys import stderr
 from pathlib import Path
 from urllib.parse import urlparse
+import httpx
 
 __all__ = ["RangeStream"]
 
@@ -51,6 +52,17 @@ class RangeStream:
         if self._active_range is None:
             self._active_range = rng
 
+    @property
+    def active_range_response(self):
+        try:
+            return self._ranges[self._active_range]
+        except KeyError as e:
+            e_pre = "Cannot get active range response "
+            if self._active_range is None:
+                raise ValueError(f"{e_pre}(no active range)")
+            else:
+                raise ValueError(f"{e_pre}({self._active_range=}")
+
     def handle_overlap(self, rng: Range):
         # raise NotImplementedError("Range overlap detected")
         handle_overlap(self, rng)
@@ -81,45 +93,14 @@ class RangeStream:
     def domain(self) -> str:
         return urlparse(self.url).netloc
 
-    def make_iterator(self, target_range: Range):
-        iterator = request_iterator(target_range)
-
-    def _load_all(self):
-        self._bytes.seek(0, SEEK_END)
-        for chunk in self._iterator:
-            self._bytes.write(chunk)
-
-    def _load_until(self, goal_position):
-        current_position = self._bytes.seek(0, SEEK_END)
-        while current_position < goal_position:
-            try:
-                current_position += self._bytes.write(next(self._iterator))
-            except StopIteration:
-                break
-
     def tell(self):
-        return self._bytes.tell()
+        return self.active_range_response.tell()
 
     def read(self, size=None):
-        left_off_at = self._bytes.tell()
-        if size is None:
-            self._load_all()
-        else:
-            goal_position = left_off_at + size
-            self._load_until(goal_position)
-
-        self._bytes.seek(left_off_at)
-        return self._bytes.read(size)
+        return self.active_range_response.read(size=size)
 
     def seek(self, position, whence=SEEK_SET):
-        if whence == SEEK_END:
-            if self._length_checked:
-                # Make first range with negative seek position
-                pass
-            else:
-                # Calculate seek position and check if in RangeDict
-                pass
-        self._bytes.seek(position, whence)
+        self.active_range_response.seek(position=position, whence=whence)
 
     def send_request(self, byte_range: Range) -> RangeRequest:
         return RangeRequest(client=self.client, url=self.url, byte_range=byte_range)
