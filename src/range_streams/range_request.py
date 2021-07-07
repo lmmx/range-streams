@@ -1,7 +1,10 @@
 from __future__ import annotations
+
+from typing import Iterator
+
 import httpx
 from ranges import Range
-from typing import Iterator
+
 from .http_utils import range_header
 
 __all__ = ["RangeRequest"]

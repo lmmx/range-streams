@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from ranges import Range
 
 __all__ = [

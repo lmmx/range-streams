@@ -1,14 +1,17 @@
 from __future__ import annotations
-from io import BytesIO, SEEK_SET, SEEK_END
-from ranges import Range, RangeSet, RangeDict
-from .range_utils import validate_range, range_span  # range_max
-from .range_response import RangeResponse
-from .range_request import RangeRequest
-from .overlaps import handle_overlap
-from sys import stderr
+
+from io import SEEK_END, SEEK_SET, BytesIO
 from pathlib import Path
+from sys import stderr
 from urllib.parse import urlparse
+
 import httpx
+from ranges import Range, RangeDict, RangeSet
+
+from .overlaps import handle_overlap
+from .range_request import RangeRequest
+from .range_response import RangeResponse
+from .range_utils import range_span, validate_range  # range_max
 
 __all__ = ["RangeStream"]
 

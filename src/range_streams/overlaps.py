@@ -1,9 +1,10 @@
 from __future__ import annotations
-from .range_utils import range_termini
+
+from typing import TYPE_CHECKING
 
 from ranges import Range
 
-from typing import TYPE_CHECKING
+from .range_utils import range_termini
 
 if TYPE_CHECKING:
     from .range_stream import RangeStream
