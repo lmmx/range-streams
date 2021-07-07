@@ -18,6 +18,9 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9"]
 
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: "actions/checkout@v2"
       - name: "Install miniconda"
@@ -47,6 +50,9 @@ jobs:
     name: "Build & verify package"
     runs-on: "ubuntu-20.04"
  
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - name: "Check out range-streams"
         uses: "actions/checkout@v2"
@@ -81,6 +87,9 @@ jobs:
     name: "Verify dev env"
     runs-on: "${{ matrix.os }}"
 
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: "actions/checkout@v2"
       - name: "Install miniconda"
@@ -94,8 +103,9 @@ jobs:
           channels: "conda-forge,anaconda"
       - name: "Install in dev mode"
         run: |
-          which python
-          python -c "import os; print(os.environ['CONDA'])"
+          echo "CONDA=$CONDA"
+          echo "python=$(which python)"
+          echo "conda=$(which conda)"
           python -m pip install -e .[dev]
       - name: "Import package"
         run: "python -c 'import range_streams; print(range_streams)'"

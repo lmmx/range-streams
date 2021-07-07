@@ -9,4 +9,3 @@ wget $MINICONDA_URL
 MINICONDA_SH="Miniconda3-latest-Linux-x86_64.sh"
 sudo bash $MINICONDA_SH -b -p $CONDA
 rm $MINICONDA_SH # Clean up after installing
-$CONDA/bin/conda init
