@@ -1,5 +1,5 @@
 import httpx
-from pytest import fixture
+from pytest import fixture, mark
 from ranges import Range
 
 from range_streams import RangeStream, example_url
@@ -16,9 +16,19 @@ def test_empty_range(empty_range_stream):
     assert isinstance(empty_range_stream, RangeStream)
 
 
+@mark.parametrize("start,stop", [(0, i) for i in (1, 5, 12)])
+def test_range(start, stop):
+    s = make_range_stream(start, stop)
+    assert s._active_range == Range(start, stop)
+
+
+def test_empty_range_total_bytes(empty_range_stream):
+    assert empty_range_stream.total_bytes == 11
+
+
 def make_range_stream(start, stop):
     c = httpx.Client()
-    s = RangeStream(range=Range(start, stop), url=example_url, client=c)
+    s = RangeStream(byte_range=Range(start, stop), url=example_url, client=c)
     return s
 
 
@@ -26,11 +36,3 @@ def make_range_stream(start, stop):
 def test_range(start, stop):
     s = make_range_stream(start, stop)
     assert s._active_range == Range(start, stop)
-
-
-def test_overlapping_ranges(empty_range_stream):
-    s = empty_range_stream
-    s.handle_byte_range(Range(0, 3))
-    s.handle_byte_range(Range(1, 3))
-    # TODO: determine correct behaviour to assert
-    assert isinstance(s, RangeStream)
