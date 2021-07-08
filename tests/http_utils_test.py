@@ -1,0 +1,26 @@
+from pytest import mark
+from ranges import Range
+
+from range_streams.http_utils import byte_range_from_range_obj, range_header
+
+
+@mark.parametrize("start,stop,expected", [(0, 0, "-0"), (0, 1, "0-0"), (0, 11, "0-10")])
+def test_byte_range_to_string(start, stop, expected):
+    r = Range(start, stop)
+    assert byte_range_from_range_obj(r) == expected
+
+
+@mark.parametrize(
+    "start,stop,expected",
+    [
+        (start, stop, {"range": ("bytes=" + byte_range_str)})
+        for start, stop, byte_range_str in [
+            (0, 0, "-0"),
+            (0, 1, "0-0"),
+            (0, 11, "0-10"),
+        ]
+    ],
+)
+def test_range_header_dict(start, stop, expected):
+    r = Range(start, stop)
+    assert range_header(r) == expected
