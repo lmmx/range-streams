@@ -1,6 +1,8 @@
 *.swp
 *.swo
 .tox
+.coverage
+.coverage.*
 build
 dist
 *.pyc

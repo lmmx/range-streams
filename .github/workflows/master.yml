@@ -13,6 +13,8 @@ jobs:
   tests:
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-20.04"
+    env:
+      USING_COVERAGE: '3.8'
 
     strategy:
       matrix:
@@ -39,12 +41,24 @@ jobs:
           python -VV
           python -m site
           python -m pip install --upgrade pip setuptools
-          python -m pip install --upgrade pytest tox tox-conda tox-gh-actions
+          python -m pip install --upgrade pytest coverage[toml] tox tox-conda tox-gh-actions
 
       - name: "Run tox targets for ${{ matrix.python-version }}"
         run: |
           python -m pytest --version
           python -m tox -v
+
+      - name: "Get coverage"
+        run: |
+          set -xe
+          python -m coverage combine
+          python -m coverage xml
+        if: "contains(env.USING_COVERAGE, matrix.python-version)"
+      - name: Upload coverage to Codecov
+        if: "contains(env.USING_COVERAGE, matrix.python-version)"
+        uses: "codecov/codecov-action@v1"
+        with:
+          fail_ci_if_error: true
 
   package:
     name: "Build & verify package"
