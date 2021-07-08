@@ -49,7 +49,7 @@ jobs:
   package:
     name: "Build & verify package"
     runs-on: "ubuntu-20.04"
- 
+
     defaults:
       run:
         shell: bash -l {0}

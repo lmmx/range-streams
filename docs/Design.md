@@ -92,7 +92,7 @@ with the newer range instead of the 'tail-trimmed' range.
 
 If a new range overlaps at the 'head' of a pre-existing `RangeResponse`, the new
 range is shortened by the length of the overlap and the bytes that would have been
-requested are instead taken from the pre-existing head (note: only if the head is 
+requested are instead taken from the pre-existing head (note: only if the head is
 unconsumed) by
 [splitting the iterable](https://docs.python.org/3/library/itertools.html#itertools.islice).
 
