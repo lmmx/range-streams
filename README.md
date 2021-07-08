@@ -33,10 +33,17 @@ Once a request is made for a non-empty range, the `RangeStream` acquires the fir
 
 ## Example
 
+- Adapted from
+  [`tests/range_stream_core_test.py`](https://github.com/lmmx/range-streams/blob/master/tests/range_stream_core_test.py)
+
 ```py
-from range_streams import RangeStream, example_url
 import httpx
 from ranges import Range
+
+from range_streams import RangeStream
+
+from .data import example_url
+
 c = httpx.Client()
 s = RangeStream(url=example_url, client=c)
 rng = Range(0,3)

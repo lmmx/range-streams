@@ -18,7 +18,7 @@ class RangeRequest:
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
 
-    def __init__(self, client: httpx.Client, url: str, byte_range: Range):
+    def __init__(self, byte_range: Range, url: str, client: httpx.Client):
         self.range = byte_range
         self.url = url
         self.client = client

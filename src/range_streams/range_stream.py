@@ -106,7 +106,7 @@ class RangeStream:
         self.active_range_response.seek(position=position, whence=whence)
 
     def send_request(self, byte_range: Range) -> RangeRequest:
-        return RangeRequest(client=self.client, url=self.url, byte_range=byte_range)
+        return RangeRequest(byte_range=byte_range, url=self.url, client=self.client)
 
     def set_length(self, length: int):
         self._length = length

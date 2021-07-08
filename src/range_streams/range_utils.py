@@ -47,7 +47,7 @@ def validate_range(
 ) -> Range:
     "Validate byte_range and convert to `[a,b)` Range if given as integer tuple"
     complain_about_types = (
-        f"{byte_range=} must be a `Range` from the `python-ranges`"
+        f"{byte_range=} must be a Range from the python-ranges"
         " package or an integer 2-tuple"
     )
     if isinstance(byte_range, tuple):
@@ -59,14 +59,20 @@ def validate_range(
     elif not isinstance(byte_range, Range):
         raise TypeError(complain_about_types)
     elif not all(map(lambda o: isinstance(o, int), [byte_range.start, byte_range.end])):
-        raise TypeError("Ranges must be discrete (use integers for start and end)")
+        raise TypeError("Ranges must be discrete: use integers for start and end")
     if not allow_empty and byte_range.isempty():
-        raise TypeError("Range is empty")
+        raise ValueError("Range is empty")
     return byte_range
 
 
 def range_span(ranges: list[Range]) -> Range:
-    "Assumes input list of RangeSets are in ascending order"
-    min_start, _ = range_termini(ranges[0])
-    _, max_end = range_termini(ranges[-1])
+    """
+    Assumes input list of RangeSets are in ascending order, switches if not
+    """
+    first_termini = range_termini(ranges[0])
+    last_termini = range_termini(ranges[-1])
+    if first_termini > last_termini:
+        first_termini, last_termini = last_termini, first_termini
+    min_start, _ = first_termini
+    _, max_end = last_termini
     return Range(min_start, max_end + 1)
