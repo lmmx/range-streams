@@ -117,7 +117,7 @@ By design this is disallowed, only a single range should be used at a time, so
 
 ## Range comparison
 
-There are 3 distinct ways of comparing ranges in a `RangeStream` (checking for membership):
+There are 4 distinct ways of comparing ranges in a `RangeStream` (checking for membership):
 
 ### `RangeStream._ranges`
 
@@ -128,6 +128,16 @@ objects storing the request sent and response received along with the initialise
 Comparing to the `_ranges` attribute therefore compares against the set of ranges requested
 so far from the file (note: not the union of these ranges, which is empty for any ranges
 which are not directly consecutive)
+
+This is "internal", and does not reflect modifications made when the tail is 'bitten'
+(trimmed) when an overlap is present at the tail of a pre-existing range upon registering
+a new range.
+
+### `RangeStream.ranges`
+
+This is the "external" (read-only) property which gates access to `_ranges`, and reflects
+modifications made when the tail is 'bitten' (trimmed) when an overlap is present
+at the tail of a pre-existing range upon registering a new range.
 
 ### `RangeStream.spanning_range`
 

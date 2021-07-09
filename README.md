@@ -41,12 +41,10 @@ Once a request is made for a non-empty range, the `RangeStream` acquires the fir
 import httpx
 from ranges import Range
 
-from range_streams import RangeStream
-
-from .data import example_url
+from range_streams import RangeStream, _example_url
 
 c = httpx.Client()
-s = RangeStream(url=example_url, client=c)
+s = RangeStream(url=_example_url, client=c)
 rng = Range(0,3)
 s.handle_byte_range(rng)
 

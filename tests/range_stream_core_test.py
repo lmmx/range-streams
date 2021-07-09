@@ -18,6 +18,22 @@ def empty_range_stream():
     return s
 
 
+@fixture
+def full_range_stream():
+    "A RangeStream covering the full [0,11) file range."
+    c = httpx.Client()
+    s = RangeStream(byte_range=Range(0, example_file_length), url=example_url, client=c)
+    return s
+
+
+@fixture
+def centred_range_stream():
+    "A RangeStream covering the central range [3,7) of the full [0,11) file range."
+    c = httpx.Client()
+    s = RangeStream(byte_range=Range(3, 7), url=example_url, client=c)
+    return s
+
+
 def test_empty_range(empty_range_stream):
     assert isinstance(empty_range_stream, RangeStream)
 
@@ -59,3 +75,25 @@ def make_range_stream(start, stop):
 def test_range(start, stop):
     s = make_range_stream(start, stop)
     assert s._active_range == Range(start, stop)
+
+
+def first_rngdict_key(rangestream, internal=True):
+    rngdict = rangestream._ranges if internal else rangestream.ranges
+    return next(k for k, v in rngdict.items())[0].ranges()[0]
+
+
+def first_rngdict_key_int_ext_termini(rangestream):
+    return [
+        (rng.start, rng.end)
+        for rng in [first_rngdict_key(rangestream, internal=i) for i in (True, False)]
+    ]
+
+
+def test_range_update(full_range_stream):
+    int_termini, ext_termini = first_rngdict_key_int_ext_termini(full_range_stream)
+    assert int_termini == (0, 11)
+    assert ext_termini == (0, 11)
+    full_range_stream.read(4)
+    int_termini, ext_termini = first_rngdict_key_int_ext_termini(full_range_stream)
+    assert int_termini == (0, 11)
+    assert ext_termini == (4, 11)
