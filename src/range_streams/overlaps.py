@@ -77,7 +77,8 @@ def overlap_whence(ranges: RangeDict, rng: Range) -> int | None:
     Note: same convention as Python io module's SEEK_SET, SEEK_CUR, and SEEK_END.
     """
     if rng in ranges:
-        whence = 1  # Full overlap (i.e. in middle of pre-existing range)
+        # Full overlap (i.e. in middle of pre-existing range)
+        whence = 1  # type: int | None
     else:
         # If minimum (max.) terminus overlaps a range, it's a tail (head) overlap
         tail_over, head_over = [t in ranges for t in range_termini(rng)]
