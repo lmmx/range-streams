@@ -78,3 +78,9 @@ def test_full_range_response_seek_tell(seek, whence, expected):
     full_range_response = RangeResponse(stream=empty_range_stream, range_request=req)
     full_range_response.seek(position=seek, whence=whence)
     assert full_range_response.tell() == expected
+
+
+@mark.parametrize("error_msg", [".*no active range.*"])
+def test_empty_range_active_range_response_fail(empty_range_stream, error_msg):
+    with raises(ValueError, match=error_msg):
+        empty_range_stream.active_range_response
