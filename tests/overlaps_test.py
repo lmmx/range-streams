@@ -1,7 +1,7 @@
 from pytest import fixture, mark, raises
 from ranges import Range
 
-from range_streams.overlaps import handle_overlap, overlap_whence
+from range_streams.overlaps import get_range_containing, handle_overlap, overlap_whence
 
 from .range_stream_core_test import (
     centred_range_stream,
@@ -20,20 +20,16 @@ def test_overlap_head(centred_range_stream, overlapping_range, expected):
     assert initial_whence == expected
     centred_range_stream.handle_overlap(rng=overlapping_range)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
-    assert final_whence is None  # After handling, no overlap is detected
+    assert final_whence is None  # after handling, no overlap is detected
 
 
-@mark.parametrize("overlapping_range,expected", [(Range(4, 6), 1)])
-def test_overlap_midbody(centred_range_stream, overlapping_range, expected):
+@mark.parametrize("pos,expected", [(4, Range(3, 7))])
+def test_range_containing(centred_range_stream, pos, expected):
     """
-    Overlapping range [4,6) at the 'mid-body' of [3,7) with intersection length 2
-    of total range length 2.
+    Position 4 in the range [3,7) should identify the range.
     """
-    initial_whence = centred_range_stream.overlap_whence(overlapping_range)
-    assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range)
-    final_whence = centred_range_stream.overlap_whence(overlapping_range)
-    assert final_whence is None  # After handling, no overlap is detected
+    rng = get_range_containing(rng_dict=centred_range_stream.ranges, position=pos)
+    assert rng == expected
 
 
 @mark.parametrize("overlapping_range,expected", [(Range(5, 8), 2)])

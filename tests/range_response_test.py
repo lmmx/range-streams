@@ -28,6 +28,13 @@ def test_range_response(example_range_response):
     assert isinstance(example_range_response, RangeResponse)
 
 
+def test_range_response_repr(example_range_response):
+    print(f"{example_range_response!r}")
+    assert f"{example_range_response!r}" == (
+        "RangeResponse ⠶ [0, 1) @ 'example_text_file.txt' from github.com"
+    )
+
+
 def test_range_response_client(example_range_response, example_range_request):
     assert example_range_response.client is example_range_request.client
 

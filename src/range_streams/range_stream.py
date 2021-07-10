@@ -177,10 +177,8 @@ class RangeStream:
     def total_range(self) -> Range:
         try:
             return Range(0, self._length)
-        except AttributeError as exc:
-            raise AttributeError(
-                "Cannot use total_range before setting _length"
-            ) from exc
+        except Exception:  # messy exception avalanche
+            raise AttributeError("Cannot use total_range before setting _length")
 
     @property
     def name(self) -> str:
