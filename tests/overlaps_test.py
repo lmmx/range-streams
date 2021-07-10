@@ -76,3 +76,22 @@ def test_no_overlap_empty_range_stream(
     """
     with raises(ValueError, match=error_msg):
         handle_overlap(ranges=empty_range_stream._ranges, rng=nonoverlapping_range)
+
+
+@mark.parametrize("error_msg", ["Partially contained on multiple ranges"])
+@mark.parametrize("initial_ranges", [[(2, 4), (6, 9)]])
+@mark.parametrize("overlapping_range", [Range(3, 7)])
+def test_partial_overlap_multiple_ranges(
+    empty_range_stream, initial_ranges, overlapping_range, error_msg
+):
+    """
+    Partial overlap with termini of the centred range [3,7) covered on multiple
+    ranges (both termini are contained) but `in` does not report True as the
+    entirety of this interval is not within the initial ranges: specifically
+    because these ranges [2,4) and [6,9) are not contiguous.
+    """
+    with raises(NotImplementedError, match=error_msg):
+        s = empty_range_stream
+        for rng_start, rng_end in initial_ranges:
+            s.handle_byte_range(byte_range=Range(rng_start, rng_end))
+        handle_overlap(ranges=empty_range_stream._ranges, rng=overlapping_range)
