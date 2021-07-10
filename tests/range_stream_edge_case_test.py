@@ -82,11 +82,40 @@ def test_subrange(full_range_stream, start, stop, error_msg):
         full_range_stream.register_range(rng=Range(start, stop), value=123)
 
 
-@mark.parametrize("error_msg", ["..."])
-def test_nonduplicate_range_handler(full_range_stream, error_msg):
+def test_nonduplicate_range_handler(full_range_stream):
     """
     Design choice currently permits reassigning the full range if it was
     read, may change but for now just test to clarify behaviour. See issue #4.
     """
     _ = full_range_stream.read()
     full_range_stream.handle_byte_range(full_range_stream.total_range)
+
+
+@mark.parametrize(
+    "error_msg", ["Cannot get active range response.*self._active_range=.*"]
+)
+def test_bad_active_range_response(full_range_stream, error_msg):
+    """
+    Design choice currently permits reassigning the full range if it was
+    read, may change but for now just test to clarify behaviour. See issue #4.
+    """
+    full_range_stream._active_range = 123
+    with raises(ValueError, match=error_msg):
+        full_range_stream.active_range_response
+
+
+def test_total_range_sabotage_length(empty_range_stream):
+    """
+    RangeStream class's `total_range` property should not work if the _length
+    was somehow altered (not possible to access before initialisation).
+    Not realistic so not a specific error.
+    """
+    empty_range_stream._length = None
+    with raises(Exception):
+        empty_range_stream.total_range
+
+
+@mark.parametrize("error_msg", ["Cannot get active range response (no active range)"])
+def test_empty_stream_tell_init(empty_range_stream):
+    with raises(ValueError, match=error_msg):
+        empty_range_stream.tell()

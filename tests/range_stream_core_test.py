@@ -121,3 +121,19 @@ def test_multiple_range_span(start, stop, range_pairs):
         s.handle_byte_range(byte_range=Range(rng_start, rng_stop))
     rng_min, rng_max = range_pairs[0][0], range_pairs[-1][-1]
     assert s.spanning_range == Range(rng_min, rng_max)
+
+
+def test_stream_tell_init(full_range_stream):
+    assert full_range_stream.tell() == 0
+
+
+@mark.parametrize("size", [0, 5, example_file_length])
+def test_stream_tell_read(full_range_stream, size):
+    full_range_stream.read(size=size)
+    assert full_range_stream.tell() == size
+
+
+@mark.parametrize("pos", [0, 5, example_file_length])
+def test_stream_seek_tell(full_range_stream, pos):
+    full_range_stream.seek(position=pos)
+    assert full_range_stream.tell() == pos
