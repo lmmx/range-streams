@@ -1,27 +1,26 @@
 from io import SEEK_END, SEEK_SET
 
-import httpx
 from pytest import fixture, mark, raises
 from ranges import Range
 
 from range_streams.range_response import RangeResponse
 
-from .data import example_file_length, example_url
+from .data import EXAMPLE_FILE_LENGTH
 from .range_request_test import example_range_request, make_range_request
 from .range_stream_core_test import empty_range_stream
 
 
 @fixture
 def example_range_response(empty_range_stream, example_range_request):
-    r = RangeResponse(stream=empty_range_stream, range_request=example_range_request)
-    return r
+    rng = RangeResponse(stream=empty_range_stream, range_request=example_range_request)
+    return rng
 
 
 @fixture
 def full_range_response(empty_range_stream):
     req = make_range_request(0, empty_range_stream.total_bytes)
-    r = RangeResponse(stream=empty_range_stream, range_request=example_range_request)
-    return r
+    rng = RangeResponse(stream=empty_range_stream, range_request=req)
+    return rng
 
 
 def test_range_response(example_range_response):
@@ -58,14 +57,14 @@ def test_range_response_read_tell(example_range_response, read_size, expected):
     [
         (0, SEEK_SET, 0),
         (1, SEEK_SET, 1),
-        (0, SEEK_END, 0),
-        (1, SEEK_END, 1),
+        (0, SEEK_END, 1),
+        (-1, SEEK_END, 0),
     ],
 )
 def test_example_range_response_seek_tell(
     example_range_response, seek, whence, expected
 ):
-    example_range_response.seek(position=seek)
+    example_range_response.seek(position=seek, whence=whence)
     assert example_range_response.tell() == expected
 
 
@@ -81,7 +80,7 @@ def test_example_range_response_seek_tell(
     ],
 )
 def test_full_range_response_seek_tell(seek, whence, expected):
-    req = make_range_request(0, example_file_length)
+    req = make_range_request(0, EXAMPLE_FILE_LENGTH)
     full_range_response = RangeResponse(stream=empty_range_stream, range_request=req)
     full_range_response.seek(position=seek, whence=whence)
     assert full_range_response.tell() == expected

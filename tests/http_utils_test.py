@@ -7,8 +7,8 @@ from range_streams.http_utils import byte_range_from_range_obj, range_header
 @mark.parametrize("start", [0])
 @mark.parametrize("stop,expected", [(0, "-0"), (1, "0-0"), (11, "0-10")])
 def test_byte_range_to_string(start, stop, expected):
-    r = Range(start, stop)
-    assert byte_range_from_range_obj(r) == expected
+    rng = Range(start, stop)
+    assert byte_range_from_range_obj(rng) == expected
 
 
 @mark.parametrize("start", [0])
@@ -24,5 +24,5 @@ def test_byte_range_to_string(start, stop, expected):
     ],
 )
 def test_range_header_dict(start, stop, expected):
-    r = Range(start, stop)
-    assert range_header(r) == expected
+    rng = Range(start, stop)
+    assert range_header(rng) == expected

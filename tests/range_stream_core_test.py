@@ -4,7 +4,7 @@ from ranges import Range
 
 from range_streams import RangeStream
 
-from .data import example_file_length, example_url
+from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
 
 
 @fixture
@@ -13,32 +13,31 @@ def empty_range_stream():
     By default, not passing the `byte_range` param to `RangeStream` will give the
     empty `Range(0,0)`. Create a fixture as a "starting point" for other tests.
     """
-    c = httpx.Client()
-    s = RangeStream(url=example_url, client=c)
-    return s
+    client = httpx.Client()
+    return RangeStream(url=EXAMPLE_URL, client=client)
 
 
 @fixture
 def full_range_stream():
     "A RangeStream covering the full [0,11) file range."
-    c = httpx.Client()
-    s = RangeStream(byte_range=Range(0, example_file_length), url=example_url, client=c)
-    return s
+    client = httpx.Client()
+    rng = Range(0, EXAMPLE_FILE_LENGTH)
+    return RangeStream(byte_range=rng, url=EXAMPLE_URL, client=client)
 
 
 @fixture
 def centred_range_stream():
     "A RangeStream covering the central range [3,7) of the full [0,11) file range."
-    c = httpx.Client()
-    s = RangeStream(byte_range=Range(3, 7), url=example_url, client=c)
-    return s
+    client = httpx.Client()
+    return RangeStream(byte_range=Range(3, 7), url=EXAMPLE_URL, client=client)
 
 
 def test_empty_range(empty_range_stream):
     assert isinstance(empty_range_stream, RangeStream)
 
 
-@mark.parametrize("start,stop", [(0, i) for i in (1, 5, example_file_length)])
+@mark.parametrize("start", [0])
+@mark.parametrize("stop", [1, 5, EXAMPLE_FILE_LENGTH])
 def test_active_range(start, stop):
     """
     The example file used is 11 bytes long, so this test uses
@@ -46,8 +45,8 @@ def test_active_range(start, stop):
     The `_active_range` attribute is set for all except the
     empty range (where it remains `None` as in the classdef)
     """
-    s = make_range_stream(start, stop)
-    assert s._active_range == Range(start, stop)
+    stream = make_range_stream(start, stop)
+    assert stream._active_range == Range(start, stop)
 
 
 @mark.parametrize("start,stop", [(0, 0)])
@@ -57,24 +56,23 @@ def test_active_range_empty(start, stop):
     empty range (where it remains `None` as in the classdef)
     so test this assumption.
     """
-    s = make_range_stream(start, stop)
-    assert s._active_range is None
+    stream = make_range_stream(start, stop)
+    assert stream._active_range is None
 
 
 def test_empty_range_total_bytes(empty_range_stream):
-    assert empty_range_stream.total_bytes == example_file_length
+    assert empty_range_stream.total_bytes == EXAMPLE_FILE_LENGTH
 
 
 def make_range_stream(start, stop):
-    c = httpx.Client()
-    s = RangeStream(byte_range=Range(start, stop), url=example_url, client=c)
-    return s
+    client = httpx.Client()
+    return RangeStream(byte_range=Range(start, stop), url=EXAMPLE_URL, client=client)
 
 
 @fixture(params=[(0, 1), (0, 2), (0, 3)])
 def test_range(start, stop):
-    s = make_range_stream(start, stop)
-    assert s._active_range == Range(start, stop)
+    stream = make_range_stream(start, stop)
+    assert stream._active_range == Range(start, stop)
 
 
 def first_rngdict_key(rangestream, internal=True):
@@ -116,24 +114,24 @@ def test_empty_range_span(empty_range_stream):
 @mark.parametrize("start,stop", [(0, 4)])
 @mark.parametrize("range_pairs", [[(0, 4), (6, 11)], [(2, 3), (5, 6), (8, 9)]])
 def test_multiple_range_span(start, stop, range_pairs):
-    s = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop)
     for rng_start, rng_stop in range_pairs:
-        s.handle_byte_range(byte_range=Range(rng_start, rng_stop))
+        stream.handle_byte_range(byte_range=Range(rng_start, rng_stop))
     rng_min, rng_max = range_pairs[0][0], range_pairs[-1][-1]
-    assert s.spanning_range == Range(rng_min, rng_max)
+    assert stream.spanning_range == Range(rng_min, rng_max)
 
 
 def test_stream_tell_init(full_range_stream):
     assert full_range_stream.tell() == 0
 
 
-@mark.parametrize("size", [0, 5, example_file_length])
+@mark.parametrize("size", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_stream_tell_read(full_range_stream, size):
     full_range_stream.read(size=size)
     assert full_range_stream.tell() == size
 
 
-@mark.parametrize("pos", [0, 5, example_file_length])
+@mark.parametrize("pos", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_stream_seek_tell(full_range_stream, pos):
     full_range_stream.seek(position=pos)
     assert full_range_stream.tell() == pos

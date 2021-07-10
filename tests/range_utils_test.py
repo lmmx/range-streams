@@ -15,43 +15,43 @@ termini_test_triples = [(0, 3, (0, 2)), (1, 4, (1, 3))]
 
 @mark.parametrize("start,stop,expected", termini_test_triples)
 def test_range_termini(start, stop, expected):
-    r = Range(start, stop)
-    assert range_termini(r) == expected
+    rng = Range(start, stop)
+    assert range_termini(rng) == expected
 
 
 @mark.parametrize("start,stop,expected", termini_test_triples)
 def test_range_min(start, stop, expected):
     min_expected, _ = expected
-    r = Range(start, stop)
-    assert range_min(r) == min_expected
+    rng = Range(start, stop)
+    assert range_min(rng) == min_expected
 
 
 @mark.parametrize("start,stop,expected", termini_test_triples)
 def test_range_max(start, stop, expected):
     _, max_expected = expected
-    r = Range(start, stop)
-    assert range_max(r) == max_expected
+    rng = Range(start, stop)
+    assert range_max(rng) == max_expected
 
 
 @mark.parametrize("start,stop,_", termini_test_triples)
 def test_range_len(start, stop, _):
-    r = Range(start, stop)
-    l = (stop - start) - 1
-    assert range_len(r) == l
+    rng = Range(start, stop)
+    rlen = (stop - start) - 1
+    assert range_len(rng) == rlen
 
 
 @mark.parametrize("start,stop,expected", termini_test_triples)
 def test_range_min_terminus(start, stop, expected):
-    r = Range(start, stop)
+    rng = Range(start, stop)
     min_terminus, _ = expected
-    assert range_termini(r)[0] == min_terminus
+    assert range_termini(rng)[0] == min_terminus
 
 
 @mark.parametrize("start,stop,expected", termini_test_triples)
 def test_range_max_terminus(start, stop, expected):
-    r = Range(start, stop)
+    rng = Range(start, stop)
     _, max_terminus = expected
-    assert range_termini(r)[1] == max_terminus
+    assert range_termini(rng)[1] == max_terminus
 
 
 @mark.parametrize("rng", [(1, 3), Range(1, 3)])

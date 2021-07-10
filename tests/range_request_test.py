@@ -4,21 +4,21 @@ from ranges import Range
 
 from range_streams.range_request import RangeRequest
 
-from .data import example_file_length, example_url
+from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
 
 
 def make_range_request(start, stop):
-    c = httpx.Client()
-    r = RangeRequest(byte_range=Range(start, stop), url=example_url, client=c)
-    return r
+    client = httpx.Client()
+    rng = RangeRequest(byte_range=Range(start, stop), url=EXAMPLE_URL, client=client)
+    return rng
 
 
 @mark.parametrize(
     "start,stop,expected", [(0, i + 1, {"range": f"bytes=0-{i}"}) for i in range(3)]
 )
 def test_range_headers(start, stop, expected):
-    r = make_range_request(start, stop)
-    assert r.range_header == expected
+    rng = make_range_request(start, stop)
+    assert rng.range_header == expected
 
 
 @fixture
@@ -36,15 +36,15 @@ def test_range_response_closing(example_range_request):
 
 def test_range_request_iter_raw(example_range_request):
     iterator = example_range_request.iter_raw()
-    b = next(iterator)
-    assert b == b"P"
+    byte = next(iterator)
+    assert byte == b"P"
 
 
 @mark.parametrize("start", [0])
 @mark.parametrize("stop,expected", [(i, {"range": f"bytes=0-{i}"}) for i in range(2)])
 def test_range_length(start, stop, expected):
-    r = make_range_request(start, stop)
-    assert r.total_content_length == example_file_length
+    rng = make_range_request(start, stop)
+    assert rng.total_content_length == EXAMPLE_FILE_LENGTH
 
 
 @mark.parametrize("error_msg", ["Response was missing 'content-range' header.*"])

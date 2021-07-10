@@ -1,10 +1,9 @@
-import httpx
-from pytest import fixture, mark, raises
+from pytest import mark, raises
 from ranges import Range
 
 from range_streams import RangeStream
 
-from .data import example_file_length, example_url
+from .data import EXAMPLE_FILE_LENGTH
 from .range_stream_core_test import (
     empty_range_stream,
     full_range_stream,
@@ -21,7 +20,7 @@ def test_overlapping_ranges(empty_range_stream):
 
 
 @mark.parametrize("start", [0])
-@mark.parametrize("stop", [0, 5, example_file_length])
+@mark.parametrize("stop", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_range_from_empty_same_as_from_nonempty(start, stop, empty_range_stream):
     empty_range_stream.handle_byte_range(Range(start, stop))
     from_nonempty = make_range_stream(start, stop)

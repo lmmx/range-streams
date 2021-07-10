@@ -1,7 +1,7 @@
-from pytest import fixture, mark, raises
+from pytest import mark, raises
 from ranges import Range
 
-from range_streams.overlaps import get_range_containing, handle_overlap, overlap_whence
+from range_streams.overlaps import get_range_containing, handle_overlap
 
 from .range_stream_core_test import (
     centred_range_stream,
@@ -23,13 +23,26 @@ def test_overlap_head(centred_range_stream, overlapping_range, expected):
     assert final_whence is None  # after handling, no overlap is detected
 
 
-@mark.parametrize("pos,expected", [(4, Range(3, 7))])
-def test_range_containing(centred_range_stream, pos, expected):
+@mark.parametrize("pos,disjoint_range,expected", [(4, Range(0, 1), Range(3, 7))])
+def test_range_containing(centred_range_stream, pos, disjoint_range, expected):
     """
-    Position 4 in the range [3,7) should identify the range.
+    Position 4 in the range [3,7) should identify the range. Also add
+    a disjoint range to give full coverage of the generator expression condition.
     """
+    centred_range_stream.handle_byte_range(disjoint_range)
     rng = get_range_containing(rng_dict=centred_range_stream.ranges, position=pos)
     assert rng == expected
+
+
+@mark.parametrize("error_msg", ["No range containing position.*in rng_dict=.*"])
+@mark.parametrize("pos", [8])
+def test_range_not_containing(centred_range_stream, pos, error_msg):
+    """
+    The centred range [3,7) does not contain the position 8, so requesting the
+    range in the RangeStream made of only this range should fail, with an error.
+    """
+    with raises(ValueError, match=error_msg):
+        get_range_containing(rng_dict=centred_range_stream.ranges, position=pos)
 
 
 @mark.parametrize("overlapping_range,expected", [(Range(5, 8), 2)])
@@ -87,7 +100,6 @@ def test_partial_overlap_multiple_ranges(
     because these ranges [2,4) and [6,9) are not contiguous.
     """
     with raises(NotImplementedError, match=error_msg):
-        s = empty_range_stream
         for rng_start, rng_end in initial_ranges:
-            s.handle_byte_range(byte_range=Range(rng_start, rng_end))
+            empty_range_stream.handle_byte_range(byte_range=Range(rng_start, rng_end))
         handle_overlap(ranges=empty_range_stream._ranges, rng=overlapping_range)
