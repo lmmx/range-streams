@@ -20,16 +20,13 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
 def handle_overlap(ranges: RangeDict, rng: Range) -> None:
     if rng.isempty():
         raise ValueError("Range overlap not detected as the range is empty")
-    # TODO: rather than compare to stream._ranges, compare to a property which wraps
-    # 'trims' the attribute value to offset the iterator by position from tell()
-    # and negative offset from 'tail bite'
     rng_min, rng_max = range_termini(rng)
     if rng not in ranges:
         # May be partially overlapping
         has_min, has_max = (pos in ranges for pos in [rng_min, rng_max])
         if has_min and has_max:
             raise NotImplementedError("Partially contained on multiple ranges")
-        elif has_min:
+        if has_min:
             # Overlap at tail of pre-existing RangeResponse erases pre-existing tail
             overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_min)
             o_rng_min, o_rng_max = range_termini(overlapped_rng)

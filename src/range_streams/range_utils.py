@@ -12,16 +12,16 @@ __all__ = [
 ]
 
 
-def range_termini(r: Range) -> tuple[int, int]:
+def range_termini(rng: Range) -> tuple[int, int]:
     """
     Get the inclusive start and end positions `[start,end]` from a `ranges.Range`.
     These are referred to as the 'termini'. Ranges are always ascending.
     """
-    if r.isempty():
+    if rng.isempty():
         raise ValueError("Empty range has no termini")
     # If range is not empty then can compare regardless of if interval is closed/open
-    start = r.start if r.include_start else r.start + 1
-    end = r.end if r.include_end else r.end - 1
+    start = rng.start if rng.include_start else rng.start + 1
+    end = rng.end if rng.include_end else rng.end - 1
     return start, end
 
 
@@ -30,16 +30,16 @@ def range_len(rng: Range) -> int:
     return rmax - rmin
 
 
-def range_min(r: Range) -> int:
-    if r.isempty():
+def range_min(rng: Range) -> int:
+    if rng.isempty():
         raise ValueError("Empty range has no minimum")
-    return range_termini(r)[0]
+    return range_termini(rng)[0]
 
 
-def range_max(r: Range) -> int:
-    if r.isempty():
+def range_max(rng: Range) -> int:
+    if rng.isempty():
         raise ValueError("Empty range has no maximum")
-    return range_termini(r)[1]
+    return range_termini(rng)[1]
 
 
 def validate_range(

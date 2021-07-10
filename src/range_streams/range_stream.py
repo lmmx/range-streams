@@ -1,13 +1,24 @@
+r"""mod:`range_streams.range_stream` exposes a class
+`RangeStream`, whose key property (once initialised) is `ranges`,
+which provides a `RangeDict` comprising the ranges of
+the file being streamed.
+
+The method `handle_byte_range` will request further ranges,
+and (unlike the other methods in this module) will accept
+a tuple of two integers as its argument (`byte_range`).
+
+See `help(RangeStream)` for more information.
+"""
+
 from __future__ import annotations
 
 from copy import deepcopy
-from io import SEEK_END, SEEK_SET, BytesIO
+from io import SEEK_SET
 from pathlib import Path
-from sys import stderr
 from urllib.parse import urlparse
 
 import httpx
-from ranges import Range, RangeDict, RangeSet
+from ranges import Range, RangeDict
 
 from .overlaps import handle_overlap, overlap_whence
 from .range_request import RangeRequest
@@ -18,6 +29,24 @@ __all__ = ["RangeStream"]
 
 
 class RangeStream:
+    """
+    A class representing a file being streamed from a server which supports
+    range requests, with the `ranges` property providing a list of those
+    intervals requested so far (and not yet exhausted).
+
+    When the class is initialised its length checked upon the first range
+    request, and the client provided is not closed (you must handle this
+    yourself). Further ranges may be requested on the `RangeStream` by
+    calling `handle_byte_range`.
+
+    Both the `RangeStream.__init__` and `RangeStream.handle_byte_range`
+    methods support the specification of a range interval as either a
+    tuple of two integers or a `Range` from the mod:`python-ranges`
+    (an external requirement installed alongside this package). Either
+    way, the interval created is interpreted to be the standard Python
+    convention of a half-open interval `[start,stop)`.
+    """
+
     _length_checked = False
     _active_range = None
 
@@ -119,12 +148,11 @@ class RangeStream:
     def active_range_response(self):
         try:
             return self._ranges[self._active_range]
-        except KeyError as e:
+        except KeyError:
             e_pre = "Cannot get active range response "
             if self._active_range is None:
                 raise ValueError(f"{e_pre}(no active range)")
-            else:
-                raise ValueError(f"{e_pre}({self._active_range=}")
+            raise ValueError(f"{e_pre}({self._active_range=}")
 
     def handle_overlap(self, rng: Range) -> None:
         handle_overlap(self._ranges, rng)
@@ -149,8 +177,10 @@ class RangeStream:
     def total_range(self) -> Range:
         try:
             return Range(0, self._length)
-        except AttributeError:
-            raise AttributeError("Cannot use total_range before setting _length")
+        except AttributeError as exc:
+            raise AttributeError(
+                "Cannot use total_range before setting _length"
+            ) from exc
 
     @property
     def name(self) -> str:

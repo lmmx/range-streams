@@ -35,8 +35,9 @@ class RangeRequest:
         `client.stream("GET", url)` but leave the stream to be manually closed
         rather than using a context manager
         """
-        h = self.range_header
-        self.request = self.client.build_request(method="GET", url=self.url, headers=h)
+        self.request = self.client.build_request(
+            method="GET", url=self.url, headers=self.range_header
+        )
         self.response = self.client.send(request=self.request, stream=True)
 
     def content_range_header(self) -> str:
@@ -45,8 +46,8 @@ class RangeRequest:
         """
         try:
             return self.response.headers["content-range"]
-        except KeyError as e:
-            raise KeyError(f"Response was missing 'content-range' header" "\n{e}")
+        except KeyError as exc:
+            raise KeyError("Response was missing 'content-range' header") from exc
 
     @property
     def total_content_length(self) -> int:

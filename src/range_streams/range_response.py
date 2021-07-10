@@ -3,8 +3,6 @@ from __future__ import annotations
 from io import SEEK_END, SEEK_SET, BytesIO
 from typing import TYPE_CHECKING
 
-from ranges import Range, RangeDict
-
 from .range_utils import range_len
 
 if TYPE_CHECKING:
