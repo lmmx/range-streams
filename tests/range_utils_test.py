@@ -19,6 +19,20 @@ def test_range_termini(start, stop, expected):
     assert range_termini(r) == expected
 
 
+@mark.parametrize("start,stop,expected", termini_test_triples)
+def test_range_min(start, stop, expected):
+    min_expected, _ = expected
+    r = Range(start, stop)
+    assert range_min(r) == min_expected
+
+
+@mark.parametrize("start,stop,expected", termini_test_triples)
+def test_range_max(start, stop, expected):
+    _, max_expected = expected
+    r = Range(start, stop)
+    assert range_max(r) == max_expected
+
+
 @mark.parametrize("start,stop,_", termini_test_triples)
 def test_range_len(start, stop, _):
     r = Range(start, stop)
