@@ -20,16 +20,12 @@ def test_overlapping_ranges(empty_range_stream):
     assert isinstance(s, RangeStream)
 
 
-@mark.parametrize("start,stop", [(0, i) for i in (0, 5, example_file_length)])
+@mark.parametrize("start", [0])
+@mark.parametrize("stop", [0, 5, example_file_length])
 def test_range_from_empty_same_as_from_nonempty(start, stop, empty_range_stream):
-    from_empty = empty_range_stream
-    from_empty.handle_byte_range(Range(start, stop))
+    empty_range_stream.handle_byte_range(Range(start, stop))
     from_nonempty = make_range_stream(start, stop)
-    # if stop > 9:
-    #    print(f"{from_empty._ranges=}")
-    #    print(f"{from_nonempty._ranges=}")
-    #    raise ValueError # raise to emit the print statement
-    assert from_empty.list_ranges() == from_nonempty.list_ranges()
+    assert empty_range_stream.list_ranges() == from_nonempty.list_ranges()
 
 
 @mark.parametrize("error_msg", ["Each RangeSet must contain 1 Range.*"])
@@ -57,3 +53,30 @@ def test_range_integrity_check_pass_empty_stream(empty_range_stream):
 def test_range_integrity_check_pass_full_stream(full_range_stream):
     full_range_stream.handle_byte_range(byte_range=Range(4, 6))
     assert full_range_stream.check_range_integrity() is None
+
+
+def test_subrange_register_pass_full_stream(full_range_stream):
+    """
+    Full RangeStream's length should be checked so calling `register_range`
+    on it should be fine
+    """
+    full_range_stream.register_range(rng=Range(4, 6), value=123)
+    assert full_range_stream.check_range_integrity() is None
+
+
+@mark.parametrize("start,stop", [(0, 1)])
+@mark.parametrize("error_msg", ["Stream length must be set before registering a range"])
+def test_class_register_range(start, stop, error_msg):
+    """
+    RangeStream class's length should not be checked until initialised as an instance,
+    so calling `register_range` on the class itself should error out.
+    """
+    with raises(ValueError, match=error_msg):
+        RangeStream.register_range(self=RangeStream, rng=Range(start, stop), value=123)
+
+
+@mark.parametrize("start,stop", [(20, 30), (0, 100), (5, 15)])
+@mark.parametrize("error_msg", [".*is not a sub-range of.*"])
+def test_subrange(full_range_stream, start, stop, error_msg):
+    with raises(ValueError, match=error_msg):
+        full_range_stream.register_range(rng=Range(start, stop), value=123)

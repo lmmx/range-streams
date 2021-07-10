@@ -63,25 +63,21 @@ def test_range_span(first_rng, last_rng, span_rng):
 
 
 @mark.parametrize(
-    "float_range, error_msg",
-    [(Range(1.5, 4.5), "Ranges must be discrete: use integers for start and end")],
+    "error_msg", ["Ranges must be discrete: use integers for start and end"]
 )
+@mark.parametrize("float_range", [Range(1.5, 4.5)])
 def test_validate_float_range(float_range, error_msg):
     with raises(TypeError, match=error_msg):
         validate_range(float_range)
 
 
 @mark.parametrize(
-    "list_range, error_msg",
+    "error_msg",
     [
-        (
-            rng,
-            "byte_range=.* must be a Range from the python-ranges package or "
-            "an integer 2-tuple",
-        )
-        for rng in ((1, 2.5), (1, 2, 3), [0, 3])
+        "byte_range=.* must be a Range from the python-ranges package or an integer 2-tuple"
     ],
 )
+@mark.parametrize("list_range", [(1, 2.5), (1, 2, 3), [0, 3]])
 def test_validate_list_range(list_range, error_msg):
     with raises(TypeError, match=error_msg):
         validate_range(list_range)

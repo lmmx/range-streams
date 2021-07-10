@@ -39,9 +39,8 @@ def test_range_request_iter_raw(example_range_request):
     assert b == b"P"
 
 
-@mark.parametrize(
-    "start,stop,expected", [(0, i, {"range": f"bytes=0-{i}"}) for i in range(2)]
-)
+@mark.parametrize("start", [0])
+@mark.parametrize("stop,expected", [(i, {"range": f"bytes=0-{i}"}) for i in range(2)])
 def test_range_length(start, stop, expected):
     r = make_range_request(start, stop)
     assert r.total_content_length == example_file_length

@@ -54,10 +54,8 @@ def test_overlap_tail(centred_range_stream, overlapping_range, expected):
 # Edge cases: handling non-overlapping ranges
 
 
-@mark.parametrize(
-    "empty_range, error_msg",
-    [(Range(0, 0), "Range overlap not detected as the range is empty")],
-)
+@mark.parametrize("error_msg", ["Range overlap not detected as the range is empty"])
+@mark.parametrize("empty_range", [Range(0, 0)])
 def test_no_overlap_empty_range(full_range_stream, empty_range, error_msg):
     """
     The full range [0,11) cannot overlap with the empty range [0,0) because
@@ -67,10 +65,8 @@ def test_no_overlap_empty_range(full_range_stream, empty_range, error_msg):
         handle_overlap(ranges=full_range_stream._ranges, rng=empty_range)
 
 
-@mark.parametrize(
-    "nonoverlapping_range, error_msg",
-    [(Range(0, 5), "Range overlap not detected at termini.*")],
-)
+@mark.parametrize("error_msg", ["Range overlap not detected at termini.*"])
+@mark.parametrize("nonoverlapping_range", [Range(0, 5)])
 def test_no_overlap_empty_range_stream(
     empty_range_stream, nonoverlapping_range, error_msg
 ):
