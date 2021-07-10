@@ -12,7 +12,7 @@ from ranges import Range, RangeDict, RangeSet
 from .overlaps import handle_overlap, overlap_whence
 from .range_request import RangeRequest
 from .range_response import RangeResponse
-from .range_utils import range_span, validate_range  # range_max
+from .range_utils import range_max, range_span, validate_range
 
 __all__ = ["RangeStream"]
 
@@ -49,30 +49,35 @@ class RangeStream:
         "Every `RangeSet` in the `_ranges: RangeDict` keys must contain 1 Range each"
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
             bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
-            raise ValueError(f"Each RangeSet must contain 1 Range: found {bad_rs=}")
+            for rset in bad_rs:
+                for rng in rset:
+                    rng_resp = self._ranges[rng.start]
+                    rng_max = range_max(rng)
+                    if rng_resp.tell() > rng_max:
+                        rset.discard(rng)  # discard subrange
+                if len(rset.ranges()) < 2:
+                    bad_rs.remove(rset)
+            if bad_rs:
+                raise ValueError(f"Each RangeSet must contain 1 Range: found {bad_rs=}")
 
-    @property
-    def ranges(self):
+    def compute_external_ranges(self) -> RangeDict:
         """
-        Read-only view on the RangeDict stored in the `_ranges` attribute, modifying
-        it to account for the bytes consumed (from the head) and tail mark offset
-        of where a range was already trimmed to avoid an overlap (from the tail).
+        Modifying the `_ranges` attribute to account for the bytes consumed
+        (from the head) and tail mark offset of where a range was already
+        trimmed to avoid an overlap (from the tail).
 
         While the RangeSet keys are a deep copy of the _ranges RangeDict keys (and
         therefore will not propagate if modified), the RangeResponse values are
         references, therefore will propagate to the `_ranges` RangeDict if modified.
-
-        Each `ranges` RangeDict key is a RangeSet containing 1 Range. Check
-        this assumption (singleton RangeSet "integrity") holds and retrieve
-        this list of RangeSet keys in ascending order, as a list of `Range`s.
         """
-        self.check_range_integrity()
         prepared_rangedict = RangeDict()
         for rng_set, rng_response in self._ranges.items():
             readable_rangeset = deepcopy(rng_set[0])
             # if (rng_response.start, rng_response.end) < 0:
             #    # negative range
             #    ...
+            if rng_response.is_consumed():
+                continue
             if rng_response_tell := rng_response.tell():
                 # Access single range (assured by unique RangeResponse values of
                 # RangeDict) of singleton rangeset (assured by check_range_integrity)
@@ -81,6 +86,20 @@ class RangeStream:
                 readable_rangeset.ranges()[0].end -= rng_response.tail_mark
             prepared_rangedict.update({readable_rangeset: rng_response})
         return prepared_rangedict
+
+    @property
+    def ranges(self):
+        """
+        Read-only view on the RangeDict stored in the `_ranges` attribute, modifying
+        it to account for the bytes consumed (from the head) and tail mark offset
+        of where a range was already trimmed to avoid an overlap (from the tail).
+
+        Each `ranges` RangeDict key is a RangeSet containing 1 Range. Check
+        this assumption (singleton RangeSet "integrity") holds and retrieve
+        this list of RangeSet keys in ascending order, as a list of `Range`s.
+        """
+        self.check_range_integrity()
+        return self.compute_external_ranges()
 
     def overlap_whence(self, rng: Range) -> int | None:
         return overlap_whence(self.ranges, rng)
@@ -108,7 +127,7 @@ class RangeStream:
                 raise ValueError(f"{e_pre}({self._active_range=}")
 
     def handle_overlap(self, rng: Range) -> None:
-        handle_overlap(self.ranges, rng)
+        handle_overlap(self._ranges, rng)
 
     @property
     def total_bytes(self) -> int | None:

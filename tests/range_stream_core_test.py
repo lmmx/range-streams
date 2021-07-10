@@ -97,3 +97,9 @@ def test_range_update(full_range_stream):
     int_termini, ext_termini = first_rngdict_key_int_ext_termini(full_range_stream)
     assert int_termini == (0, 11)
     assert ext_termini == (4, 11)
+
+
+def test_range_stream_repr(full_range_stream):
+    assert f"{full_range_stream!r}" == (
+        "RangeStream ⠶ [0, 11) @@ 'example_text_file.txt' from github.com"
+    )

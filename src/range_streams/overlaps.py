@@ -7,7 +7,7 @@ from ranges import Range
 from .range_utils import range_termini
 
 if TYPE_CHECKING:
-    from ranges import RangeDict
+    from ranges import RangeDict  # pragma: no cover
 
 __all__ = ["handle_overlap", "overlap_whence"]
 

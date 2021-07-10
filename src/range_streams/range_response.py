@@ -8,7 +8,7 @@ from ranges import Range, RangeDict
 from .range_utils import range_len
 
 if TYPE_CHECKING:
-    from .range_stream import RangeRequest, RangeStream
+    from .range_stream import RangeRequest, RangeStream  # pragma: no cover
 
 __all__ = ["RangeResponse"]
 
