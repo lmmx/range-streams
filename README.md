@@ -30,7 +30,10 @@ to set the total file length on the `_length` attribute of `RangeStream` (access
 `total_bytes` property).
 
 Once a request is made for a non-empty range, the `RangeStream` acquires the first entry in the
-`RangeDict` stored on the `._ranges` attribute.
+`RangeDict` stored on the `._ranges` attribute. When using the ranges, you should access
+the `ranges` property (instead of the internal `_ranges` attribute), which takes into account
+whether the bytes in each range's `RangeResponse` are exhausted or removed due to overlap with
+another range. See the design docs for further details.
 
 ## Example
 
@@ -54,6 +57,23 @@ s._ranges
 ```py
 RangeDict{
   RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
+}
+```
+
+Further ranges are requested by simply calling `handle_byte_range` with another Range
+object. You can also provide a byte range to the `handle_byte_range` method as a tuple
+of two integers, which will be interpreted per the usual convention for ranges in Python,
+as a `[a,b)` half-open interval.
+
+```py
+s.handle_byte_range(byte_range=(7,9))
+s.ranges
+```
+⇣
+```py
+RangeDict{
+  RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
+  RangeSet{Range[7, 9)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
 }
 ```
 
