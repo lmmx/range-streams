@@ -80,3 +80,13 @@ def test_class_register_range(start, stop, error_msg):
 def test_subrange(full_range_stream, start, stop, error_msg):
     with raises(ValueError, match=error_msg):
         full_range_stream.register_range(rng=Range(start, stop), value=123)
+
+
+@mark.parametrize("error_msg", ["..."])
+def test_nonduplicate_range_handler(full_range_stream, error_msg):
+    """
+    Design choice currently permits reassigning the full range if it was
+    read, may change but for now just test to clarify behaviour. See issue #4.
+    """
+    _ = full_range_stream.read()
+    full_range_stream.handle_byte_range(full_range_stream.total_range)
