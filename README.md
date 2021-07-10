@@ -46,12 +46,12 @@ from ranges import Range
 
 from range_streams import RangeStream, _EXAMPLE_URL
 
-c = httpx.Client()
-s = RangeStream(url=_EXAMPLE_URL, client=c)
+client = httpx.Client()
+stream = RangeStream(url=_EXAMPLE_URL, client=client)
 rng = Range(0,3)
-s.handle_byte_range(rng)
+stream.handle_byte_range(rng)
 
-s._ranges
+stream.ranges
 ```
 ⇣
 ```py
@@ -66,8 +66,8 @@ of two integers, which will be interpreted per the usual convention for ranges i
 as a `[a,b)` half-open interval.
 
 ```py
-s.handle_byte_range(byte_range=(7,9))
-s.ranges
+stream.handle_byte_range(byte_range=(7,9))
+stream.ranges
 ```
 ⇣
 ```py
