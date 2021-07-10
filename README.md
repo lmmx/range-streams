@@ -44,10 +44,10 @@ another range. See the design docs for further details.
 import httpx
 from ranges import Range
 
-from range_streams import RangeStream, _example_url
+from range_streams import RangeStream, _EXAMPLE_URL
 
 c = httpx.Client()
-s = RangeStream(url=_example_url, client=c)
+s = RangeStream(url=_EXAMPLE_URL, client=c)
 rng = Range(0,3)
 s.handle_byte_range(rng)
 

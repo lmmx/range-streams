@@ -47,9 +47,9 @@ The following example shows the basic setup for a single range.
 
     >>> import httpx
     >>> from ranges import Range
-    >>> from range_streams import RangeStream, _example_url
+    >>> from range_streams import RangeStream, _EXAMPLE_URL
     >>> c = httpx.Client()
-    >>> s = RangeStream(url=_example_url, client=c)
+    >>> s = RangeStream(url=_EXAMPLE_URL, client=c)
     >>> rng = Range(0,3)
     >>> s.handle_byte_range(rng)
     >>> s.ranges
@@ -79,7 +79,7 @@ __url__ = "https://github.com/lmmx/range-streams"
 __uri__ = __url__
 __email__ = "louismmx@gmail.com"
 
-_example_url = (
+_EXAMPLE_URL = (
     "https://github.com/lmmx/range-streams/raw/"
     "bb5e0cc2e6980ea9e716a569ab0322587d3aa785/example_text_file.txt"
 )
