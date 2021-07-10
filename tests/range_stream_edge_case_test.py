@@ -115,7 +115,7 @@ def test_total_range_sabotage_length(empty_range_stream):
         empty_range_stream.total_range
 
 
-@mark.parametrize("error_msg", ["Cannot get active range response (no active range)"])
-def test_empty_stream_tell_init(empty_range_stream):
+@mark.parametrize("error_msg", ["Cannot get active range response.*no active range.*"])
+def test_empty_stream_tell_init(empty_range_stream, error_msg):
     with raises(ValueError, match=error_msg):
         empty_range_stream.tell()

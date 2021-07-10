@@ -56,8 +56,8 @@ def test_range_max_terminus(start, stop, expected):
 
 @mark.parametrize("rng", [(1, 3), Range(1, 3)])
 def test_validate_range(rng):
-    tup_rng = Range(rng[0], rng[1]) if isinstance(rng, tuple) else rng
-    assert validate_range(rng) is tup_rng
+    expected = Range(rng[0], rng[1]) if isinstance(rng, tuple) else rng
+    assert validate_range(rng) == expected
 
 
 @mark.parametrize(

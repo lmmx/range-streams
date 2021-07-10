@@ -28,9 +28,10 @@ def example_range_request():
 
 
 def test_range_response_closing(example_range_request):
-    assert not example_range_request.response.is_closed
+    assert example_range_request.response.is_closed is False
     example_range_request.close()
-    assert example_range_request.response.is_closed
+    assert example_range_request.response.is_closed is True
+    example_range_request.close()
 
 
 def test_range_request_iter_raw(example_range_request):
