@@ -103,3 +103,21 @@ def test_range_stream_repr(full_range_stream):
     assert f"{full_range_stream!r}" == (
         "RangeStream ⠶ [0, 11) @@ 'example_text_file.txt' from github.com"
     )
+
+
+def test_empty_range_stream_empty(empty_range_stream):
+    assert empty_range_stream.isempty() is True
+
+
+def test_empty_range_span(empty_range_stream):
+    assert empty_range_stream.spanning_range == Range(0, 0)
+
+
+@mark.parametrize("start,stop", [(0, 4)])
+@mark.parametrize("range_pairs", [[(0, 4), (6, 11)], [(2, 3), (5, 6), (8, 9)]])
+def test_multiple_range_span(start, stop, range_pairs):
+    s = make_range_stream(start, stop)
+    for rng_start, rng_stop in range_pairs:
+        s.handle_byte_range(byte_range=Range(rng_start, rng_stop))
+    rng_min, rng_max = range_pairs[0][0], range_pairs[-1][-1]
+    assert s.spanning_range == Range(rng_min, rng_max)
