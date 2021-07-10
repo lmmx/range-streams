@@ -54,10 +54,10 @@ def test_range_max_terminus(start, stop, expected):
     assert range_termini(r)[1] == max_terminus
 
 
-@mark.parametrize("start,stop", [(1, 3)])
-def test_validate_range(start, stop):
-    r = Range(start, stop)
-    assert validate_range(r) is r
+@mark.parametrize("rng", [(1, 3), Range(1, 3)])
+def test_validate_range(rng):
+    tup_rng = Range(rng[0], rng[1]) if isinstance(rng, tuple) else rng
+    assert validate_range(rng) is tup_rng
 
 
 @mark.parametrize(
