@@ -3,7 +3,7 @@ r"""mod:`range_streams.range_stream` exposes a class
 which provides a `RangeDict` comprising the ranges of
 the file being streamed.
 
-The method `handle_byte_range` will request further ranges,
+The method `RangeStream.add` will request further ranges,
 and (unlike the other methods in this module) will accept
 a tuple of two integers as its argument (`byte_range`).
 
@@ -37,9 +37,9 @@ class RangeStream:
     When the class is initialised its length checked upon the first range
     request, and the client provided is not closed (you must handle this
     yourself). Further ranges may be requested on the `RangeStream` by
-    calling `handle_byte_range`.
+    calling `add`.
 
-    Both the `RangeStream.__init__` and `RangeStream.handle_byte_range`
+    Both the `RangeStream.__init__` and `RangeStream.add`
     methods support the specification of a range interval as either a
     tuple of two integers or a `Range` from the mod:`python-ranges`
     (an external requirement installed alongside this package). Either
@@ -59,7 +59,7 @@ class RangeStream:
         self.url = url
         self.client = client
         self._ranges = RangeDict()
-        self.handle_byte_range(byte_range=byte_range)
+        self.add(byte_range=byte_range)
 
     def __repr__(self) -> str:
         return (
@@ -214,9 +214,7 @@ class RangeStream:
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 
-    def handle_byte_range(
-        self, byte_range: Range | tuple[int, int] = Range("[0, 0)")
-    ) -> None:
+    def add(self, byte_range: Range | tuple[int, int] = Range("[0, 0)")) -> None:
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not send a request for an empty range if total length already checked
         if not self._length_checked or not byte_range.isempty():

@@ -116,7 +116,7 @@ def test_empty_range_span(empty_range_stream):
 def test_multiple_range_span(start, stop, range_pairs):
     stream = make_range_stream(start, stop)
     for rng_start, rng_stop in range_pairs:
-        stream.handle_byte_range(byte_range=Range(rng_start, rng_stop))
+        stream.add(byte_range=Range(rng_start, rng_stop))
     rng_min, rng_max = range_pairs[0][0], range_pairs[-1][-1]
     assert stream.spanning_range == Range(rng_min, rng_max)
 

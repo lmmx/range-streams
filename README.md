@@ -49,7 +49,7 @@ from range_streams import RangeStream, _EXAMPLE_URL
 client = httpx.Client()
 stream = RangeStream(url=_EXAMPLE_URL, client=client)
 rng = Range(0,3)
-stream.handle_byte_range(rng)
+stream.add(byte_range=rng)
 
 stream.ranges
 ```
@@ -60,13 +60,13 @@ RangeDict{
 }
 ```
 
-Further ranges are requested by simply calling `handle_byte_range` with another Range
-object. You can also provide a byte range to the `handle_byte_range` method as a tuple
+Further ranges are requested by simply calling `RangeStream.add` with another Range
+object. You can also provide a byte range to the `add` method as a tuple
 of two integers, which will be interpreted per the usual convention for ranges in Python,
 as a `[a,b)` half-open interval.
 
 ```py
-stream.handle_byte_range(byte_range=(7,9))
+stream.add(byte_range=(7,9))
 stream.ranges
 ```
 ⇣

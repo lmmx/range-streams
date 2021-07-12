@@ -16,7 +16,7 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     "Presumes range integrity has been checked, get a range by position it contains"
     # return next(k[0] for k, v in rng_dict.items() if position in k[0]).ranges()[0]
     rng_dict_kv = rng_dict.items()
-    for k, v in rng_dict_kv:
+    for k, _ in rng_dict_kv:
         if position in k[0]:
             rng = k[0].ranges()[0]
             return rng

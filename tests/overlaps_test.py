@@ -29,7 +29,7 @@ def test_range_containing(centred_range_stream, pos, disjoint_range, expected):
     Position 4 in the range [3,7) should identify the range. Also add
     a disjoint range to give full coverage of the generator expression condition.
     """
-    centred_range_stream.handle_byte_range(disjoint_range)
+    centred_range_stream.add(disjoint_range)
     rng = get_range_containing(rng_dict=centred_range_stream.ranges, position=pos)
     assert rng == expected
 
@@ -101,5 +101,5 @@ def test_partial_overlap_multiple_ranges(
     """
     with raises(NotImplementedError, match=error_msg):
         for rng_start, rng_end in initial_ranges:
-            empty_range_stream.handle_byte_range(byte_range=Range(rng_start, rng_end))
+            empty_range_stream.add(byte_range=Range(rng_start, rng_end))
         handle_overlap(ranges=empty_range_stream._ranges, rng=overlapping_range)

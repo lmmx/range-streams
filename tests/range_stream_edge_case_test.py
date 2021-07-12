@@ -13,8 +13,8 @@ from .range_stream_core_test import (
 
 def test_overlapping_ranges(empty_range_stream):
     s = empty_range_stream
-    s.handle_byte_range(Range(0, 3))
-    s.handle_byte_range(Range(1, 3))
+    s.add(Range(0, 3))
+    s.add(Range(1, 3))
     # TODO: determine correct behaviour to assert
     assert isinstance(s, RangeStream)
 
@@ -22,7 +22,7 @@ def test_overlapping_ranges(empty_range_stream):
 @mark.parametrize("start", [0])
 @mark.parametrize("stop", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_range_from_empty_same_as_from_nonempty(start, stop, empty_range_stream):
-    empty_range_stream.handle_byte_range(Range(start, stop))
+    empty_range_stream.add(Range(start, stop))
     from_nonempty = make_range_stream(start, stop)
     assert empty_range_stream.list_ranges() == from_nonempty.list_ranges()
 
@@ -50,7 +50,7 @@ def test_range_integrity_check_pass_empty_stream(empty_range_stream):
 
 
 def test_range_integrity_check_pass_full_stream(full_range_stream):
-    full_range_stream.handle_byte_range(byte_range=Range(4, 6))
+    full_range_stream.add(byte_range=Range(4, 6))
     assert full_range_stream.check_range_integrity() is None
 
 
@@ -81,13 +81,13 @@ def test_subrange(full_range_stream, start, stop, error_msg):
         full_range_stream.register_range(rng=Range(start, stop), value=123)
 
 
-def test_nonduplicate_range_handler(full_range_stream):
+def test_nonduplicate_range_add(full_range_stream):
     """
     Design choice currently permits reassigning the full range if it was
     read, may change but for now just test to clarify behaviour. See issue #4.
     """
     _ = full_range_stream.read()
-    full_range_stream.handle_byte_range(full_range_stream.total_range)
+    full_range_stream.add(full_range_stream.total_range)
 
 
 @mark.parametrize(

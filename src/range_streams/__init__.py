@@ -51,18 +51,18 @@ The following example shows the basic setup for a single range.
     >>> c = httpx.Client()
     >>> s = RangeStream(url=_EXAMPLE_URL, client=c)
     >>> rng = Range(0,3)
-    >>> s.handle_byte_range(rng)
+    >>> s.add(rng)
     >>> s.ranges
     RangeDict{
       RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
     }
 
-Further ranges are requested by simply calling `handle_byte_range` with another Range
-object. You can also provide a byte range to the `handle_byte_range` method as a tuple of
+Further ranges are requested by simply calling `RangeStream.add` with another Range
+object. You can also provide a byte range to the `add` method as a tuple of
 two integers, which will be interpreted per the usual convention for ranges in Python,
 as a `[a,b)` half-open interval.
 
-    >>> s.handle_byte_range(byte_range=(7,9))
+    >>> s.add(byte_range=(7,9))
     >>> s.ranges
     RangeDict{
       RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
