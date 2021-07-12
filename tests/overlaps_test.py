@@ -18,7 +18,7 @@ def test_overlap_head(centred_range_stream, overlapping_range, expected):
     """
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range)
+    centred_range_stream.handle_overlap(rng=overlapping_range, internal=True)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert final_whence is None  # after handling, no overlap is detected
 
@@ -55,7 +55,7 @@ def test_overlap_tail(centred_range_stream, overlapping_range, expected):
     """
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range)
+    centred_range_stream.handle_overlap(rng=overlapping_range, internal=True)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert final_whence is None  # After handling, no overlap is detected
 
@@ -71,7 +71,7 @@ def test_no_overlap_empty_range(full_range_stream, empty_range, error_msg):
     (trivially) the empty range has no possibly overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        handle_overlap(ranges=full_range_stream._ranges, rng=empty_range)
+        handle_overlap(stream=full_range_stream, rng=empty_range, internal=False)
 
 
 @mark.parametrize("error_msg", ["Range overlap not detected at termini.*"])
@@ -84,7 +84,9 @@ def test_no_overlap_empty_range_stream(
     because (trivially) the empty range has no possible overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        handle_overlap(ranges=empty_range_stream._ranges, rng=nonoverlapping_range)
+        handle_overlap(
+            stream=empty_range_stream, rng=nonoverlapping_range, internal=False
+        )
 
 
 @mark.parametrize("error_msg", ["Partially contained on multiple ranges"])
@@ -102,4 +104,4 @@ def test_partial_overlap_multiple_ranges(
     with raises(NotImplementedError, match=error_msg):
         for rng_start, rng_end in initial_ranges:
             empty_range_stream.add(byte_range=Range(rng_start, rng_end))
-        handle_overlap(ranges=empty_range_stream._ranges, rng=overlapping_range)
+        handle_overlap(stream=empty_range_stream, rng=overlapping_range, internal=False)

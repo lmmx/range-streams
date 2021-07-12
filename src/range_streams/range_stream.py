@@ -139,7 +139,7 @@ class RangeStream:
         else:
             raise ValueError("Stream length must be set before registering a range")
         if self.overlap_whence(rng) is not None:
-            self.handle_overlap(rng)
+            self.handle_overlap(rng, internal=True)
         self._ranges.add(rng=rng, value=value)
         if self._active_range is None:
             self._active_range = rng
@@ -154,8 +154,8 @@ class RangeStream:
                 raise ValueError(f"{e_pre}(no active range)")
             raise ValueError(f"{e_pre}({self._active_range=}")
 
-    def handle_overlap(self, rng: Range) -> None:
-        handle_overlap(self._ranges, rng)
+    def handle_overlap(self, rng: Range, internal: bool = False) -> None:
+        handle_overlap(self, rng, internal=internal)
 
     @property
     def total_bytes(self) -> int | None:
@@ -163,11 +163,6 @@ class RangeStream:
 
     def isempty(self) -> bool:
         return self._ranges.isempty()
-
-    # def isempty(self) -> bool:
-    #    return self.ranges.isempty()
-    # def _isempty(self) -> bool:
-    #    return self._ranges.isempty()
 
     @property
     def spanning_range(self) -> Range:

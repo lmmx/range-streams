@@ -23,7 +23,8 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     raise ValueError(f"No range containing position {position} in {rng_dict=}")
 
 
-def handle_overlap(ranges: RangeDict, rng: Range) -> None:
+def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> None:
+    ranges = stream._ranges if internal else stream.ranges
     if rng.isempty():
         raise ValueError("Range overlap not detected as the range is empty")
     rng_min, rng_max = range_termini(rng)
