@@ -2,6 +2,7 @@ from pytest import mark, raises
 from ranges import Range
 
 from range_streams import RangeStream
+from range_streams.range_utils import ranges_in_registration_order
 
 from .data import EXAMPLE_FILE_LENGTH
 from .range_stream_core_test import (
@@ -153,7 +154,7 @@ def test_nonduplicate_range_add_with_pruning_Head_To_Tail(
 @mark.parametrize("overlapping_range,test_pos", [(Range(2, 5), 3)])
 @mark.parametrize(
     "pruning_level,expected_int_count,expected_ext_count",
-    [(-1, None, None), (0, 2, 1), (1, 1, 1), (2, None, None)],
+    [(-1, None, None), (0, 2, 2), (1, 1, 1), (2, None, None)],
 )
 @mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
 @mark.parametrize(
@@ -186,11 +187,21 @@ def test_nonduplicate_range_add_with_pruning_Head(
     `pruning_level` is 1 ("burn").
     """
     centred_range_stream.pruning_level = pruning_level
+    init_active_rng = centred_range_stream._active_range
     if pruning_level in range(2):
         # 0 = replant, 1 = burn
         centred_range_stream.add(overlapping_range)
         assert len(centred_range_stream._ranges) == expected_int_count
         assert len(centred_range_stream.ranges) == expected_ext_count
+        if pruning_level == 0:
+            # assert one of the RangeResponse ranges values in
+            # centred_range_stream.ranges == overlapping_range
+            # (because it was just requested) and the initial active range is
+            # no longer in the list of internal ranges (because it was just burnt
+            # and re-requested)
+            assert centred_range_stream._active_range == overlapping_range
+            rng_lst = ranges_in_registration_order(centred_range_stream._ranges)
+            assert init_active_rng not in rng_lst
     else:
         # 2 = strict, anything else is invalid
         error_msg = error_msg_strict if pruning_level == 2 else error_msg_invalid

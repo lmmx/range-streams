@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from ranges import Range
 
-from .range_utils import ext2int, range_termini
+from .range_utils import ext2int, most_recent_range, range_termini
 
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import RangeDict
@@ -14,6 +14,8 @@ if TYPE_CHECKING:  # pragma: no cover
 __all__ = ["handle_overlap", "overlap_whence"]
 
 
+# This could be written more clearly by using a range_utils helper function shared with
+# most_recent_range
 def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     "Presumes range integrity has been checked, get a range by position it contains"
     # return next(k[0] for k, v in rng_dict.items() if position in k[0]).ranges()[0]
@@ -28,6 +30,8 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
 def burn_range(stream: RangeStream, overlapped_ext_rng: Range):
     internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
     stream._ranges.remove(internal_rng)
+    # set `_active_range` to most recently registered internal range or None if empty
+    stream._active_range = most_recent_range(stream, internal=True)
 
 
 def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> None:
@@ -45,7 +49,7 @@ def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> N
     # print(f"Handling {rng=} with {stream.pruning_level=}")
     if rng.isempty():
         raise ValueError("Range overlap not detected as the range is empty")
-    if stream.pruning_level == 2:
+    if stream.pruning_level == 2:  # 2: strict
         raise ValueError("Range overlap not registered due to strict pruning policy")
     rng_min, rng_max = range_termini(rng)
     if rng not in ranges:
@@ -58,24 +62,29 @@ def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> N
             # M: Overlap at midbody of pre-existing RangeResponse truncates that tail
             overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_min)
             # print(f"T/M {overlapped_rng=}")
-            if stream.pruning_level == 1:  # burn
+            if stream.pruning_level == 1:  # 1: burn
                 burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-            else:
+            else:  # 0: replant
                 o_rng_min, o_rng_max = range_termini(overlapped_rng)
                 intersect_len = o_rng_max - rng_min + 1
                 ranges[rng_min].tail_mark += intersect_len
         elif has_max:
-            # H: Overlap at head of pre-existing RangeResponse is reduced and chained
+            # H: Overlap at head of pre-existing RangeResponse is replanted or burnt
             overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_max)
             # print(f"H {overlapped_rng=}")
-            if stream.pruning_level == 1:  # burn
+            if stream.pruning_level == 1:  # 1: burn
                 burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-            else:
+            else:  # 0: replant
                 o_rng_min, o_rng_max = range_termini(overlapped_rng)
-                intersect_len = o_rng_max - rng_min + 1
+                intersect_len = rng_max - o_rng_min + 1
                 # For now, simply throw away: read `size=intersect_len` bytes of response,
                 # consequently `tell` will trim the head computed in `ranges` property
-                _ = ranges[rng_max].read(intersect_len)
+                # _ = ranges[rng_max].read(intersect_len)
+                burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
+                if (new_o_rng_min := o_rng_min + intersect_len) > rng_max:
+                    new_o_rng_max = o_rng_max  # (I can't think of exceptions to this?)
+                    new_o_rng = Range(new_o_rng_min, new_o_rng_max + 1)
+                    stream.add(new_o_rng)  # head-overlapped range has been 'replanted'
         else:
             info = f"{rng=} and {ranges=}"
             raise ValueError(f"Range overlap not detected at termini {info}")

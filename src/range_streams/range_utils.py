@@ -15,8 +15,21 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ranges import RangeDict
+
     from .range_response import RangeResponse
     from .range_stream import RangeStream
+
+
+def ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
+    return [k[0].ranges()[0] for k, v in ranges.items()]
+
+
+def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | None:
+    if not stream._ranges.isempty():
+        ranges = stream._ranges if internal else stream.ranges
+        rng = ranges_in_registration_order(ranges)[-1]
+        return rng
 
 
 def range_termini(rng: Range) -> tuple[int, int]:

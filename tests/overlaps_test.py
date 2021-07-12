@@ -10,17 +10,46 @@ from .range_stream_core_test import (
 )
 
 
-@mark.parametrize("overlapping_range,expected", [(Range(2, 5), 0)])
-def test_overlap_head(centred_range_stream, overlapping_range, expected):
+@mark.parametrize("pruning_level,exp_final_whence", [(0, 1), (1, 1)])
+@mark.parametrize("exp_init_whence,overlapping_range", [(0, Range(2, 5))])
+@mark.parametrize("pre_pos_in", [[(2, False), (3, True), (5, True), (6, True)]])
+@mark.parametrize("post_pos", [[2, 3, 5, 6]])
+@mark.parametrize("is_in_post", [True])
+def test_overlap_head(
+    centred_range_stream,
+    pruning_level,
+    exp_init_whence,
+    exp_final_whence,
+    overlapping_range,
+    pre_pos_in,
+    post_pos,
+    is_in_post,
+):
     """
     Overlapping range [2,5) at the 'head' of [3,7) with intersection length 2
-    of total range length 3.
+    of total range length 3. Test whether various positions are in or not in the
+    internal RangeDict, before and after handling the overlapping range.
+    Note: assumed the stream is initialised with (default) pruning level 0 (replant).
+
+    This used to test `handle_overlap` but was then rebuilt for `RangeStream.add`
+    since that isn't a principle handler any more...
     """
+    # print(f"{centred_range_stream.pruning_level=}")
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
-    assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range, internal=False)
+    assert initial_whence == exp_init_whence
+    for pre_position, is_in_pre in pre_pos_in:
+        check_pos_in_pre = pre_position in centred_range_stream._ranges
+        # print(f"{check_pos_in_pre=} expecting {is_in_pre} ({pre_position=})")
+        assert check_pos_in_pre is is_in_pre
+    # print(centred_range_stream._ranges)
+    centred_range_stream.add(byte_range=overlapping_range)
+    # print(centred_range_stream._ranges)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
-    assert final_whence is None  # after handling, no overlap is detected
+    assert final_whence is exp_final_whence  # after handling, no overlap is detected
+    for post_position in post_pos:
+        check_pos_in_post = post_position in centred_range_stream._ranges
+        # print(f"{check_pos_in_post=} expecting {is_in_post} ({post_position=})")
+        assert check_pos_in_post is is_in_post
 
 
 @mark.parametrize("pos,disjoint_range,expected", [(4, Range(0, 1), Range(3, 7))])
