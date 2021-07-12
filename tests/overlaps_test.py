@@ -18,7 +18,7 @@ def test_overlap_head(centred_range_stream, overlapping_range, expected):
     """
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range, internal=True)
+    centred_range_stream.handle_overlap(rng=overlapping_range, internal=False)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert final_whence is None  # after handling, no overlap is detected
 
@@ -55,7 +55,7 @@ def test_overlap_tail(centred_range_stream, overlapping_range, expected):
     """
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range, internal=True)
+    centred_range_stream.handle_overlap(rng=overlapping_range, internal=False)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert final_whence is None  # After handling, no overlap is detected
 

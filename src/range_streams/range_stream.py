@@ -55,9 +55,11 @@ class RangeStream:
         url: str,
         client: httpx.Client,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
+        pruning_level: int = 0,
     ):
         self.url = url
         self.client = client
+        self.pruning_level = pruning_level
         self._ranges = RangeDict()
         self.add(byte_range=byte_range)
 
@@ -130,18 +132,23 @@ class RangeStream:
         self.check_range_integrity()
         return self.compute_external_ranges()
 
-    def overlap_whence(self, rng: Range) -> int | None:
-        return overlap_whence(self.ranges, rng)
+    def overlap_whence(self, rng: Range, internal: bool = False) -> int | None:
+        return overlap_whence(self, rng, internal=internal)
 
-    def register_range(self, rng: Range, value: RangeResponse):
+    def register_range(
+        self,
+        rng: Range,
+        value: RangeResponse,
+        activate: bool = True,
+    ):
         if self._length_checked:
             self.check_is_subrange(rng)
         else:
             raise ValueError("Stream length must be set before registering a range")
-        if self.overlap_whence(rng) is not None:
-            self.handle_overlap(rng, internal=True)
+        if self.overlap_whence(rng, internal=False) is not None:
+            self.handle_overlap(rng, internal=False)
         self._ranges.add(rng=rng, value=value)
-        if self._active_range is None:
+        if activate:
             self._active_range = rng
 
     @property
@@ -206,10 +213,24 @@ class RangeStream:
         The RangeSet to Range transformation is permitted because the `ranges`
         property method begins by checking range integrity, which requires
         each RangeSet to be a singleton set (of a single Range).
+
+        If `activate` is True (the default), the range will be made the active range
+        of the RangeStream upon being registered (if it meets the criteria for
+        registration).
+
+        If `pruning_level` is 0 then overlaps are handled using a "replant" policy
+        (redefine and overwrite the existing range to be disjoint when the new range
+        would overlap it), if it's 1 they are handled with a "burn" policy (simply
+        dispose of the existing range to eliminate any potential overlap), and if
+        it's 2 using a "strict" policy (raising errors upon detecting overlap).
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 
-    def add(self, byte_range: Range | tuple[int, int] = Range("[0, 0)")) -> None:
+    def add(
+        self,
+        byte_range: Range | tuple[int, int] = Range("[0, 0)"),
+        activate: bool = True,
+    ) -> None:
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not send a request for an empty range if total length already checked
         if not self._length_checked or not byte_range.isempty():
@@ -219,4 +240,8 @@ class RangeStream:
             if not byte_range.isempty():
                 # bytes are available in the RangeRequest.response stream
                 resp = RangeResponse(stream=self, range_request=req)
-                self.register_range(rng=byte_range, value=resp)
+                self.register_range(
+                    rng=byte_range,
+                    value=resp,
+                    activate=activate,
+                )

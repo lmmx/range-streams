@@ -9,7 +9,14 @@ __all__ = [
     "validate_range",
     "range_span",
     "range_len",
+    "ext2int",
 ]
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .range_response import RangeResponse
+    from .range_stream import RangeStream
 
 
 def range_termini(rng: Range) -> tuple[int, int]:
@@ -76,3 +83,24 @@ def range_span(ranges: list[Range]) -> Range:
     min_start, _ = first_termini
     _, max_end = last_termini
     return Range(min_start, max_end + 1)
+
+
+def ext2int(stream: RangeStream, ext_rng: Range) -> RangeResponse:
+    """
+    Given the external range `ext_rng` and the RangeStream `stream` on which it is
+    'stored' (or rather, computed, in the `ranges` property), return the internal
+    Range stored on the `_ranges` attribute of the RangeStream, by looking up the
+    shared `RangeResponse` value.
+    """
+    rng_response = stream.ranges[ext_rng]
+    for k, v in stream._ranges.items():
+        if v == rng_response:
+            if len(k[0].ranges()) > 1:
+                # This shouldn't be allowed to happen thanks to early integrity checks
+                # (but would happen if overlaps were not checked properly, leading to
+                # the automatic behaviour of a range inserted in the midst of another
+                # splitting it into two ranges: the before and after sub-ranges)
+                integ_err_msg = "Internal range integrity failure: fragmented RangeSet"
+                raise ValueError(integ_err_msg)
+            return k[0].ranges()[0]
+    raise ValueError("Looked up a non-existent key in the internal RangeDict")

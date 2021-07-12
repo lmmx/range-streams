@@ -135,3 +135,23 @@ def test_stream_tell_read(full_range_stream, size):
 def test_stream_seek_tell(full_range_stream, pos):
     full_range_stream.seek(position=pos)
     assert full_range_stream.tell() == pos
+
+
+def test_active_range_changes(empty_range_stream):
+    assert empty_range_stream._active_range is None
+    rng1 = Range(0, 1)
+    empty_range_stream.add(rng1)
+    assert empty_range_stream._active_range == rng1
+    rng2 = Range(4, 6)
+    empty_range_stream.add(rng2)
+    assert empty_range_stream._active_range == rng2
+
+
+def test_add_range_no_activate(empty_range_stream):
+    assert empty_range_stream._active_range is None
+    rng1 = Range(0, 1)
+    empty_range_stream.add(rng1, activate=False)
+    assert empty_range_stream._active_range is None
+    rng2 = Range(4, 6)
+    empty_range_stream.add(rng2, activate=False)
+    assert empty_range_stream._active_range is None

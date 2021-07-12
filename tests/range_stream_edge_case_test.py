@@ -5,6 +5,7 @@ from range_streams import RangeStream
 
 from .data import EXAMPLE_FILE_LENGTH
 from .range_stream_core_test import (
+    centred_range_stream,
     empty_range_stream,
     full_range_stream,
     make_range_stream,
@@ -90,6 +91,159 @@ def test_nonduplicate_range_add(full_range_stream):
     full_range_stream.add(full_range_stream.total_range)
 
 
+@mark.parametrize("test_pos", [0])
+@mark.parametrize("overlapping_range", [Range(3, 7)])
+@mark.parametrize(
+    "pruning_level,expected_count", [(-1, None), (0, 1), (1, 1), (2, None)]
+)
+@mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
+@mark.parametrize(
+    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+)
+def test_nonduplicate_range_add_with_pruning_Head_To_Tail(
+    full_range_stream,
+    test_pos,
+    overlapping_range,
+    pruning_level,
+    expected_count,
+    error_msg_invalid,
+    error_msg_strict,
+):
+    """
+    Although it is permitted to reassign a range if it was read (i.e. consumed), it may
+    not be permitted to reassign a range if it has not been read.
+
+    If the pruning policy is "strict" (`pruning_level` = 2) then attempting to do so
+    will raise a ValueError.
+
+    If the pruning policy is to "burn" (`pruning_level` = 1) then a range that is
+    overlapped by another range being added will be deleted before the new range is
+    added.
+
+    If the pruning policy is to "replant" (`pruning_level` = 0) then a range that is
+    overlapped by another range being added will be truncated (if the tail is
+    overlapped, by incrementing a `tail_mark` on the internal Range stored) or
+    re-requested (if the head is overlapped, by adding a replacement for a resized,
+    disjoint version of the old range, before the new range is added).
+
+    Vary the levels of pruning, check the results are as expected when adding an
+    overlapping range, and catch the ValueError if the pruning mode is strict.
+
+    The range `[3,7)` overlaps "Head To Tail" (HTT) with the range `[0,11)`, so
+    it is expected that the counts of ranges in the RangeDict entry in the internal
+    `_ranges` RangeDict should be 1 for both the pruning policies of "replant"/"burn"
+    (`pruning_level` 0 and 1 respectively), since there is no remaining range
+    left after trimming it, under the "replant" policy, the entry will be deleted,
+    and for the "burn" policy all overlapped ranges are deleted. In both cases,
+    a single entry will be left in the RangeDict.
+    """
+    full_range_stream.pruning_level = pruning_level
+    if pruning_level in range(2):
+        # 0 = replant, 1 = burn
+        full_range_stream.add(overlapping_range)
+        assert len(full_range_stream._ranges) == expected_count
+        assert len(full_range_stream.ranges) == expected_count
+    else:
+        # 2 = strict, anything else is invalid
+        error_msg = error_msg_strict if pruning_level == 2 else error_msg_invalid
+        with raises(ValueError, match=error_msg):
+            full_range_stream.add(overlapping_range)
+
+
+@mark.parametrize("overlapping_range,test_pos", [(Range(2, 5), 3)])
+@mark.parametrize(
+    "pruning_level,expected_int_count,expected_ext_count",
+    [(-1, None, None), (0, 2, 1), (1, 1, 1), (2, None, None)],
+)
+@mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
+@mark.parametrize(
+    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+)
+def test_nonduplicate_range_add_with_pruning_Head(
+    centred_range_stream,
+    test_pos,
+    overlapping_range,
+    pruning_level,
+    expected_ext_count,
+    expected_int_count,
+    error_msg_invalid,
+    error_msg_strict,
+):
+    """
+    If the pruning policy is to "replant" (`pruning_level` = 0) then a range that is
+    overlapped at the "Head" (H) by another range being added will be re-requested
+    (by adding a replacement for a resized, disjoint version of the old range, before
+    the new range is added).
+
+    Vary the levels of pruning, check the results are as expected when adding an
+    overlapping range, and catch the ValueError if the pruning mode is strict.
+
+    The range `[2,5)` overlaps the "Head" (H) of the range `[3,7)`, so it is expected
+    that the counts of ranges in the RangeSet key in the internal `_ranges` RangeDict
+    should differ for the pruning policies of "replant" and "burn" (pruning_level 0
+    and 1 respectively). There will be remaining range left after trimming it, so
+    the entry should remain when `pruning_level` is 0 ("replant") but be deleted when
+    `pruning_level` is 1 ("burn").
+    """
+    centred_range_stream.pruning_level = pruning_level
+    if pruning_level in range(2):
+        # 0 = replant, 1 = burn
+        centred_range_stream.add(overlapping_range)
+        assert len(centred_range_stream._ranges) == expected_int_count
+        assert len(centred_range_stream.ranges) == expected_ext_count
+    else:
+        # 2 = strict, anything else is invalid
+        error_msg = error_msg_strict if pruning_level == 2 else error_msg_invalid
+        with raises(ValueError, match=error_msg):
+            centred_range_stream.add(overlapping_range)
+
+
+@mark.parametrize("overlapping_range,test_pos", [(Range(5, 9), 5)])
+@mark.parametrize(
+    "pruning_level,expected_int_count,expected_ext_count",
+    [(-1, None, None), (0, 2, 1), (1, 1, 1), (2, None, None)],
+)
+@mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
+@mark.parametrize(
+    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+)
+def test_nonduplicate_range_add_with_pruning_Tail(
+    centred_range_stream,
+    test_pos,
+    overlapping_range,
+    pruning_level,
+    expected_ext_count,
+    expected_int_count,
+    error_msg_invalid,
+    error_msg_strict,
+):
+    """
+    If the pruning policy is to "replant" (`pruning_level` = 0) then a range whose
+    "Tail" (T) is overlapped by another range being added will be truncated (if the tail is
+    overlapped, by incrementing a `tail_mark` on the internal Range stored).
+
+    Vary the levels of pruning, check the results are as expected when adding an
+    overlapping range, and catch the ValueError if the pruning mode is strict.
+
+    The range `[3,7)` overlaps "Head To Tail" (HTT) with the range `[0,11)`, so
+    it is expected that the counts of ranges in the RangeDict entry in the internal
+    `_ranges` RangeDict should differ for the pruning policies of "replant" and "burn"
+    (pruning_level 0 and 1 respectively). Even though there is no remaining range
+    left after trimming it, the entry should remain when `pruning_level` is 0.
+    """
+    centred_range_stream.pruning_level = pruning_level
+    if pruning_level in range(2):
+        # 0 = replant, 1 = burn
+        centred_range_stream.add(overlapping_range)
+        assert len(centred_range_stream._ranges) == expected_int_count
+        assert len(centred_range_stream.ranges) == expected_ext_count
+    else:
+        # 2 = strict, anything else is invalid
+        error_msg = error_msg_strict if pruning_level == 2 else error_msg_invalid
+        with raises(ValueError, match=error_msg):
+            centred_range_stream.add(overlapping_range)
+
+
 @mark.parametrize(
     "error_msg", ["Cannot get active range response.*self._active_range=.*"]
 )
@@ -108,7 +262,6 @@ def test_total_range_sabotage_length(empty_range_stream, error_msg):
     """
     RangeStream class's `total_range` property should not work if the _length
     was somehow altered (not possible to access before initialisation).
-    Not realistic so not a specific error.
     """
     empty_range_stream._length = None
     with raises(AttributeError, match=error_msg):
@@ -120,7 +273,6 @@ def test_total_range_sabotage_length(empty_range_stream, error_msg):
     """
     RangeStream class's `total_range` property should not work if the _length
     was somehow altered (not possible to access before initialisation).
-    Not realistic so not a specific error.
     """
     empty_range_stream._length = None
     with raises(AttributeError, match=error_msg):
