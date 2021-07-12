@@ -73,7 +73,7 @@ stream.ranges
 ```py
 RangeDict{
   RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
-  RangeSet{Range[7, 9)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
+  RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
 }
 ```
 
