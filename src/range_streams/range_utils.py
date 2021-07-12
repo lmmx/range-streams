@@ -26,10 +26,12 @@ def ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
 
 
 def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | None:
-    if not stream._ranges.isempty():
+    if stream._ranges.isempty():
+        rng = None  # type: Range | None
+    else:
         ranges = stream._ranges if internal else stream.ranges
         rng = ranges_in_registration_order(ranges)[-1]
-        return rng
+    return rng
 
 
 def range_termini(rng: Range) -> tuple[int, int]:
