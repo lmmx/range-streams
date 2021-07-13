@@ -22,7 +22,12 @@ if TYPE_CHECKING:
 
 
 def ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
+    "Presumes integrity is already checked"
     return [k[0].ranges()[0] for k, v in ranges.items()]
+
+
+def response_ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
+    return [v.request.range for k, v in ranges.items()]
 
 
 def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | None:

@@ -69,6 +69,14 @@ class RangeStream:
             f"'{self.name}' from {self.domain}"
         )
 
+    # @property
+    # def _ranges(self):
+    #    return self.__ranges__
+
+    # @_ranges.setter
+    # def _ranges(self, val):
+    #    self.__ranges__ = val
+
     def __ranges_repr__(self) -> str:
         return ", ".join(map(str, self.list_ranges()))
 
@@ -102,8 +110,10 @@ class RangeStream:
         references, therefore will propagate to the `_ranges` RangeDict if modified.
         """
         prepared_rangedict = RangeDict()
-        for rng_set, rng_response in self._ranges.items():
-            readable_rangeset = deepcopy(rng_set[0])
+        internal_rangedict = self._ranges.items()
+        for rng_set, rng_response in internal_rangedict:
+            requested_range = rng_response.request.range
+            rng = deepcopy(requested_range)
             # if (rng_response.start, rng_response.end) < 0:
             #    # negative range
             #    ...
@@ -112,10 +122,10 @@ class RangeStream:
             if rng_response_tell := rng_response.tell():
                 # Access single range (assured by unique RangeResponse values of
                 # RangeDict) of singleton rangeset (assured by check_range_integrity)
-                readable_rangeset.ranges()[0].start += rng_response_tell
+                rng.start += rng_response_tell
             if rng_response.tail_mark:
-                readable_rangeset.ranges()[0].end -= rng_response.tail_mark
-            prepared_rangedict.update({readable_rangeset: rng_response})
+                rng.end -= rng_response.tail_mark
+            prepared_rangedict.update({rng: rng_response})
         return prepared_rangedict
 
     @property
@@ -147,9 +157,12 @@ class RangeStream:
             raise ValueError("Stream length must be set before registering a range")
         if self.overlap_whence(rng, internal=False) is not None:
             self.handle_overlap(rng, internal=False)
+        print(f"Pre: {self._ranges=}")
+        print(f"Adding: {rng=}")
         self._ranges.add(rng=rng, value=value)
         if activate:
             self._active_range = rng
+        print(f"Post: {self._ranges=}")
 
     @property
     def active_range_response(self):

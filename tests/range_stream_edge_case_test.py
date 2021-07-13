@@ -212,7 +212,7 @@ def test_nonduplicate_range_add_with_pruning_Head(
 @mark.parametrize("overlapping_range,test_pos", [(Range(5, 9), 5)])
 @mark.parametrize(
     "pruning_level,expected_int_count,expected_ext_count",
-    [(-1, None, None), (0, 2, 1), (1, 1, 1), (2, None, None)],
+    [(-1, None, None), (0, 2, 2), (1, 1, 1), (2, None, None)],
 )
 @mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
 @mark.parametrize(

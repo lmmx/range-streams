@@ -2,11 +2,17 @@ from pytest import mark, raises
 from ranges import Range
 
 from range_streams.overlaps import get_range_containing, handle_overlap
+from range_streams.range_utils import (
+    most_recent_range,
+    ranges_in_registration_order,
+    response_ranges_in_registration_order,
+)
 
 from .range_stream_core_test import (
     centred_range_stream,
     empty_range_stream,
     full_range_stream,
+    make_range_stream,
 )
 
 
@@ -15,7 +21,7 @@ from .range_stream_core_test import (
 @mark.parametrize("pre_pos_in", [[(2, False), (3, True), (5, True), (6, True)]])
 @mark.parametrize("post_pos", [[2, 3, 5, 6]])
 @mark.parametrize("is_in_post", [True])
-def test_overlap_head(
+def test_add_overlap_head(
     centred_range_stream,
     pruning_level,
     exp_init_whence,
@@ -34,22 +40,105 @@ def test_overlap_head(
     This used to test `handle_overlap` but was then rebuilt for `RangeStream.add`
     since that isn't a principle handler any more...
     """
-    # print(f"{centred_range_stream.pruning_level=}")
     initial_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert initial_whence == exp_init_whence
     for pre_position, is_in_pre in pre_pos_in:
         check_pos_in_pre = pre_position in centred_range_stream._ranges
-        # print(f"{check_pos_in_pre=} expecting {is_in_pre} ({pre_position=})")
         assert check_pos_in_pre is is_in_pre
-    # print(centred_range_stream._ranges)
     centred_range_stream.add(byte_range=overlapping_range)
-    # print(centred_range_stream._ranges)
     final_whence = centred_range_stream.overlap_whence(overlapping_range)
     assert final_whence is exp_final_whence  # after handling, no overlap is detected
     for post_position in post_pos:
         check_pos_in_post = post_position in centred_range_stream._ranges
-        # print(f"{check_pos_in_post=} expecting {is_in_post} ({post_position=})")
         assert check_pos_in_post is is_in_post
+
+
+@mark.parametrize("pruning_level", [0, 1])
+@mark.parametrize("overlapping_range", [Range(2, 5)])
+def test_handle_overlap_int_ext_rngdict_Head(
+    centred_range_stream,
+    pruning_level,
+    overlapping_range,
+):
+    """
+    This function tests `handle_overlap` in isolation, ensuring it does not modify
+    [in-place] any key in `ranges` when `pruning_level` is 0 ("replant") nor
+    the value of the RangeResponse range nor the internal `_ranges` Range keys.
+
+    Note: it does not check that the "burnt" range is deleted, only that there is no
+    mismatch between keys and values. Range burning is tested separately.
+
+    Overlapping range [2,5) at the 'head' of [3,7) with intersection length 2
+    of total range length 3. Test whether `handle_overlap` changes the internal and
+    external RangeDict in the expected way after handling the overlapping range.
+    Note: assumed the stream is initialised with (default) pruning level 0 (replant).
+    """
+    centred_range_stream.pruning_level = pruning_level
+    centred_range_stream.handle_overlap(rng=overlapping_range)
+    ext_count_changed, int_count_changed = count_rangedict_mutation(
+        centred_range_stream
+    )
+    assert int_count_changed == 0
+    assert ext_count_changed == 0  # re-requested if replant, deleted if burn
+
+
+def count_rangedict_mutation(stream):
+    ext_count_changed = 0
+    int_count_changed = 0
+    for i, rngdict in enumerate([stream.ranges, stream._ranges]):
+        for k, v in rngdict.items():
+            range_key = k[0].ranges()[0]
+            range_value = v.request.range
+            if range_key != range_value:
+                if i == 0:
+                    ext_count_changed += 1
+                else:
+                    int_count_changed += 1
+    return ext_count_changed, int_count_changed
+
+
+@mark.parametrize("pruning_level,expected", [(0, 1), (1, 0)])
+@mark.parametrize("start,stop", [(2, 5)])
+@mark.parametrize("overlapping_range", [Range(3, 7)])
+def test_handle_overlap_int_ext_rngdict_Tail(
+    pruning_level,
+    start,
+    stop,
+    expected,
+    overlapping_range,
+):
+    """
+    This function tests `handle_overlap` in isolation, ensuring it modifies [in-place]
+    only the value of a key in `ranges` when `pruning_level` is 0 ("replant") and not
+    the value of the RangeResponse range nor the internal `_ranges` Range keys.
+
+    Overlapping range [3,7) at the 'tail' of [2,5) with intersection length 2
+    of total range length 3. Test whether `handle_overlap` changes the internal and
+    external RangeDict in the expected way after handling the overlapping range.
+    Note: assumed the stream is initialised with (default) pruning level 0 (replant).
+    """
+    stream = make_range_stream(start, stop)
+    stream.pruning_level = pruning_level
+    stream.handle_overlap(rng=overlapping_range)
+    ext_count_changed, int_count_changed = count_rangedict_mutation(stream)
+    assert int_count_changed == 0
+    assert ext_count_changed == expected  # tail marked if replant, deleted if burn
+    if pruning_level == 1:
+        assert stream._ranges.isempty()
+    else:
+        init_rng = Range(start, stop)
+        resized_rng = Range(start, overlapping_range.start)
+        internal_rng_list = ranges_in_registration_order(stream._ranges)
+        internal_resp_rng_list = response_ranges_in_registration_order(stream._ranges)
+        assert init_rng in internal_rng_list
+        assert init_rng in internal_resp_rng_list
+        external_rng_list = ranges_in_registration_order(stream.ranges)
+        external_resp_rng_list = response_ranges_in_registration_order(stream.ranges)
+        # The external range list (i.e. keys of `ranges`) should contain a trimmed
+        # version of the overlapped range: [2,5) becomes [2,3) when [3,7) is handled
+        assert init_rng not in external_rng_list
+        assert resized_rng in external_rng_list
+        assert init_rng in external_resp_rng_list
 
 
 @mark.parametrize("pos,disjoint_range,expected", [(4, Range(0, 1), Range(3, 7))])
