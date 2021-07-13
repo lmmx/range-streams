@@ -78,6 +78,12 @@ RangeDict{
 
 - Python 3.8+
 
+## Installation
+
+```sh
+pip install range-streams
+```
+
 ## See also
 
 - [Motivation.md](https://github.com/lmmx/range-streams/blob/master/docs/Motivation.md):
@@ -91,5 +97,3 @@ RangeDict{
 
 > _range-streams_ is available from [PyPI](https://pypi.org/project/range-streams), and
 > the code is on [GitHub](https://github.com/lmmx/range-streams)
-
-- TODO: put up on PyPI!
