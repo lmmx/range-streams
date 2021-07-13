@@ -42,14 +42,11 @@ another range. See the design docs for further details.
 
 ```py
 import httpx
-from ranges import Range
 
 from range_streams import RangeStream, _EXAMPLE_URL
 
-client = httpx.Client()
-stream = RangeStream(url=_EXAMPLE_URL, client=client)
-rng = Range(0,3)
-stream.add(byte_range=rng)
+stream = RangeStream(url=_EXAMPLE_URL, client=httpx.Client())
+stream.add(byte_range=(0,3)) # or pass ranges.Range(0,3)
 
 stream.ranges
 ```
