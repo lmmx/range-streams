@@ -207,11 +207,10 @@ def test_no_overlap_empty_range_stream(
         )
 
 
-@mark.parametrize("error_msg", ["Partially contained on multiple ranges"])
 @mark.parametrize("initial_ranges", [[(2, 4), (6, 9)]])
 @mark.parametrize("overlapping_range", [Range(3, 7)])
 def test_partial_overlap_multiple_ranges(
-    empty_range_stream, initial_ranges, overlapping_range, error_msg
+    empty_range_stream, initial_ranges, overlapping_range
 ):
     """
     Partial overlap with termini of the centred range [3,7) covered on multiple
@@ -219,7 +218,20 @@ def test_partial_overlap_multiple_ranges(
     entirety of this interval is not within the initial ranges: specifically
     because these ranges [2,4) and [6,9) are not contiguous.
     """
-    with raises(NotImplementedError, match=error_msg):
-        for rng_start, rng_end in initial_ranges:
-            empty_range_stream.add(byte_range=Range(rng_start, rng_end))
-        handle_overlap(stream=empty_range_stream, rng=overlapping_range, internal=False)
+    stream = empty_range_stream
+    for rng_start, rng_end in initial_ranges:
+        stream.add(byte_range=Range(rng_start, rng_end))
+    spanning_rng_pre = stream.spanning_range
+    handle_overlap(stream=stream, rng=overlapping_range, internal=False)
+    spanning_rng_post = stream.spanning_range
+    assert spanning_rng_pre == spanning_rng_post
+    internal_rng_list = ranges_in_reg_order(stream._ranges)
+    external_rng_list = ranges_in_reg_order(stream.ranges)
+    assert internal_rng_list[0] > external_rng_list[0]
+    assert internal_rng_list[1] == external_rng_list[1]
+    stream.add(overlapping_range)
+    external_rng_list = ranges_in_reg_order(stream.ranges)
+    assert overlapping_range in external_rng_list
+    for init_rng in initial_ranges:
+        assert init_rng not in external_rng_list
+    assert len(external_rng_list) == 3

@@ -55,9 +55,9 @@ def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> N
     if rng not in ranges:
         # May be partially overlapping
         has_min, has_max = (pos in ranges for pos in [rng_min, rng_max])
-        if has_min and has_max:
-            raise NotImplementedError("Partially contained on multiple ranges")
         if has_min:
+            # if has_min and has_max:
+            #    print("Partially contained on multiple ranges")
             # T: Overlap at  tail   of pre-existing RangeResponse truncates that tail
             # M: Overlap at midbody of pre-existing RangeResponse truncates that tail
             overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_min)
