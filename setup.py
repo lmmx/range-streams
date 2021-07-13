@@ -11,7 +11,7 @@ PROJECT_URLS = {
     "Source Code": "https://github.com/lmmx/range-streams",
 }
 CLASSIFIERS = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "License :: OSI Approved :: MIT License",
