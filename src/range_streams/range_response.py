@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from .range_utils import range_len
 
-if TYPE_CHECKING:
-    from .range_stream import RangeRequest, RangeStream  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
+    from .range_stream import RangeRequest, RangeStream
 
 __all__ = ["RangeResponse"]
 

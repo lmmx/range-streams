@@ -14,7 +14,7 @@ __all__ = [
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ranges import RangeDict
 
     from .range_response import RangeResponse

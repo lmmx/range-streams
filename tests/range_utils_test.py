@@ -2,12 +2,22 @@ from pytest import fixture, mark, raises
 from ranges import Range
 
 from range_streams.range_utils import (
+    ext2int,
+    most_recent_range,
     range_len,
     range_max,
     range_min,
     range_span,
     range_termini,
+    ranges_in_reg_order,
+    response_ranges_in_reg_order,
     validate_range,
+)
+
+from .range_stream_core_test import (
+    centred_range_stream,
+    empty_range_stream,
+    full_range_stream,
 )
 
 termini_test_triples = [(0, 3, (0, 2)), (1, 4, (1, 3))]
@@ -127,3 +137,30 @@ def test_empty_range_max(empty_range, error_msg):
 def test_empty_range_validate(empty_range, error_msg):
     with raises(ValueError, match=error_msg):
         validate_range(empty_range, allow_empty=False)
+
+
+def test_most_recent_range_empty(empty_range_stream):
+    assert most_recent_range(empty_range_stream) is None
+
+
+@mark.parametrize("expected", [Range(0, 11)])
+def test_most_recent_range_full(full_range_stream, expected):
+    assert most_recent_range(full_range_stream) == expected
+
+
+@mark.parametrize("initial_range", [Range(3, 7)])
+@mark.parametrize("overlapping_range", [Range(5, 9)])
+@mark.parametrize("pruning_level,expected", [(0, Range(3, 5))])
+def test_ext2int(
+    empty_range_stream, initial_range, overlapping_range, pruning_level, expected
+):
+    stream = empty_range_stream
+    stream.pruning_level = pruning_level
+    stream.add(initial_range)
+    stream.add(overlapping_range)
+    internal_ranges = ranges_in_reg_order(stream._ranges)
+    external_ranges = ranges_in_reg_order(stream.ranges)
+    assert internal_ranges == external_ranges
+    resized_range = external_ranges[0]
+    assert internal_ranges[0] == expected
+    assert ext2int(stream=stream, ext_rng=resized_range) == expected
