@@ -12,7 +12,7 @@ Streaming via range requests in Python
 A `RangeStream` is initialised by providing:
 
 - a URL (the file to be streamed)
-- a client (e.g. `httpx.Client` or `requests.Session`)
+- a client (e.g. `httpx.Client`)
 - (optionally) a range, as either:
   - `ranges.Range` from the `python-ranges` package [recommended]
   - or a tuple of integers, presumed to be a half-open interval
