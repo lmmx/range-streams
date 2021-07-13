@@ -52,6 +52,12 @@ def test_range_response_read_tell(example_range_response, read_size, expected):
     assert example_range_response.tell() == expected
 
 
+@mark.parametrize("read_size", [100])
+def test_range_response_read_overshoot(example_range_response, read_size):
+    "Hit the StopIteration to cover the `_load_until` break clause"
+    example_range_response.read(size=read_size)
+
+
 @mark.parametrize(
     "seek,whence,expected",
     [

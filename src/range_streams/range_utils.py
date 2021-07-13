@@ -116,12 +116,5 @@ def ext2int(stream: RangeStream, ext_rng: Range) -> RangeResponse:
     rng_response = stream.ranges[ext_rng]
     for k, v in stream._ranges.items():
         if v == rng_response:
-            if len(k[0].ranges()) > 1:
-                # This shouldn't be allowed to happen thanks to early integrity checks
-                # (but would happen if overlaps were not checked properly, leading to
-                # the automatic behaviour of a range inserted in the midst of another
-                # splitting it into two ranges: the before and after sub-ranges)
-                integ_err_msg = "Internal range integrity failure: fragmented RangeSet"
-                raise ValueError(integ_err_msg)
             return k[0].ranges()[0]
     raise ValueError("Looked up a non-existent key in the internal RangeDict")

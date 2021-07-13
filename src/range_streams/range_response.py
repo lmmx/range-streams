@@ -74,4 +74,6 @@ class RangeResponse:
         self._bytes.seek(position, whence)
 
     def is_consumed(self) -> bool:
-        return self.tell() - range_len(self.request.range) > 0
+        read_so_far = self.tell()
+        len_to_read = range_len(self.request.range) - self.tail_mark
+        return read_so_far - len_to_read > 0

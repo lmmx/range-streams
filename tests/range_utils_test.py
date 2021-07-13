@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from pytest import fixture, mark, raises
 from ranges import Range
 
@@ -146,36 +148,3 @@ def test_most_recent_range_empty(empty_range_stream):
 @mark.parametrize("expected", [Range(0, 11)])
 def test_most_recent_range_full(full_range_stream, expected):
     assert most_recent_range(full_range_stream) == expected
-
-
-@mark.parametrize("initial_range", [Range(3, 7)])
-@mark.parametrize("overlapping_range", [Range(5, 9)])
-@mark.parametrize("pruning_level,expected", [(0, Range(3, 5))])
-@mark.parametrize("read_size", [1])
-def test_ext2int(
-    empty_range_stream,
-    initial_range,
-    overlapping_range,
-    pruning_level,
-    expected,
-    read_size,
-):
-    stream = empty_range_stream
-    stream.pruning_level = pruning_level
-    stream.add(initial_range)
-    stream.add(overlapping_range)
-    internal_ranges = ranges_in_reg_order(stream._ranges)
-    external_ranges = ranges_in_reg_order(stream.ranges)
-    assert internal_ranges == external_ranges
-    resized_range = external_ranges[0]
-    assert internal_ranges[0] == expected
-    assert ext2int(stream=stream, ext_rng=resized_range) == expected
-    resp = stream.ranges[resized_range.start]
-    resp.read(read_size)
-    internal_ranges = ranges_in_reg_order(stream._ranges)
-    external_ranges = ranges_in_reg_order(stream.ranges)
-    assert internal_ranges != external_ranges
-    read_range = external_ranges[0]
-    assert internal_ranges[0].start + read_size == read_range.start
-    assert internal_ranges[0].end == read_range.end
-    assert ext2int(stream=stream, ext_rng=read_range) == internal_ranges[0]
