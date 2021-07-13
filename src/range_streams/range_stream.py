@@ -157,12 +157,12 @@ class RangeStream:
             raise ValueError("Stream length must be set before registering a range")
         if self.overlap_whence(rng, internal=False) is not None:
             self.handle_overlap(rng, internal=False)
-        print(f"Pre: {self._ranges=}")
-        print(f"Adding: {rng=}")
+        # print(f"Pre: {self._ranges=}")
+        # print(f"Adding: {rng=}")
         self._ranges.add(rng=rng, value=value)
         if activate:
             self._active_range = rng
-        print(f"Post: {self._ranges=}")
+        # print(f"Post: {self._ranges=}")
 
     @property
     def active_range_response(self):
