@@ -1,0 +1,19 @@
+---
+# See https://docs.readthedocs.io/en/latest/config-file/v2.html
+version: 2
+sphinx:
+  configuration: docs/conf.py
+python:
+  version: 3.9
+
+  install:
+    - method: pip
+      path: docs # .
+      extra_requirements:
+        - docs
+
+#search:
+#  ignore:
+# Internal documentation
+#  - search.html
+#  - 404.html

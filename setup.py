@@ -7,6 +7,7 @@ from setuptools import find_packages, setup
 
 NAME = "range_streams"
 PROJECT_URLS = {
+    "Documentation": "https://range-streams.readthedocs.io/",
     "Bug Tracker": "https://github.com/lmmx/range-streams/issues",
     "Source Code": "https://github.com/lmmx/range-streams",
 }
@@ -24,8 +25,20 @@ CLASSIFIERS = [
     "Topic :: Internet :: WWW/HTTP",
 ]
 INSTALL_REQUIRES = Path("requirements.txt").read_text().splitlines()
-EXTRAS_REQUIRE = {"tests": ["coverage[toml]>=5.5", "pytest"]}
-EXTRAS_REQUIRE["dev"] = EXTRAS_REQUIRE["tests"] + ["pre-commit"]
+EXTRAS_REQUIRE = {
+    "docs": [
+        "sphinx>=3,<4",
+        "sphinx_rtd_theme",
+        "sphinx-autodoc-typehints==1.11.1",  # don't bump to 1.12.0
+        "jupyter-sphinx>=0.3.2",
+        "myst-nb",
+        # "myst-parser"
+    ],
+    "tests": ["coverage[toml]>=5.5", "pytest"],
+}
+EXTRAS_REQUIRE["dev"] = (
+    EXTRAS_REQUIRE["tests"] + EXTRAS_REQUIRE["docs"] + ["pre-commit"]
+)
 PYTHON_REQUIRES = ">=3.8"
 LONG_DESCRIPTION = Path("README.md").read_text()
 PACKAGE_DATA = {"range_streams": ["py.typed"]}
