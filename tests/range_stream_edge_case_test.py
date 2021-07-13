@@ -2,7 +2,7 @@ from pytest import mark, raises
 from ranges import Range
 
 from range_streams import RangeStream
-from range_streams.range_utils import ranges_in_registration_order
+from range_streams.range_utils import ranges_in_reg_order
 
 from .data import EXAMPLE_FILE_LENGTH
 from .range_stream_core_test import (
@@ -200,7 +200,7 @@ def test_nonduplicate_range_add_with_pruning_Head(
             # no longer in the list of internal ranges (because it was just burnt
             # and re-requested)
             assert centred_range_stream._active_range == overlapping_range
-            rng_lst = ranges_in_registration_order(centred_range_stream._ranges)
+            rng_lst = ranges_in_reg_order(centred_range_stream._ranges)
             assert init_active_rng not in rng_lst
     else:
         # 2 = strict, anything else is invalid

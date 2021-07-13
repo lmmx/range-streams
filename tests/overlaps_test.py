@@ -4,8 +4,8 @@ from ranges import Range
 from range_streams.overlaps import get_range_containing, handle_overlap
 from range_streams.range_utils import (
     most_recent_range,
-    ranges_in_registration_order,
-    response_ranges_in_registration_order,
+    ranges_in_reg_order,
+    response_ranges_in_reg_order,
 )
 
 from .range_stream_core_test import (
@@ -128,12 +128,12 @@ def test_handle_overlap_int_ext_rngdict_Tail(
     else:
         init_rng = Range(start, stop)
         resized_rng = Range(start, overlapping_range.start)
-        internal_rng_list = ranges_in_registration_order(stream._ranges)
-        internal_resp_rng_list = response_ranges_in_registration_order(stream._ranges)
+        internal_rng_list = ranges_in_reg_order(stream._ranges)
+        internal_resp_rng_list = response_ranges_in_reg_order(stream._ranges)
         assert init_rng in internal_rng_list
         assert init_rng in internal_resp_rng_list
-        external_rng_list = ranges_in_registration_order(stream.ranges)
-        external_resp_rng_list = response_ranges_in_registration_order(stream.ranges)
+        external_rng_list = ranges_in_reg_order(stream.ranges)
+        external_resp_rng_list = response_ranges_in_reg_order(stream.ranges)
         # The external range list (i.e. keys of `ranges`) should contain a trimmed
         # version of the overlapped range: [2,5) becomes [2,3) when [3,7) is handled
         assert init_rng not in external_rng_list

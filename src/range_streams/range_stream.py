@@ -23,7 +23,7 @@ from ranges import Range, RangeDict
 from .overlaps import handle_overlap, overlap_whence
 from .range_request import RangeRequest
 from .range_response import RangeResponse
-from .range_utils import range_max, range_span, validate_range
+from .range_utils import range_max, range_span, ranges_in_reg_order, validate_range
 
 __all__ = ["RangeStream"]
 
@@ -250,7 +250,9 @@ class RangeStream:
             req = self.send_request(byte_range)
             if not self._length_checked:
                 self.set_length(req.total_content_length)
-            if not byte_range.isempty():
+            if byte_range in ranges_in_reg_order(self.ranges):
+                pass  # trivial no-op when adding a range that already exists
+            elif not byte_range.isempty():
                 # bytes are available in the RangeRequest.response stream
                 resp = RangeResponse(stream=self, range_request=req)
                 self.register_range(

@@ -21,12 +21,13 @@ if TYPE_CHECKING:
     from .range_stream import RangeStream
 
 
-def ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
-    "Presumes integrity is already checked"
+def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
+    "Presumes integrity is already checked: ranges in order of registration"
     return [k[0].ranges()[0] for k, v in ranges.items()]
 
 
-def response_ranges_in_registration_order(ranges: RangeDict) -> list[Range]:
+def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
+    "RangeResponse requested ranges in order of registration"
     return [v.request.range for k, v in ranges.items()]
 
 
@@ -35,7 +36,7 @@ def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | Non
         rng = None  # type: Range | None
     else:
         ranges = stream._ranges if internal else stream.ranges
-        rng = ranges_in_registration_order(ranges)[-1]
+        rng = ranges_in_reg_order(ranges)[-1]
     return rng
 
 
