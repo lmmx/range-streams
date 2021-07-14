@@ -53,9 +53,7 @@ The following example shows the basic setup for a single range.
     >>> rng = Range(0,3)
     >>> s.add(rng)
     >>> s.ranges
-    RangeDict{
-      RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
-    }
+    RangeDict{RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com}
 
 Further ranges are requested by simply calling `RangeStream.add` with another Range
 object. You can also provide a byte range to the `add` method as a tuple of
@@ -63,10 +61,10 @@ two integers, which will be interpreted per the usual convention for ranges in P
 as a `[a,b)` half-open interval.
 
     >>> s.add(byte_range=(7,9))
-    >>> s.ranges
+    >>> s.ranges # doctest: +SKIP
     RangeDict{
       RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
-      RangeSet{Range[7, 9)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
+      RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
     }
 """
 
