@@ -6,8 +6,7 @@
 range-streams: Streaming via range requests in Python
 =====================================================
 
-.. include:: ../README.md
-..   :start-after: teaser-begin
+.. include:: ../README.rst
 
 .. toctree::
     :maxdepth: 2

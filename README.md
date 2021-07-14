@@ -38,8 +38,8 @@ another range. See the design docs for further details.
 
 ## Example
 
-- Adapted from
-  [`tests/range_stream_core_test.py`](https://github.com/lmmx/range-streams/blob/master/tests/range_stream_core_test.py)
+- Adapted from `tests/range_stream_core_test.py`
+  ([source](https://github.com/lmmx/range-streams/blob/master/tests/range_stream_core_test.py))
 
 ```py
 import httpx
