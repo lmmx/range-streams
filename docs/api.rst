@@ -3,6 +3,7 @@ API Reference
 =============
 
 .. automodule:: range_streams
+   :members:
 
 Range streams
 =============
