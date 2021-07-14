@@ -7,17 +7,28 @@ from ranges import Range
 from .range_utils import ext2int, most_recent_range, range_termini
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ranges import RangeDict
+    import ranges
 
     from range_streams import RangeStream
 
-__all__ = ["handle_overlap", "overlap_whence"]
+__all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_whence"]
 
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
-def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
-    "Presumes range integrity has been checked, get a range by position it contains"
+def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> Range:
+    """Get a :class:`Range` from ``rng_dict`` by looking up the ``position`` it
+    contains, where ``rng_dict`` is either the internal :obj:`RangeStream._ranges`
+    or the external :obj:`RangeStream.ranges`.
+
+    Presumes range integrity has been checked.
+
+    Raises :exc:`ValueError` if ``position`` is not in ``rng_dict``.
+
+    Args:
+      rng_dict : input range
+      position : the position at which to look up
+    """
     # return next(k[0] for k, v in rng_dict.items() if position in k[0]).ranges()[0]
     rng_dict_kv = rng_dict.items()
     for k, _ in rng_dict_kv:

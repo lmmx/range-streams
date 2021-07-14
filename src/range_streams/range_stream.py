@@ -1,13 +1,11 @@
-r"""mod:`range_streams.range_stream` exposes a class
-`RangeStream`, whose key property (once initialised) is `ranges`,
+r""":mod:`range_streams.range_stream` exposes a class
+:py:func:`RangeStream`, whose key property (once initialised) is `ranges`,
 which provides a `RangeDict` comprising the ranges of
 the file being streamed.
 
-The method `RangeStream.add` will request further ranges,
+The method :py:func:`RangeStream.add` will request further ranges,
 and (unlike the other methods in this module) will accept
-a tuple of two integers as its argument (`byte_range`).
-
-See `help(RangeStream)` for more information.
+a tuple of two integers as its argument (``byte_range``).
 """
 
 from __future__ import annotations

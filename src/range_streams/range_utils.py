@@ -15,18 +15,18 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ranges import RangeDict
+    import ranges
 
     from .range_response import RangeResponse
     from .range_stream import RangeStream
 
 
-def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
+def ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
     "Presumes integrity is already checked: ranges in order of registration"
     return [k[0].ranges()[0] for k, v in ranges.items()]
 
 
-def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
+def response_ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
     "RangeResponse requested ranges in order of registration"
     return [v.request.range for k, v in ranges.items()]
 

@@ -10,7 +10,7 @@ range-streams: Streaming via range requests in Python
     :maxdepth: 2
     :caption: Contents:
 
-    overview.rst
+    overview
     api
 
 .. toctree::

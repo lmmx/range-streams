@@ -12,16 +12,18 @@ can provide partial content requests, avoiding the need to download
 and consume linearly from the start of a file when streaming,
 or without needing to download the entire file (non-streaming requests).
 
+Test: :class:`h5py.File`
+
 A `RangeStream` is initialised by providing:
 
 - a URL (the file to be streamed)
-- a client (e.g. `httpx.Client` or `requests.Session`)
+- a client (:class:`httpx.Client`)
 - (optionally) a range, as either:
   - `ranges.Range` from the `python-ranges` package [recommended]
   - or a tuple of integers, presumed to be a half-open interval
     inclusive of start/exclusive of stop as is common practice
-    in Python — `[start, stop)` in interval notation
-    <https://en.wikipedia.org/wiki/Interval_(mathematics)#Notations_for_intervals>
+    in Python — `[start, stop)` in `interval notation
+    <https://en.wikipedia.org/wiki/Interval_(mathematics)#Notations_for_intervals>`_
 
 Since every range request returns the total content length, the
 `RangeStream` will become capable of seeking to negative-valued

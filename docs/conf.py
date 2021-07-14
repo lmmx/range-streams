@@ -45,6 +45,7 @@ extensions = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "python-ranges": ("https://python-ranges.readthedocs.io/en/latest/", None),
+    # "httpx": ("https://www.python-httpx.org/", None),
 }
 
 suppress_warnings = [
@@ -91,6 +92,12 @@ main_doc = "index"
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+# autodoc_typehints = "description"
+
+# https://github.com/sphinx-doc/sphinx/issues/5480
+set_type_checking_flag = True
 
 autosummary_generate = True
 # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
