@@ -12,7 +12,7 @@ def byte_range_from_range_obj(rng: ranges.Range) -> str:
     <https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests>`_.
 
     Args:
-      rng : input range
+      rng : range of the bytes to be requested (0-based)
     """
     if rng.isempty():
         byte_range = "-0"
@@ -27,7 +27,7 @@ def range_header(rng: ranges.Range) -> dict[str, str]:
     with a single key ``ranges`` whose value is the byte range.
 
     Args:
-      rng : input range
+      rng : range of the bytes to be requested (0-based)
     """
     byte_range = byte_range_from_range_obj(rng)
     return {"range": f"bytes={byte_range}"}
