@@ -16,8 +16,8 @@ __all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_when
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
-def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> Range:
-    """Get a :class:`Range` from ``rng_dict`` by looking up the ``position`` it
+def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> ranges.Range:
+    """Get a :class:`ranges.Range` from ``rng_dict`` by looking up the ``position`` it
     contains, where ``rng_dict`` is either the internal :obj:`RangeStream._ranges`
     or the external :obj:`RangeStream.ranges`.
 
@@ -38,14 +38,16 @@ def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> Range:
     raise ValueError(f"No range containing position {position} in {rng_dict=}")
 
 
-def burn_range(stream: RangeStream, overlapped_ext_rng: Range):
+def burn_range(stream: RangeStream, overlapped_ext_rng: ranges.Range):
     internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
     stream._ranges.remove(internal_rng)
     # set `_active_range` to most recently registered internal range or None if empty
     stream._active_range = most_recent_range(stream, internal=True)
 
 
-def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> None:
+def handle_overlap(
+    stream: RangeStream, rng: ranges.Range, internal: bool = False
+) -> None:
     """
     Handle overlaps with a given pruning level:
 
@@ -108,7 +110,7 @@ def handle_overlap(stream: RangeStream, rng: Range, internal: bool = False) -> N
 
 
 def overlap_whence(
-    stream: RangeStream, rng: Range, internal: bool = False
+    stream: RangeStream, rng: ranges.Range, internal: bool = False
 ) -> int | None:
     """
     Determine if any overlap exists, whence (i.e. from where) on the pre-existing

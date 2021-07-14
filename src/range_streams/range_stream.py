@@ -13,6 +13,7 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import httpx
@@ -22,6 +23,10 @@ from .overlaps import handle_overlap, overlap_whence
 from .range_request import RangeRequest
 from .range_response import RangeResponse
 from .range_utils import range_max, range_span, ranges_in_reg_order, validate_range
+
+if TYPE_CHECKING:  # pragma: no cover
+    import ranges
+
 
 __all__ = ["RangeStream"]
 
@@ -83,7 +88,7 @@ class RangeStream:
             raise ValueError(f"{rng} is not a sub-range of {self.total_range}")
 
     def check_range_integrity(self) -> None:
-        "Every `RangeSet` in the `_ranges: RangeDict` keys must contain 1 Range each"
+        "Every `RangeSet` in the `_ranges: ranges.RangeDict` keys must contain 1 Range each"
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
             bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
             for rset in bad_rs:
@@ -219,14 +224,15 @@ class RangeStream:
 
     def list_ranges(self) -> list[Range]:
         """
-        Retrieve ascending order list of RangeSet keys, as a list of `Range`s.
+        Retrieve ascending order list of RangeSet keys, as a :py:class:`list` of
+        :class:`ranges.Range`.
 
-        The RangeSet to Range transformation is permitted because the `ranges`
+        The :class:`RangeSet` to :class:`ranges.Range` transformation is permitted because the `ranges`
         property method begins by checking range integrity, which requires
-        each RangeSet to be a singleton set (of a single Range).
+        each :class:`RangeSet` to be a singleton set (of a single :class:`ranges.Range`).
 
         If `activate` is True (the default), the range will be made the active range
-        of the RangeStream upon being registered (if it meets the criteria for
+        of the :class:`RangeStream` upon being registered (if it meets the criteria for
         registration).
 
         If `pruning_level` is 0 then overlaps are handled using a "replant" policy
