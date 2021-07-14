@@ -101,7 +101,7 @@ set_type_checking_flag = True
 
 autosummary_generate = True
 # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
-napoleon_use_rtype = False
+napoleon_use_rtype = True
 napoleon_use_params = True
 
 # -- Options for HTML output -------------------------------------------------
