@@ -6,12 +6,11 @@
 range-streams: Streaming via range requests in Python
 =====================================================
 
-.. include:: overview.rst
-
 .. toctree::
     :maxdepth: 2
     :caption: Contents:
 
+    overview.rst
     api
 
 .. toctree::
