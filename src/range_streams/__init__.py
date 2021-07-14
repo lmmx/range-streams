@@ -1,10 +1,11 @@
 r"""
 :mod:`range_streams` provides file-like object handling through
 an API familiar to users of the standard library
-:mod:`io` module.  It uses Range, RangeSet, and RangeDict classes
+:mod:`io` module.  It uses :class:`ranges.Range`, :class:`ranges.RangeSet`,
+and :class:`ranges.RangeDict` classes (from the externally maintained
+`python-ranges <https://python-ranges.readthedocs.io/en/latest/>`_ library)
 to represent and look up range operations in an efficient linked
-list data structure from the externally maintained python-ranges
-library.
+list data structure.
 
 Servers with support for `HTTP range requests
 <https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests>`_
