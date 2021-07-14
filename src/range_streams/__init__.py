@@ -12,8 +12,6 @@ can provide partial content requests, avoiding the need to download
 and consume linearly from the start of a file when streaming,
 or without needing to download the entire file (non-streaming requests).
 
-Test: :class:`h5py.File`
-
 A `RangeStream` is initialised by providing:
 
 - a URL (the file to be streamed)
