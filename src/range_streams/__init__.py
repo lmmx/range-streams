@@ -1,17 +1,16 @@
 r"""
-files available on a server with support for HTTP range requests
-<https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests>
-enabling partial content requests on a 'need to know basis',
-without having to download and consume linearly from the start of
-a file when streaming, or without needing to download the entire
-file (non-streaming requests).
-
 :mod:`range_streams` provides file-like object handling through
 an API familiar to users of the standard library
 :mod:`io` module.  It uses Range, RangeSet, and RangeDict classes
 to represent and look up range operations in an efficient linked
 list data structure from the externally maintained python-ranges
 library.
+
+Servers with support for `HTTP range requests
+<https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests>`_
+can provide partial content requests, avoiding the need to download
+and consume linearly from the start of a file when streaming,
+or without needing to download the entire file (non-streaming requests).
 
 A `RangeStream` is initialised by providing:
 
