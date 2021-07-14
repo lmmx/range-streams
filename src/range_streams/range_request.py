@@ -3,9 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator
 
 import httpx
-
-if TYPE_CHECKING:  # pragma: no cover
-    import ranges
+import ranges
 
 from .http_utils import range_header
 

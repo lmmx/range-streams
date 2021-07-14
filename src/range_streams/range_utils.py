@@ -12,13 +12,10 @@ __all__ = [
 
 from typing import TYPE_CHECKING
 
+import ranges
 from ranges import Range
 
-if TYPE_CHECKING:  # pragma: no cover
-    import ranges
-
-    from .range_response import RangeResponse
-    from .range_stream import RangeStream
+import range_streams
 
 
 def ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
@@ -32,7 +29,7 @@ def response_ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
 
 
 def most_recent_range(
-    stream: RangeStream, internal: bool = True
+    stream: range_streams.range_stream.RangeStream, internal: bool = True
 ) -> ranges.Range | None:
     if stream._ranges.isempty():
         rng = None  # type: Range | None
@@ -111,7 +108,9 @@ def range_span(ranges: list[ranges.Range]) -> ranges.Range:
     return Range(min_start, max_end + 1)
 
 
-def ext2int(stream: RangeStream, ext_rng: ranges.Range) -> RangeResponse:
+def ext2int(
+    stream: range_streams.range_stream.RangeStream, ext_rng: ranges.Range
+) -> range_streams.range_stream.RangeResponse:
     """
     Given the external range `ext_rng` and the :class:`RangeStream` ``stream`` on which it is
     'stored' (or rather, computed, in the ``ranges`` property), return the internal

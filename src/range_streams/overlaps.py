@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import ranges
 from ranges import Range
+
+# due to https://github.com/agronholm/sphinx-autodoc-typehints/issues/72
+import range_streams  # for RangeStream
 
 from .range_utils import ext2int, most_recent_range, range_termini
 
 if TYPE_CHECKING:  # pragma: no cover
     import ranges
 
-    from range_streams import RangeStream
 
 __all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_whence"]
 
@@ -38,7 +41,9 @@ def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> ranges.Ra
     raise ValueError(f"No range containing position {position} in {rng_dict=}")
 
 
-def burn_range(stream: RangeStream, overlapped_ext_rng: ranges.Range):
+def burn_range(
+    stream: range_streams.range_stream.RangeStream, overlapped_ext_rng: ranges.Range
+):
     internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
     stream._ranges.remove(internal_rng)
     # set `_active_range` to most recently registered internal range or None if empty
@@ -46,15 +51,17 @@ def burn_range(stream: RangeStream, overlapped_ext_rng: ranges.Range):
 
 
 def handle_overlap(
-    stream: RangeStream, rng: ranges.Range, internal: bool = False
+    stream: range_streams.range_stream.RangeStream,
+    rng: ranges.Range,
+    internal: bool = False,
 ) -> None:
     """
     Handle overlaps with a given pruning level:
 
-    0: "replant" ranges overlapped at the head with fresh, disjoint ranges 'downstream'
+    0. "replant" ranges overlapped at the head with fresh, disjoint ranges 'downstream'
        or mark their tails to effectively truncate them if overlapped at the tail
-    1: "burn" existing ranges overlapped anywhere by the new range
-    2: "strict" will throw a ValueError
+    1. "burn" existing ranges overlapped anywhere by the new range
+    2. "strict" will throw a ValueError
     """
     ranges = stream._ranges if internal else stream.ranges
     if stream.pruning_level not in range(3):
@@ -110,7 +117,9 @@ def handle_overlap(
 
 
 def overlap_whence(
-    stream: RangeStream, rng: ranges.Range, internal: bool = False
+    stream: range_streams.range_stream.RangeStream,
+    rng: ranges.Range,
+    internal: bool = False,
 ) -> int | None:
     """
     Determine if any overlap exists, whence (i.e. from where) on the pre-existing

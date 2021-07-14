@@ -134,13 +134,13 @@ class RangeStream:
     @property
     def ranges(self):
         """
-        Read-only view on the RangeDict stored in the `_ranges` attribute, modifying
+        Read-only view on the RangeDict stored in the ``_ranges`` attribute, modifying
         it to account for the bytes consumed (from the head) and tail mark offset
         of where a range was already trimmed to avoid an overlap (from the tail).
 
-        Each `ranges` RangeDict key is a RangeSet containing 1 Range. Check
+        Each ``ranges`` RangeDict key is a RangeSet containing 1 Range. Check
         this assumption (singleton RangeSet "integrity") holds and retrieve
-        this list of RangeSet keys in ascending order, as a list of `Range`s.
+        this list of RangeSet keys in ascending order, as a list of ``Range``.
         """
         self.check_range_integrity()
         return self.compute_external_ranges()
