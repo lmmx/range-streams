@@ -1,11 +1,3 @@
-range-streams
-=============
-
-|Documentation| |CI Status| |Coverage| |Checked with mypy| |Code style:
-black|
-
-Streaming via range requests in Python
-
 Outline of ``RangeStream`` data structure
 -----------------------------------------
 
@@ -84,45 +76,3 @@ interval.
      RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
      RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
    }
-
-Requires
---------
-
--  Python 3.8+
-
-Installation
-------------
-
-.. code:: sh
-
-   pip install range-streams
-
-See also
---------
-
--  `Motivation <https://github.com/lmmx/range-streams/blob/master/docs/motivation.md>`__:
-   background on the idea and why you would want to use this technique
--  `Design <https://github.com/lmmx/range-streams/blob/master/docs/design.md>`__:
-   technical overview on how disjoint ranges are represented, how
-   intersecting ranges are handled, and the different ways of comparing
-   ranges on a ``RangeStream``
--  `TODO <https://github.com/lmmx/range-streams/blob/master/docs/todo.md>`__
--  `CONDA_SETUP.md <https://github.com/lmmx/range-streams/blob/master/docs/CONDA_SETUP.md>`__
--  `CONTRIBUTING <https://github.com/lmmx/range-streams/blob/master/.github/contributing.md>`__
-
-..
-
-   *range-streams* is available from
-   `PyPI <https://pypi.org/project/range-streams>`__, and the code is on
-   `GitHub <https://github.com/lmmx/range-streams>`__
-
-.. |Documentation| image:: https://readthedocs.org/projects/range-streams/badge/?version=latest
-   :target: https://range-streams.readthedocs.io/en/latest/
-.. |CI Status| image:: https://github.com/lmmx/range-streams/actions/workflows/master.yml/badge.svg
-   :target: https://github.com/lmmx/range-streams/actions/workflows/master.yml
-.. |Coverage| image:: https://codecov.io/gh/lmmx/range-streams/branch/master/graph/badge.svg
-   :target: https://codecov.io/github/lmmx/range-streams
-.. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
-   :target: http://mypy-lang.org
-.. |Code style: black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
