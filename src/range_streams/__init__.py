@@ -3,7 +3,7 @@ r"""
 an API familiar to users of the standard library
 :mod:`io` module.  It uses :class:`ranges.Range`, :class:`ranges.RangeSet`,
 and :class:`ranges.RangeDict` classes (from the externally maintained
-`python-ranges <https://python-ranges.readthedocs.io/en/latest/>`_ library)
+:mod:`python-ranges: library)
 to represent and look up range operations in an efficient linked
 list data structure.
 
