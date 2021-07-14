@@ -10,14 +10,14 @@ range-streams: Streaming via range requests in Python
 ..   :start-after: teaser-begin
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Contents:
 
-User's Guide
-------------
+    api
 
 .. toctree::
    :maxdepth: 1
+   :caption: User's Guide:
 
    design
    motivation
