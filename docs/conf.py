@@ -94,7 +94,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 autosummary_generate = True
 # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
-napolean_use_rtype = False
+napoleon_use_rtype = False
+napoleon_use_params = True
 
 # -- Options for HTML output -------------------------------------------------
 
