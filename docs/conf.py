@@ -47,10 +47,34 @@ intersphinx_mapping = {
     "python-ranges": ("https://python-ranges.readthedocs.io/en/latest/", None),
 }
 
-# suppress_warnings = [
-#    'ref.citation',  # Many duplicated citations in numpy/scipy docstrings.
-#    'ref.footnote',  # Many unreferenced footnotes in numpy/scipy docstrings
-# ]
+suppress_warnings = [
+    #   'ref.citation',  # Many duplicated citations in numpy/scipy docstrings.
+    #   'ref.footnote',  # Many unreferenced footnotes in numpy/scipy docstrings
+    "files.*",
+    "rest.*",
+    "app.add_node",
+    "app.add_directive",
+    "app.add_role",
+    "app.add_generic_role",
+    "app.add_source_parser",
+    "download.not_readable",
+    "image.not_readable",
+    "ref.term",
+    "ref.ref",
+    "ref.numref",
+    "ref.keyword",
+    "ref.option",
+    "ref.citation",
+    "ref.footnote",
+    "ref.doc",
+    "ref.python",
+    "misc.highlighting_failure",
+    "toc.circular",
+    "toc.secnum",
+    "epub.unknown_project_files",
+    "epub.duplicated_toc_entry",
+    "autosectionlabel.*",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -90,6 +114,20 @@ execution_allow_errors = False
 execution_fail_on_error = (
     True  # Requires https://github.com/executablebooks/MyST-NB/pull/296
 )
+nb_render_priority = {
+    "html": (
+        "application/vnd.jupyter.widget-view+json",
+        "application/javascript",
+        "text/html",
+        "image/svg+xml",
+        "image/png",
+        "image/jpeg",
+        "text/markdown",
+        "text/latex",
+        "text/plain",
+    )
+}
+nb_render_priority["doctest"] = nb_render_priority["html"]
 
 # Notebook cell execution timeout; defaults to 30.
 execution_timeout = 100

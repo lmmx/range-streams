@@ -23,16 +23,6 @@ User's Guide
    motivation
 
 
-Project Information
--------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   license
-   contributing
-
-
 Indices and tables
 ==================
 
