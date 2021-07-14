@@ -28,7 +28,8 @@ INSTALL_REQUIRES = Path("requirements.txt").read_text().splitlines()
 EXTRAS_REQUIRE = {
     "docs": [
         "sphinx>=3,<4",
-        "sphinx_rtd_theme",
+        # "sphinx_rtd_theme",
+        "furo",
         "sphinx-autodoc-typehints==1.11.1",  # don't bump to 1.12.0
         "jupyter-sphinx>=0.3.2",
         "myst-nb",
