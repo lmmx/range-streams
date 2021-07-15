@@ -12,8 +12,8 @@ __all__ = [
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    import ranges
+if TYPE_CHECKING:  # pragma: no cover
+    import ranges  # for sphinx
 from ranges import Range, RangeDict
 
 import range_streams

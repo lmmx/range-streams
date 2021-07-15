@@ -39,7 +39,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
-    "myst_nb",
+    # "myst_nb",
+    # "myst_parser",
 ]
 
 intersphinx_mapping = {
@@ -114,31 +115,7 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-
-# -- Options for myst ----------------------------------------------
-jupyter_execute_notebooks = "force"
-execution_allow_errors = False
-execution_fail_on_error = (
-    True  # Requires https://github.com/executablebooks/MyST-NB/pull/296
-)
-nb_render_priority = {
-    "html": (
-        "application/vnd.jupyter.widget-view+json",
-        "application/javascript",
-        "text/html",
-        "image/svg+xml",
-        "image/png",
-        "image/jpeg",
-        "text/markdown",
-        "text/latex",
-        "text/plain",
-    )
-}
-nb_render_priority["doctest"] = nb_render_priority["html"]
-
-# Notebook cell execution timeout; defaults to 30.
-execution_timeout = 100
-
-# List of patterns, relative to source directory, that match notebook
-# files that will not be executed.
-execution_excludepatterns = []
+# https://docs.readthedocs.io/en/stable/guides/adding-custom-css.html
+html_css_files = [
+    "css/style.css",
+]

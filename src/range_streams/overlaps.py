@@ -21,8 +21,9 @@ __all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_when
 # most_recent_range
 def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     """Get a :class:`ranges.Range` from ``rng_dict`` by looking up the ``position`` it
-    contains, where ``rng_dict`` is either the internal :obj:`RangeStream._ranges`
-    or the external :obj:`RangeStream.ranges`.
+    contains, where ``rng_dict`` is either the internal
+    :obj:`RangeStream._ranges` attribute
+    or the external :obj:`~range_streams.range_stream.RangeStream.ranges` property.
 
     Presumes range integrity has been checked.
 
@@ -44,6 +45,18 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
 def burn_range(
     stream: range_streams.range_stream.RangeStream, overlapped_ext_rng: Range
 ):
+    """Get the internal range (i.e. without offsets applied from the current read
+    position on the range) from the external one (which may differ if the seek position
+    has advanced from the start position, usually due to reading bytes from the range).
+    Once this internal range has been identified, delete it, and set the
+    :attr:`~range_streams.range_stream.RangeStream._active_range` to the most recent
+    (or if the stream becomes empty, set it to ``None``).
+
+    Args:
+      stream             : the :class:`RangeStream` of the file the range to be deleted
+                           ('burned') is on
+      overlapped_ext_rng : the overlapped external range
+    """
     internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
     stream._ranges.remove(internal_rng)
     # set `_active_range` to most recently registered internal range or None if empty

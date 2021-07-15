@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Iterator
 import httpx
 from ranges import Range
 
-if TYPE_CHECKING:
-    import ranges
+if TYPE_CHECKING:  # pragma: no cover
+    import ranges  # for sphinx
 
 from .http_utils import range_header
 
