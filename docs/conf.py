@@ -44,8 +44,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "python-ranges": ("https://python-ranges.readthedocs.io/en/latest/", None),
-    # "httpx": ("https://www.python-httpx.org/", None),
+    "ranges": ("https://python-ranges.readthedocs.io/en/latest/", None),
 }
 
 suppress_warnings = [

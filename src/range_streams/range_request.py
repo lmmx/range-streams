@@ -3,7 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator
 
 import httpx
-import ranges
+from ranges import Range
+
+if TYPE_CHECKING:
+    import ranges
 
 from .http_utils import range_header
 
@@ -18,7 +21,7 @@ class RangeRequest:
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
 
-    def __init__(self, byte_range: ranges.Range, url: str, client: httpx.Client):
+    def __init__(self, byte_range: Range, url: str, client: httpx.Client):
         self.range = byte_range
         self.url = url
         self.client = client

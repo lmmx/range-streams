@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-import ranges
+from typing import TYPE_CHECKING
+
+from ranges import Range
+
+if TYPE_CHECKING:
+    import ranges
 
 from .range_utils import range_termini
 
 __all__ = ["byte_range_from_range_obj", "range_header"]
 
 
-def byte_range_from_range_obj(rng: ranges.Range) -> str:
+def byte_range_from_range_obj(rng: Range) -> str:
     """Prepare the byte range substring for a HTTP `range request
     <https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests>`_.
 
@@ -22,7 +27,7 @@ def byte_range_from_range_obj(rng: ranges.Range) -> str:
     return byte_range
 
 
-def range_header(rng: ranges.Range) -> dict[str, str]:
+def range_header(rng: Range) -> dict[str, str]:
     """Prepare a :class:`dict` to pass as a :mod:`httpx` request header
     with a single key ``ranges`` whose value is the byte range.
 

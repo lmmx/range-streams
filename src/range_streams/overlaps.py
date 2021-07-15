@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import ranges
-from ranges import Range
+from ranges import Range, RangeDict
 
 # due to https://github.com/agronholm/sphinx-autodoc-typehints/issues/72
 import range_streams  # for RangeStream
@@ -19,7 +19,7 @@ __all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_when
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
-def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> ranges.Range:
+def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     """Get a :class:`ranges.Range` from ``rng_dict`` by looking up the ``position`` it
     contains, where ``rng_dict`` is either the internal :obj:`RangeStream._ranges`
     or the external :obj:`RangeStream.ranges`.
@@ -42,7 +42,7 @@ def get_range_containing(rng_dict: ranges.RangeDict, position: int) -> ranges.Ra
 
 
 def burn_range(
-    stream: range_streams.range_stream.RangeStream, overlapped_ext_rng: ranges.Range
+    stream: range_streams.range_stream.RangeStream, overlapped_ext_rng: Range
 ):
     internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
     stream._ranges.remove(internal_rng)
@@ -52,7 +52,7 @@ def burn_range(
 
 def handle_overlap(
     stream: range_streams.range_stream.RangeStream,
-    rng: ranges.Range,
+    rng: Range,
     internal: bool = False,
 ) -> None:
     """
@@ -118,7 +118,7 @@ def handle_overlap(
 
 def overlap_whence(
     stream: range_streams.range_stream.RangeStream,
-    rng: ranges.Range,
+    rng: Range,
     internal: bool = False,
 ) -> int | None:
     """

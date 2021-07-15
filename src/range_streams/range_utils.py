@@ -12,25 +12,26 @@ __all__ = [
 
 from typing import TYPE_CHECKING
 
-import ranges
-from ranges import Range
+if TYPE_CHECKING:
+    import ranges
+from ranges import Range, RangeDict
 
 import range_streams
 
 
-def ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
+def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     "Presumes integrity is already checked: ranges in order of registration"
     return [k[0].ranges()[0] for k, v in ranges.items()]
 
 
-def response_ranges_in_reg_order(ranges: ranges.RangeDict) -> list[Range]:
+def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     "RangeResponse requested ranges in order of registration"
     return [v.request.range for k, v in ranges.items()]
 
 
 def most_recent_range(
     stream: range_streams.range_stream.RangeStream, internal: bool = True
-) -> ranges.Range | None:
+) -> Range | None:
     if stream._ranges.isempty():
         rng = None  # type: Range | None
     else:
@@ -39,7 +40,7 @@ def most_recent_range(
     return rng
 
 
-def range_termini(rng: ranges.Range) -> tuple[int, int]:
+def range_termini(rng: Range) -> tuple[int, int]:
     """
     Get the inclusive start and end positions `[start,end]` from a `ranges.Range`.
     These are referred to as the 'termini'. Ranges are always ascending.
@@ -52,26 +53,26 @@ def range_termini(rng: ranges.Range) -> tuple[int, int]:
     return start, end
 
 
-def range_len(rng: ranges.Range) -> int:
+def range_len(rng: Range) -> int:
     rmin, rmax = range_termini(rng)
     return rmax - rmin
 
 
-def range_min(rng: ranges.Range) -> int:
+def range_min(rng: Range) -> int:
     if rng.isempty():
         raise ValueError("Empty range has no minimum")
     return range_termini(rng)[0]
 
 
-def range_max(rng: ranges.Range) -> int:
+def range_max(rng: Range) -> int:
     if rng.isempty():
         raise ValueError("Empty range has no maximum")
     return range_termini(rng)[1]
 
 
 def validate_range(
-    byte_range: ranges.Range | tuple[int, int], allow_empty: bool = True
-) -> ranges.Range:
+    byte_range: Range | tuple[int, int], allow_empty: bool = True
+) -> Range:
     """
     Validate byte_range and convert to `[a,b)` :class:`ranges.Range` if given as integer
     tuple.
@@ -95,7 +96,7 @@ def validate_range(
     return byte_range
 
 
-def range_span(ranges: list[ranges.Range]) -> ranges.Range:
+def range_span(ranges: list[Range]) -> Range:
     """
     Assumes input list of :class:`RangeSets` are in ascending order, switches if not
     """
@@ -109,7 +110,7 @@ def range_span(ranges: list[ranges.Range]) -> ranges.Range:
 
 
 def ext2int(
-    stream: range_streams.range_stream.RangeStream, ext_rng: ranges.Range
+    stream: range_streams.range_stream.RangeStream, ext_rng: Range
 ) -> range_streams.range_stream.RangeResponse:
     """
     Given the external range `ext_rng` and the :class:`RangeStream` ``stream`` on which it is
