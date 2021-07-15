@@ -157,7 +157,7 @@ def validate_range(
 
 
 def range_span(ranges: list[Range]) -> Range:
-    """Given a list of :class:`ranges.Range`, calculate their 'span'
+    """Given a list of :class:`~ranges.Range`, calculate their 'span'
     (i.e. the range spanned from their minimum to maximum). This span
     may of course not be completely 'covered' by the ranges in the list.
     
@@ -182,8 +182,9 @@ def ext2int(
     """Given the external range `ext_rng` and the :class:`RangeStream`
     ``stream`` on which it is 'stored' (or rather, computed, in the
     :attr:`~range_streams.range_stream.RangeStream.ranges` property),
-    return the internal :class:`ranges.Range` stored on the
-    :attr:`_ranges` attribute of the RangeStream, by looking up the
+    return the internal :class:`~ranges.Range` stored on the
+    :attr:`_ranges` attribute of the
+    :attr:`~range_streams.range_stream.RangeStream`, by looking up the
     shared :class:`RangeResponse` value.
     
     Args:
