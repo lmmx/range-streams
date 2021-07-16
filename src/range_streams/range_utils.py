@@ -22,9 +22,9 @@ import range_streams
 def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     """Given a :class:`~ranges.RangeDict`,
     list the ranges in order of registration.
-    
+
     Presumes integrity is already checked.
-    
+
     Args:
       ranges : Either the internal or external ranges of a
                :class:`~range_streams.range_stream.RangeStream`.
@@ -37,7 +37,7 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     values in the :class:`ranges.RangeDict`, list the ranges from their
     original :attribute:~range_streams.range_response.RangeResponse.request`
     in order of registration.
-    
+
     Args:
       ranges : Either the internal or external ranges of a
                :class:`~range_streams.range_stream.RangeStream`.
@@ -52,13 +52,13 @@ def most_recent_range(
     values in the :class:`ranges.RangeDict`, list the ranges from their
     original :attr:`~range_streams.range_response.RangeResponse.request`
     in order of registration.
-    
+
     If ``internal`` is ``True``, use
     :attr:`~range_streams.range_stream.RangeStream._ranges` as the
     :class:`ranges.RangeDict`, else use the 'external' (computed) property
     :attr:`~range_streams.range_stream.RangeStream.ranges`. The external
     ones take into account the position the file has been read/seeked to.
-    
+
     Args:
       stream   : Either the internal or external ranges of a
                  :class:`~range_streams.range_stream.RangeStream`.
@@ -76,7 +76,7 @@ def range_termini(rng: Range) -> tuple[int, int]:
     """Get the inclusive start and end positions ``[start,end]``
     from a :class`ranges.Range`. These are referred to as the
     'termini'. Ranges are always ascending.
-    
+
     Args:
       rng : A :class:`~ranges.Range` (which by default will be
             half-closed, i.e. not inclusive of the end position).
@@ -91,7 +91,7 @@ def range_termini(rng: Range) -> tuple[int, int]:
 
 def range_len(rng: Range) -> int:
     """Get the length of a :class:`~ranges.Range`.
-    
+
     Args:
       rng : A :class:`~ranges.Range` (which by default will be
             half-closed, i.e. not inclusive of the end position).
@@ -102,7 +102,7 @@ def range_len(rng: Range) -> int:
 
 def range_min(rng: Range) -> int:
     """Get the minimum (or start terminus) of a :class:`~ranges.Range`.
-    
+
     Args:
       rng : A :class:`~ranges.Range` (which by default will be
             half-closed, i.e. not inclusive of the end position).
@@ -114,7 +114,7 @@ def range_min(rng: Range) -> int:
 
 def range_max(rng: Range) -> int:
     """Get the maximum (or end terminus) of a :class:`~ranges.Range`.
-    
+
     Args:
       rng : A :class:`~ranges.Range` (which by default will be
             half-closed, i.e. not inclusive of the end position).
@@ -130,7 +130,7 @@ def validate_range(
     """Validate ``byte_range`` and convert to a half-closed (i.e.
     not inclusive of the end position) ``[start,end)`` :class:`ranges.Range`
     if given as integer tuple.
-    
+
     Args:
       byte_range : Either a :class:`tuple` of two :class:`int` positions with
                    which to create a :class:`~ranges.Range` (which by
@@ -160,10 +160,10 @@ def range_span(ranges: list[Range]) -> Range:
     """Given a list of :class:`~ranges.Range`, calculate their 'span'
     (i.e. the range spanned from their minimum to maximum). This span
     may of course not be completely 'covered' by the ranges in the list.
-    
+
     Assumes input list of :class:`RangeSets` are in ascending order,
     switches if not.
-    
+
     Args:
       ranges : A list of ranges whose span is to be given.
     """
@@ -186,7 +186,7 @@ def ext2int(
     :attr:`_ranges` attribute of the
     :attr:`~range_streams.range_stream.RangeStream`, by looking up the
     shared :class:`RangeResponse` value.
-    
+
     Args:
       stream  : A :class:`~range_streams.range_stream.RangeStream`
                 in whose 'external'

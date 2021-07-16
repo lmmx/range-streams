@@ -3,11 +3,9 @@ from __future__ import annotations
 from io import SEEK_END, SEEK_SET, BytesIO
 from typing import TYPE_CHECKING
 
-from .range_utils import range_len
+import range_streams  # absolute import for sphinx
 
-if TYPE_CHECKING:  # pragma: no cover
-    from .range_stream import RangeRequest, RangeStream
-    import range_streams # for sphinx
+from .range_utils import range_len
 
 __all__ = ["RangeResponse"]
 
@@ -15,7 +13,11 @@ __all__ = ["RangeResponse"]
 class RangeResponse:
     tail_mark = 0
 
-    def __init__(self, stream: RangeStream, range_request: RangeRequest):
+    def __init__(
+        self,
+        stream: range_streams.range_stream.RangeStream,
+        range_request: range_streams.range_request.RangeRequest,
+    ):
         self.parent_stream = stream
         self.request = range_request
         self._bytes = BytesIO()
