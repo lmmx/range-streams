@@ -7,16 +7,16 @@ __all__ = [
     "validate_range",
     "range_span",
     "range_len",
-    "ext2int",
 ]
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     import ranges  # for sphinx
-from ranges import Range, RangeDict
+    from range_streams.range_stream import RangeStream
+    from range_streams.range_response import RangeResponse
 
-import range_streams
+from ranges import Range, RangeDict
 
 
 def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
@@ -45,9 +45,7 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     return [v.request.range for k, v in ranges.items()]
 
 
-def most_recent_range(
-    stream: range_streams.range_stream.RangeStream, internal: bool = True
-) -> Range | None:
+def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | None:
     """For all of the :class:`~range_streams.range_response.RangeResponse`
     values in the :class:`ranges.RangeDict`, list the ranges from their
     original :attr:`~range_streams.range_response.RangeResponse.request`
@@ -174,33 +172,3 @@ def range_span(ranges: list[Range]) -> Range:
     min_start, _ = first_termini
     _, max_end = last_termini
     return Range(min_start, max_end + 1)
-
-
-def ext2int(
-    stream: range_streams.range_stream.RangeStream, ext_rng: Range
-) -> range_streams.range_stream.RangeResponse:
-    """Given the external range `ext_rng` and the :class:`RangeStream`
-    ``stream`` on which it is 'stored' (or rather, computed, in the
-    :attr:`~range_streams.range_stream.RangeStream.ranges` property),
-    return the internal :class:`~ranges.Range` stored on the
-    :attr:`_ranges` attribute of the
-    :attr:`~range_streams.range_stream.RangeStream`, by looking up the
-    shared :class:`RangeResponse` value.
-
-    Args:
-      stream  : A :class:`~range_streams.range_stream.RangeStream`
-                in whose 'external'
-                :attr:`~range_streams.range_stream.RangeStream.ranges`
-                property :class:`ranges.RangeDict` the ``ext_rng`` is
-                found.
-      ext_rng : A :class:`ranges.Range` from the 'external'
-                :attr:`~range_streams.range_stream.RangeStream.ranges`
-                with which to cross-reference in
-                :attr:`~range_streams.range_stream.RangeStream._ranges`
-                to identify the corresponding 'internal' range.
-    """
-    rng_response = stream.ranges[ext_rng]
-    for k, v in stream._ranges.items():
-        if v == rng_response:
-            return k[0].ranges()[0]
-    raise ValueError("Looked up a non-existent key in the internal RangeDict")

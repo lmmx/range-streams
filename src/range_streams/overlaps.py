@@ -2,20 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import ranges
 from ranges import Range, RangeDict
 
-# due to https://github.com/agronholm/sphinx-autodoc-typehints/issues/72
-import range_streams  # for RangeStream
-
-from .range_utils import ext2int, most_recent_range, range_termini
+from .range_utils import range_termini
 
 if TYPE_CHECKING:  # pragma: no cover
     import ranges
 
 
-__all__ = ["get_range_containing", "burn_range", "handle_overlap", "overlap_whence"]
-
+__all__ = ["get_range_containing", "overlap_whence"]
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
@@ -42,97 +37,9 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     raise ValueError(f"No range containing position {position} in {rng_dict=}")
 
 
-def burn_range(
-    stream: range_streams.range_stream.RangeStream, overlapped_ext_rng: Range
-):
-    """Get the internal range (i.e. without offsets applied from the current read
-    position on the range) from the external one (which may differ if the seek position
-    has advanced from the start position, usually due to reading bytes from the range).
-    Once this internal range has been identified, delete it, and set the
-    :attr:`~range_streams.range_stream.RangeStream._active_range` to the most recent
-    (or if the stream becomes empty, set it to ``None``).
-
-    Args:
-      stream             : the :class:`RangeStream` of the file the range to be deleted
-                           ('burned') is on
-      overlapped_ext_rng : the overlapped external range
-    """
-    internal_rng = ext2int(stream=stream, ext_rng=overlapped_ext_rng)
-    stream._ranges.remove(internal_rng)
-    # set `_active_range` to most recently registered internal range or None if empty
-    stream._active_range = most_recent_range(stream, internal=True)
-
-
-def handle_overlap(
-    stream: range_streams.range_stream.RangeStream,
-    rng: Range,
-    internal: bool = False,
-) -> None:
-    """
-    Handle overlaps with a given pruning level:
-
-    0. "replant" ranges overlapped at the head with fresh, disjoint ranges 'downstream'
-       or mark their tails to effectively truncate them if overlapped at the tail
-    1. "burn" existing ranges overlapped anywhere by the new range
-    2. "strict" will throw a ValueError
-    """
-    ranges = stream._ranges if internal else stream.ranges
-    if stream.pruning_level not in range(3):
-        raise ValueError("Pruning level must be 0, 1, or 2")
-    # print(f"Handling {rng=} with {stream.pruning_level=}")
-    if rng.isempty():
-        raise ValueError("Range overlap not detected as the range is empty")
-    if stream.pruning_level == 2:  # 2: strict
-        raise ValueError("Range overlap not registered due to strict pruning policy")
-    rng_min, rng_max = range_termini(rng)
-    if rng not in ranges:
-        # May be partially overlapping
-        has_min, has_max = (pos in ranges for pos in [rng_min, rng_max])
-        if has_min:
-            # if has_min and has_max:
-            #    print("Partially contained on multiple ranges")
-            # T: Overlap at  tail   of pre-existing RangeResponse truncates that tail
-            # M: Overlap at midbody of pre-existing RangeResponse truncates that tail
-            overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_min)
-            # print(f"T/M {overlapped_rng=}")
-            if stream.pruning_level == 1:  # 1: burn
-                burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-            else:  # 0: replant
-                o_rng_min, o_rng_max = range_termini(overlapped_rng)
-                intersect_len = o_rng_max - rng_min + 1
-                ranges[rng_min].tail_mark += intersect_len
-        elif has_max:
-            # H: Overlap at head of pre-existing RangeResponse is replanted or burnt
-            overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_max)
-            # print(f"H {overlapped_rng=}")
-            if stream.pruning_level == 1:  # 1: burn
-                burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-            else:  # 0: replant
-                o_rng_min, o_rng_max = range_termini(overlapped_rng)
-                intersect_len = rng_max - o_rng_min + 1
-                # For now, simply throw away: read `size=intersect_len` bytes of response,
-                # consequently `tell` will trim the head computed in `ranges` property
-                # _ = ranges[rng_max].read(intersect_len)
-                burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-                if (new_o_rng_min := o_rng_min + intersect_len) > rng_max:
-                    new_o_rng_max = o_rng_max  # (I can't think of exceptions to this?)
-                    new_o_rng = Range(new_o_rng_min, new_o_rng_max + 1)
-                    stream.add(new_o_rng)  # head-overlapped range has been 'replanted'
-        else:
-            info = f"{rng=} and {ranges=}"
-            raise ValueError(f"Range overlap not detected at termini {info}")
-    else:  # HTT: Full overlap with an existing range ("Head To Tail")
-        overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_max)
-        # Fully overlapped ranges would be exhausted if read, so delete regardless of
-        # whether pruning policy is "replant"/"burn" (i.e. can't replant empty range)
-        # print(f"HTT {overlapped_rng=}")
-        burn_range(stream=stream, overlapped_ext_rng=overlapped_rng)
-
-
 def overlap_whence(
-    stream: range_streams.range_stream.RangeStream,
+    rng_dict: RangeDict,
     rng: Range,
-    internal: bool = False,
 ) -> int | None:
     """
     Determine if any overlap exists, whence (i.e. from where) on the pre-existing
@@ -142,13 +49,12 @@ def overlap_whence(
 
     Note: same convention as Python io module's SEEK_SET, SEEK_CUR, and SEEK_END.
     """
-    ranges = stream._ranges if internal else stream.ranges
-    if rng in ranges:
+    if rng in rng_dict:
         # Full overlap (i.e. in middle of pre-existing range)
         whence = 1  # type: int | None
     else:
         # If minimum (max.) terminus overlaps a range, it's a tail (head) overlap
-        tail_over, head_over = [t in ranges for t in range_termini(rng)]
+        tail_over, head_over = [t in rng_dict for t in range_termini(rng)]
         if tail_over:
             whence = 2
         elif head_over:

@@ -4,7 +4,6 @@ from pytest import fixture, mark, raises
 from ranges import Range
 
 from range_streams.range_utils import (
-    ext2int,
     most_recent_range,
     range_len,
     range_max,

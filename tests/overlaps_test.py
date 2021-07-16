@@ -1,7 +1,7 @@
 from pytest import mark, raises
 from ranges import Range
 
-from range_streams.overlaps import get_range_containing, handle_overlap
+from range_streams.overlaps import get_range_containing
 from range_streams.range_utils import (
     most_recent_range,
     ranges_in_reg_order,
@@ -189,7 +189,7 @@ def test_no_overlap_empty_range(full_range_stream, empty_range, error_msg):
     (trivially) the empty range has no possibly overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        handle_overlap(stream=full_range_stream, rng=empty_range, internal=False)
+        full_range_stream.handle_overlap(rng=empty_range, internal=False)
 
 
 @mark.parametrize("error_msg", ["Range overlap not detected at termini.*"])
@@ -202,9 +202,7 @@ def test_no_overlap_empty_range_stream(
     because (trivially) the empty range has no possible overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        handle_overlap(
-            stream=empty_range_stream, rng=nonoverlapping_range, internal=False
-        )
+        empty_range_stream.handle_overlap(rng=nonoverlapping_range, internal=False)
 
 
 @mark.parametrize("initial_ranges", [[(2, 4), (6, 9)]])
@@ -222,7 +220,7 @@ def test_partial_overlap_multiple_ranges(
     for rng_start, rng_end in initial_ranges:
         stream.add(byte_range=Range(rng_start, rng_end))
     spanning_rng_pre = stream.spanning_range
-    handle_overlap(stream=stream, rng=overlapping_range, internal=False)
+    stream.handle_overlap(rng=overlapping_range, internal=False)
     spanning_rng_post = stream.spanning_range
     assert spanning_rng_pre == spanning_rng_post
     internal_rng_list = ranges_in_reg_order(stream._ranges)

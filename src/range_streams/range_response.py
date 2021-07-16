@@ -3,7 +3,13 @@ from __future__ import annotations
 from io import SEEK_END, SEEK_SET, BytesIO
 from typing import TYPE_CHECKING
 
-import range_streams  # absolute import for sphinx
+if TYPE_CHECKING:  # pragma: no cover
+    # absolute imports for sphinx
+    # from range_streams import range_stream
+    from range_streams.range_stream import RangeStream
+
+    # from range_streams import range_request
+    from range_streams.range_request import RangeRequest
 
 from .range_utils import range_len
 
@@ -15,8 +21,8 @@ class RangeResponse:
 
     def __init__(
         self,
-        stream: range_streams.range_stream.RangeStream,
-        range_request: range_streams.range_request.RangeRequest,
+        stream,  # RangeStream,
+        range_request,  #: RangeRequest,
     ):
         self.parent_stream = stream
         self.request = range_request

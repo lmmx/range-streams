@@ -19,13 +19,24 @@ from urllib.parse import urlparse
 import httpx
 from ranges import Range, RangeDict
 
-from .overlaps import handle_overlap, overlap_whence
-from .range_request import RangeRequest
-from .range_response import RangeResponse
-from .range_utils import range_max, range_span, ranges_in_reg_order, validate_range
+from .overlaps import get_range_containing, overlap_whence
+from .range_utils import (
+    most_recent_range,
+    range_max,
+    range_span,
+    range_termini,
+    ranges_in_reg_order,
+    validate_range,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     import ranges
+
+    from range_streams.range_request import RangeRequest
+    from range_streams.range_response import RangeResponse
+else:
+    from .range_request import RangeRequest
+    from .range_response import RangeResponse
 
 
 __all__ = ["RangeStream"]
@@ -146,7 +157,8 @@ class RangeStream:
         return self.compute_external_ranges()
 
     def overlap_whence(self, rng: Range, internal: bool = False) -> int | None:
-        return overlap_whence(self, rng, internal=internal)
+        rng_dict = self._ranges if internal else self.ranges
+        return overlap_whence(rng_dict, rng)
 
     def register_range(
         self,
@@ -177,8 +189,114 @@ class RangeStream:
                 raise ValueError(f"{e_pre}(no active range)")
             raise ValueError(f"{e_pre}({self._active_range=}")
 
-    def handle_overlap(self, rng: Range, internal: bool = False) -> None:
-        handle_overlap(self, rng, internal=internal)
+    def ext2int(self, ext_rng: Range) -> RangeResponse:
+        """Given the external range `ext_rng` and the :class:`RangeStream`
+        on which it is 'stored' (or rather, computed, in the
+        :attr:`~range_streams.range_stream.RangeStream.ranges` property),
+        return the internal :class:`~ranges.Range` stored on the
+        :attr:`_ranges` attribute of the
+        :attr:`~range_streams.range_stream.RangeStream`, by looking up the
+        shared :class:`RangeResponse` value.
+
+        Args:
+          ext_rng : A :class:`ranges.Range` from the 'external'
+                    :attr:`~range_streams.range_stream.RangeStream.ranges`
+                    with which to cross-reference in
+                    :attr:`~range_streams.range_stream.RangeStream._ranges`
+                    to identify the corresponding 'internal' range.
+        """
+        rng_response = self.ranges[ext_rng]
+        for k, v in self._ranges.items():
+            if v == rng_response:
+                return k[0].ranges()[0]
+        raise ValueError("Looked up a non-existent key in the internal RangeDict")
+
+    def burn_range(self, overlapped_ext_rng: Range):
+        """Get the internal range (i.e. without offsets applied from the current read
+        position on the range) from the external one (which may differ if the seek position
+        has advanced from the start position, usually due to reading bytes from the range).
+        Once this internal range has been identified, delete it, and set the
+        :attr:`~range_streams.range_stream.RangeStream._active_range` to the most recent
+        (or if the stream becomes empty, set it to ``None``).
+
+        Args:
+          overlapped_ext_rng : the overlapped external range
+        """
+        internal_rng = self.ext2int(ext_rng=overlapped_ext_rng)
+        self._ranges.remove(internal_rng)
+        # set `_active_range` to most recently registered internal range or None if empty
+        self._active_range = most_recent_range(self, internal=True)
+
+    def handle_overlap(
+        self,
+        rng: Range,
+        internal: bool = False,
+    ) -> None:
+        """
+        Handle overlaps with a given pruning level:
+
+        0. "replant" ranges overlapped at the head with fresh, disjoint ranges 'downstream'
+           or mark their tails to effectively truncate them if overlapped at the tail
+        1. "burn" existing ranges overlapped anywhere by the new range
+        2. "strict" will throw a ValueError
+        """
+        ranges = self._ranges if internal else self.ranges
+        if self.pruning_level not in range(3):
+            raise ValueError("Pruning level must be 0, 1, or 2")
+        # print(f"Handling {rng=} with {self.pruning_level=}")
+        if rng.isempty():
+            raise ValueError("Range overlap not detected as the range is empty")
+        if self.pruning_level == 2:  # 2: strict
+            raise ValueError(
+                "Range overlap not registered due to strict pruning policy"
+            )
+        rng_min, rng_max = range_termini(rng)
+        if rng not in ranges:
+            # May be partially overlapping
+            has_min, has_max = (pos in ranges for pos in [rng_min, rng_max])
+            if has_min:
+                # if has_min and has_max:
+                #    print("Partially contained on multiple ranges")
+                # T: Overlap at  tail   of pre-existing RangeResponse truncates that tail
+                # M: Overlap at midbody of pre-existing RangeResponse truncates that tail
+                overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_min)
+                # print(f"T/M {overlapped_rng=}")
+                if self.pruning_level == 1:  # 1: burn
+                    self.burn_range(overlapped_ext_rng=overlapped_rng)
+                else:  # 0: replant
+                    o_rng_min, o_rng_max = range_termini(overlapped_rng)
+                    intersect_len = o_rng_max - rng_min + 1
+                    ranges[rng_min].tail_mark += intersect_len
+            elif has_max:
+                # H: Overlap at head of pre-existing RangeResponse is replanted or burnt
+                overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_max)
+                # print(f"H {overlapped_rng=}")
+                if self.pruning_level == 1:  # 1: burn
+                    self.burn_range(overlapped_ext_rng=overlapped_rng)
+                else:  # 0: replant
+                    o_rng_min, o_rng_max = range_termini(overlapped_rng)
+                    intersect_len = rng_max - o_rng_min + 1
+                    # For now, simply throw away: read `size=intersect_len` bytes of response,
+                    # consequently `tell` will trim the head computed in `ranges` property
+                    # _ = ranges[rng_max].read(intersect_len)
+                    self.burn_range(overlapped_ext_rng=overlapped_rng)
+                    if (new_o_rng_min := o_rng_min + intersect_len) > rng_max:
+                        new_o_rng_max = (
+                            o_rng_max  # (I can't think of exceptions to this?)
+                        )
+                        new_o_rng = Range(new_o_rng_min, new_o_rng_max + 1)
+                        self.add(
+                            new_o_rng
+                        )  # head-overlapped range has been 'replanted'
+            else:
+                info = f"{rng=} and {ranges=}"
+                raise ValueError(f"Range overlap not detected at termini {info}")
+        else:  # HTT: Full overlap with an existing range ("Head To Tail")
+            overlapped_rng = get_range_containing(rng_dict=ranges, position=rng_max)
+            # Fully overlapped ranges would be exhausted if read, so delete regardless of
+            # whether pruning policy is "replant"/"burn" (i.e. can't replant empty range)
+            # print(f"HTT {overlapped_rng=}")
+            self.burn_range(overlapped_ext_rng=overlapped_rng)
 
     @property
     def total_bytes(self) -> int | None:
