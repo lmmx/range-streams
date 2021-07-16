@@ -7,6 +7,7 @@ from .range_utils import range_len
 
 if TYPE_CHECKING:  # pragma: no cover
     from .range_stream import RangeRequest, RangeStream
+    import range_streams # for sphinx
 
 __all__ = ["RangeResponse"]
 
