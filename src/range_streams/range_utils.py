@@ -12,11 +12,10 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    import ranges  # for sphinx
-    from range_streams.range_stream import RangeStream
-    from range_streams.range_response import RangeResponse
+    from ranges import RangeDict
+    from range_streams import RangeStream, RangeResponse
 
-from ranges import Range, RangeDict
+from ranges import Range
 
 
 def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:

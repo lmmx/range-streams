@@ -13,13 +13,14 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import httpx
 from ranges import Range, RangeDict
 
 from .overlaps import get_range_containing, overlap_whence
+from .range_request import RangeRequest
+from .range_response import RangeResponse
 from .range_utils import (
     most_recent_range,
     range_max,
@@ -28,16 +29,6 @@ from .range_utils import (
     ranges_in_reg_order,
     validate_range,
 )
-
-if TYPE_CHECKING:  # pragma: no cover
-    import ranges
-
-    from range_streams.range_request import RangeRequest
-    from range_streams.range_response import RangeResponse
-else:
-    from .range_request import RangeRequest
-    from .range_response import RangeResponse
-
 
 __all__ = ["RangeStream"]
 

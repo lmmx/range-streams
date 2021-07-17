@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ranges import Range, RangeDict
-
 from .range_utils import range_termini
 
 if TYPE_CHECKING:  # pragma: no cover
-    import ranges
+    from ranges import Range, RangeDict
 
 
-__all__ = ["get_range_containing", "overlap_whence"]
+__all__: list[str] = []
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range

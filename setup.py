@@ -28,10 +28,10 @@ INSTALL_REQUIRES = Path("requirements.txt").read_text().splitlines()
 EXTRAS_REQUIRE = {
     "docs": [
         # "sphinx>=3,<4", # required for myst-parser and myst-nb
-        "sphinx>=4",  # required for :property: role
+        "sphinx>=4",  # required for property :attr: role
         "sphinx_rtd_theme",
-        "sphinx-autodoc-typehints==1.11.1",  # don't bump to 1.12.0
-        "jupyter-sphinx>=0.3.2",
+        "sphinx-autodoc-typehints",  # don't pin to 1.11.1
+        # "jupyter-sphinx>=0.3.2",
         # "myst-nb",
         # "myst-parser"
     ],

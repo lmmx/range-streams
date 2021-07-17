@@ -18,14 +18,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ranges import Range
-
 if TYPE_CHECKING:  # pragma: no cover
-    import ranges  # for sphinx
+    from ranges import Range
 
 from .range_utils import range_termini
 
-__all__ = ["byte_range_from_range_obj", "range_header"]
+__all__: list[str] = []  # exclude funcs else Sphinx won't resolve forward refs
 
 
 def byte_range_from_range_obj(rng: Range) -> str:
@@ -69,7 +67,8 @@ def range_header(rng: Range) -> dict[str, str]:
 
     Returns:
       :class:`dict` suitable to be passed to :meth:`httpx.Client.build_request`
-      in :meth:`~range_streams.range_request.RangeRequest.setup_stream` through :attr:`~range_streams.range_request.RangeRequest.range_header`
+      in :meth:`~range_streams.range_request.RangeRequest.setup_stream` through
+      :attr:`~range_streams.range_request.RangeRequest.range_header`
     """
     byte_range = byte_range_from_range_obj(rng)
     return {"range": f"bytes={byte_range}"}

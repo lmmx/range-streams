@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator
 
 import httpx
-from ranges import Range
 
 if TYPE_CHECKING:  # pragma: no cover
-    import ranges  # for sphinx
+    from ranges import Range
 
 from .http_utils import range_header
 
-__all__ = ["RangeRequest"]
+__all__: list[str] = []
 
 
 class RangeRequest:
