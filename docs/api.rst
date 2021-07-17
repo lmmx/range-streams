@@ -69,7 +69,7 @@ and handling the response as a file-like object.
 
 
 .. automodule:: range_streams.range_response
-   :members: RangeResponse
+   :members:
    :undoc-members:
    :show-inheritance:
 
