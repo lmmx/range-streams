@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 __all__ = [
+    "ranges_in_reg_order",
+    "response_ranges_in_reg_order",
+    "most_recent_range",
     "range_termini",
+    "range_len",
     "range_min",
     "range_max",
     "validate_range",
     "range_span",
-    "range_len",
 ]
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import RangeDict
-    from range_streams import RangeStream, RangeResponse
+    import range_streams  # for RangeStream, RangeResponse
 
 from ranges import Range
 
@@ -44,7 +47,9 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     return [v.request.range for k, v in ranges.items()]
 
 
-def most_recent_range(stream: RangeStream, internal: bool = True) -> Range | None:
+def most_recent_range(
+    stream: range_streams.range_stream.RangeStream, internal: bool = True
+) -> Range | None:
     """For all of the :class:`~range_streams.range_response.RangeResponse`
     values in the :class:`ranges.RangeDict`, list the ranges from their
     original :attr:`~range_streams.range_response.RangeResponse.request`

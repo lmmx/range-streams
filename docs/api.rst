@@ -19,6 +19,8 @@ ranges.
 .. automodule:: range_streams.range_stream
    :members:
    :undoc-members:
+   :private-members: _ranges
+   :special-members: __ranges_repr__
    :show-inheritance:
 
 
@@ -67,7 +69,7 @@ and handling the response as a file-like object.
 
 
 .. automodule:: range_streams.range_response
-   :members:
+   :members: RangeResponse
    :undoc-members:
    :show-inheritance:
 

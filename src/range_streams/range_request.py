@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator
 
-import httpx
-
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import Range
+else:
+    import httpx  # avoid importing to Sphinx type checker
+
 
 from .http_utils import range_header
 
-__all__: list[str] = []
+__all__ = ["RangeRequest"]
 
 
 class RangeRequest:
@@ -20,10 +21,11 @@ class RangeRequest:
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
 
-    def __init__(self, byte_range: Range, url: str, client: httpx.Client):
+    def __init__(self, byte_range: Range, url: str, client):
         self.range = byte_range
         self.url = url
         self.client = client
+        self.check_client()
         self.setup_stream()
         self.content_range = self.content_range_header()
         self._iterator = self.iter_raw()
@@ -61,3 +63,7 @@ class RangeRequest:
     def close(self) -> None:
         if not self.response.is_closed:
             self.response.close()
+
+    def check_client(self):
+        if not isinstance(self.client, httpx.Client):
+            raise NotImplementedError("Only HTTPX clients currently supported")

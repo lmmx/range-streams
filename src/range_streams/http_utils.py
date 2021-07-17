@@ -23,7 +23,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 from .range_utils import range_termini
 
-__all__: list[str] = []  # exclude funcs else Sphinx won't resolve forward refs
+__all__ = ["byte_range_from_range_obj", "range_header"]
 
 
 def byte_range_from_range_obj(rng: Range) -> str:
@@ -53,7 +53,8 @@ def byte_range_from_range_obj(rng: Range) -> str:
 
 
 def range_header(rng: Range) -> dict[str, str]:
-    """Prepare a :class:`dict` to pass as a :mod:`httpx` request header
+    # """Prepare a :class:`dict` to pass as a :mod:`httpx` request header
+    """Prepare a :class:`dict` to pass as a ``httpx`` request header
     with a single key ``ranges`` whose value is the byte range.
 
     For example:
@@ -66,9 +67,10 @@ def range_header(rng: Range) -> dict[str, str]:
       rng : range of the bytes to be requested (0-based)
 
     Returns:
-      :class:`dict` suitable to be passed to :meth:`httpx.Client.build_request`
+      :class:`dict` suitable to be passed to ``httpx.Client.build_request``
       in :meth:`~range_streams.range_request.RangeRequest.setup_stream` through
       :attr:`~range_streams.range_request.RangeRequest.range_header`
     """
+    # :class:`dict` suitable to be passed to :meth:`httpx.Client.build_request`
     byte_range = byte_range_from_range_obj(rng)
     return {"range": f"bytes={byte_range}"}

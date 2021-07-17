@@ -32,7 +32,6 @@ release = ""
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.doctest",
     # "sphinx.ext.mathjax",
@@ -99,7 +98,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://github.com/sphinx-doc/sphinx/issues/5480
 set_type_checking_flag = True
 
-autosummary_generate = True
 # https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_use_rtype = True
 napoleon_use_params = True

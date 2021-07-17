@@ -45,14 +45,12 @@ with another range. See the design docs for further details.
 
 The following example shows the basic setup for a single range.
 
-    >>> import httpx
     >>> from ranges import Range
     >>> from range_streams import RangeStream, _EXAMPLE_URL
-    >>> c = httpx.Client()
-    >>> s = RangeStream(url=_EXAMPLE_URL, client=c)
-    >>> rng = Range(0,3)
-    >>> s.add(rng)
-    >>> s.ranges
+    >>> s = RangeStream(url=_EXAMPLE_URL) # doctest: +SKIP
+    >>> rng = Range(0,3) # doctest: +SKIP
+    >>> s.add(rng) # doctest: +SKIP
+    >>> s.ranges # doctest: +SKIP
     RangeDict{RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com}
 
 Further ranges are requested by simply calling `RangeStream.add` with another Range
@@ -60,7 +58,7 @@ object. You can also provide a byte range to the `add` method as a tuple of
 two integers, which will be interpreted per the usual convention for ranges in Python,
 as a `[a,b)` half-open interval.
 
-    >>> s.add(byte_range=(7,9))
+    >>> s.add(byte_range=(7,9)) # doctest: +SKIP
     >>> s.ranges # doctest: +SKIP
     RangeDict{
       RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
@@ -68,12 +66,21 @@ as a `[a,b)` half-open interval.
     }
 """
 
-from . import http_utils, overlaps, range_utils
-from .range_request import RangeRequest
-from .range_response import RangeResponse
+from . import (
+    http_utils,
+    overlaps,
+    range_request,
+    range_response,
+    range_stream,
+    range_utils,
+)
+
+# from .range_request import RangeRequest
+# from .range_response import RangeResponse
+from .range_stream import RangeStream
 
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
-from .range_stream import RangeStream
+# from .range_stream import RangeStream
 
 __all__ = [
     "range_stream",

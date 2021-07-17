@@ -13,9 +13,12 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-import httpx
+if not TYPE_CHECKING:
+    import httpx
+
 from ranges import Range, RangeDict
 
 from .overlaps import get_range_containing, overlap_whence
@@ -52,18 +55,27 @@ class RangeStream:
     convention of a half-open interval `[start,stop)`.
     """
 
-    _length_checked = False
-    _active_range = None
+    _length_checked: bool = False
+    _active_range: Range | None = None
+
+    _ranges: RangeDict
+    """
+    `'Internal'` ranges attribute. Start position is not affected by
+    reading in bytes from the :class:`RangeResponse` (unlike the
+    'externa' :attr:`ranges` property)
+    """
 
     def __init__(
         self,
         url: str,
-        client: httpx.Client,
+        client=None,  # don't hint httpx.Client (Sphinx gives error)
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
     ):
         self.url = url
         self.client = client
+        if self.client is None:
+            self.client = httpx.Client()
         self.pruning_level = pruning_level
         self._ranges = RangeDict()
         self.add(byte_range=byte_range)
@@ -171,7 +183,13 @@ class RangeStream:
         # print(f"Post: {self._ranges=}")
 
     @property
-    def active_range_response(self):
+    def active_range_response(self) -> RangeResponse:
+        """Look up the :class:`RangeResponse` object associated with the
+        currently active range by using
+        :attr:`~range_streams.range_stream.RangeStream._active_range` as the
+        :class:`Range` key for the internal
+        :attr:`~range_streams.range_stream.RangeStream._ranges` :class:`RangeDict`.
+        """
         try:
             return self._ranges[self._active_range]
         except KeyError:

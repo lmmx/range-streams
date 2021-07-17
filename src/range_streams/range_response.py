@@ -4,12 +4,12 @@ from io import SEEK_END, SEEK_SET, BytesIO
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    # absolute imports for sphinx
-    from range_streams import RangeStream, RangeRequest
+    # absolute imports for Sphinx
+    import range_streams  # for RangeStream, RangeRequest
 
 from .range_utils import range_len
 
-__all__: list[str] = []  # exclude RangeResponse else Sphinx won't resolve forward refs
+__all__ = ["RangeResponse"]
 
 
 class RangeResponse:
@@ -17,8 +17,8 @@ class RangeResponse:
 
     def __init__(
         self,
-        stream: RangeStream,
-        range_request: RangeRequest,
+        stream: range_streams.RangeStream,
+        range_request: range_streams.RangeRequest,
     ):
         self.parent_stream = stream
         self.request = range_request

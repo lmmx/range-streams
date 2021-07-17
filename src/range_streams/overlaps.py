@@ -8,7 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from ranges import Range, RangeDict
 
 
-__all__: list[str] = []
+__all__ = ["get_range_containing", "overlap_whence"]
 
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
