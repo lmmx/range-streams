@@ -16,8 +16,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-if not TYPE_CHECKING:
-    import httpx
+MYPY = False  # when using mypy will be overrided as True
+if MYPY or not TYPE_CHECKING:  # pragma: no cover
+    import httpx  # avoid importing to Sphinx type checker
 
 from ranges import Range, RangeDict
 

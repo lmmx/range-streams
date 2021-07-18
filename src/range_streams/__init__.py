@@ -66,21 +66,12 @@ as a `[a,b)` half-open interval.
     }
 """
 
-from . import (
-    http_utils,
-    overlaps,
-    range_request,
-    range_response,
-    range_stream,
-    range_utils,
-)
-
-# from .range_request import RangeRequest
-# from .range_response import RangeResponse
-from .range_stream import RangeStream
-
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
-# from .range_stream import RangeStream
+
+from . import http_utils, overlaps, range_utils
+from .range_request import RangeRequest
+from .range_response import RangeResponse
+from .range_stream import RangeStream
 
 __all__ = [
     "range_stream",

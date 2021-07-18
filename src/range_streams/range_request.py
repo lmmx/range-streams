@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator
 
+MYPY = False  # when using mypy will be overrided as True
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import Range
-else:
+if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
 
