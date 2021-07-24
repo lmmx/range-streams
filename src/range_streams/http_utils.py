@@ -84,10 +84,22 @@ class PartialContentStatusError(Exception):
     """
     The response had any HTTP status code other than 206 (Partial Content).
 
-    May be raised when calling :meth:`~range_streams.range_request.RangeRequest.raise_for_status`
+    May be raised when calling
+    :meth:`~range_streams.range_request.RangeRequest.raise_for_non_partial_content`
     """
 
     def __init__(self, *, request, response):
         super().__init__(f"Got HTTP {response.status_code} not 206 (Partial Content)")
         self.request = request
         self.response = response
+
+
+def detect_header_value(headers: dict, key: str):
+    """
+    Detect a title case, lower case, or capitalised version of the given string.
+    """
+    variants = key.title(), key.lower(), key.capitalize()
+    try:
+        return next(headers.get(k) for k in variants if k in headers)
+    except StopIteration:
+        raise KeyError(f"Response was missing '{key}' header")

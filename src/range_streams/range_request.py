@@ -8,7 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
-from .http_utils import PartialContentStatusError, range_header
+from .http_utils import PartialContentStatusError, detect_header_value, range_header
 
 __all__ = ["RangeRequest"]
 
@@ -21,16 +21,12 @@ class RangeRequest:
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
 
-    def __init__(
-        self, byte_range: Range, url: str, client, raise_for_status: bool = True
-    ):
+    def __init__(self, byte_range: Range, url: str, client):
         self.range = byte_range
         self.url = url
         self.client = client
         self.check_client()
         self.setup_stream()
-        if raise_for_status:
-            self.raise_for_status()
         self.content_range = self.content_range_header()
         self._iterator = self.iter_raw()
 
@@ -47,8 +43,9 @@ class RangeRequest:
             method="GET", url=self.url, headers=self.range_header
         )
         self.response = self.client.send(request=self.request, stream=True)
+        self.raise_for_non_partial_content()
 
-    def raise_for_status(self):
+    def raise_for_non_partial_content(self):
         """
         Raise the :class:`~range_streams.http_utils.PartialContentStatusError` if the response status code is
         anything other than 206 (Partial Content), as that is what was requested.
@@ -62,10 +59,7 @@ class RangeRequest:
         """
         Validate request was range request by presence of `content-range` header
         """
-        try:
-            return self.response.headers["content-range"]
-        except KeyError as exc:
-            raise KeyError("Response was missing 'content-range' header") from exc
+        return detect_header_value(headers=self.response.headers, key="content-range")
 
     @property
     def total_content_length(self) -> int:

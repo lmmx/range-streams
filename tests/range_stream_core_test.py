@@ -14,7 +14,7 @@ def empty_range_stream():
     empty `Range(0,0)`. Create a fixture as a "starting point" for other tests.
     """
     client = httpx.Client()
-    return RangeStream(url=EXAMPLE_URL, client=client, raise_for_status=False)
+    return RangeStream(url=EXAMPLE_URL, client=client)
 
 
 @fixture
@@ -56,7 +56,7 @@ def test_active_range_empty(start, stop):
     empty range (where it remains `None` as in the classdef)
     so test this assumption.
     """
-    stream = make_range_stream(start, stop, raise_for_status=False)
+    stream = make_range_stream(start, stop)
     assert stream._active_range is None
 
 
@@ -64,13 +64,12 @@ def test_empty_range_total_bytes(empty_range_stream):
     assert empty_range_stream.total_bytes == EXAMPLE_FILE_LENGTH
 
 
-def make_range_stream(start, stop, raise_for_status=True):
+def make_range_stream(start, stop):
     client = httpx.Client()
     return RangeStream(
         byte_range=Range(start, stop),
         url=EXAMPLE_URL,
         client=client,
-        raise_for_status=raise_for_status,
     )
 
 

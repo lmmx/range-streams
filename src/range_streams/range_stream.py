@@ -22,6 +22,7 @@ if MYPY or not TYPE_CHECKING:  # pragma: no cover
 
 from ranges import Range, RangeDict
 
+from .http_utils import detect_header_value
 from .overlaps import get_range_containing, overlap_whence
 from .range_request import RangeRequest
 from .range_response import RangeResponse
@@ -72,16 +73,17 @@ class RangeStream:
         client=None,  # don't hint httpx.Client (Sphinx gives error)
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
-        raise_for_status: bool = True,
     ):
         self.url = url
         self.client = client
         if self.client is None:
             self.client = httpx.Client()
         self.pruning_level = pruning_level
-        self.raise_for_status = raise_for_status
         self._ranges = RangeDict()
-        self.add(byte_range=byte_range)
+        if byte_range.isempty():
+            self.head_check()
+        else:
+            self.add(byte_range=byte_range)
 
     def __repr__(self) -> str:
         return (
@@ -350,8 +352,25 @@ class RangeStream:
             byte_range=byte_range,
             url=self.url,
             client=self.client,
-            raise_for_status=self.raise_for_status,
         )
+
+    def send_head_request(self) -> None:
+        """
+        Send a 'plain' HEAD request without range headers, to check the total content
+        length without creating a RangeRequest (simply discard the response as it can
+        only be associated with the empty range, which cannot be stored in a RangeDict),
+        raising for status ASAP.
+        """
+        req = self.client.build_request("HEAD", self.url)
+        resp = self.client.send(request=req)
+        resp.raise_for_status()
+        try:
+            total_length = detect_header_value(
+                headers=resp.headers, key="content-length"
+            )
+        except KeyError as exc:
+            raise KeyError(f"HEAD request response was missing '{key}' header") from exc
+        self.set_length(int(total_length))
 
     def set_length(self, length: int) -> None:
         self._length = length
@@ -378,11 +397,19 @@ class RangeStream:
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 
+    def head_check(self):
+        """
+        Send a HEAD request to check the total content length (to be used when
+        initialised with an empty byte range).
+        """
+        req = self.send_head_request()
+
     def add(
         self,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         activate: bool = True,
     ) -> None:
+        # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not send a request for an empty range if total length already checked
         if not self._length_checked or not byte_range.isempty():
