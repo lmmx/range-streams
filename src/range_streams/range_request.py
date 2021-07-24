@@ -8,8 +8,7 @@ if TYPE_CHECKING:  # pragma: no cover
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
-
-from .http_utils import range_header
+from .http_utils import PartialContentStatusError, range_header
 
 __all__ = ["RangeRequest"]
 
@@ -22,12 +21,16 @@ class RangeRequest:
     suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
     """
 
-    def __init__(self, byte_range: Range, url: str, client):
+    def __init__(
+        self, byte_range: Range, url: str, client, raise_for_status: bool = False
+    ):
         self.range = byte_range
         self.url = url
         self.client = client
         self.check_client()
         self.setup_stream()
+        if raise_for_status:
+            self.raise_for_status()
         self.content_range = self.content_range_header()
         self._iterator = self.iter_raw()
 
@@ -44,6 +47,16 @@ class RangeRequest:
             method="GET", url=self.url, headers=self.range_header
         )
         self.response = self.client.send(request=self.request, stream=True)
+
+    def raise_for_status(self):
+        """
+        Raise the :class:`~range_streams.http_utils.PartialContentStatusError` if the response status code is
+        anything other than 206 (Partial Content), as that is what was requested.
+        """
+        if self.response.status_code != 206:
+            raise PartialContentStatusError(
+                request=self.request, response=self.response
+            )
 
     def content_range_header(self) -> str:
         """

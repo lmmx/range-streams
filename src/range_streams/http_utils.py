@@ -18,12 +18,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+MYPY = False
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import Range
 
+    if not MYPY:  # Sphinx docstring import
+        import range_streams
+
 from .range_utils import range_termini
 
-__all__ = ["byte_range_from_range_obj", "range_header"]
+__all__ = ["byte_range_from_range_obj", "range_header", "PartialContentStatusError"]
 
 
 def byte_range_from_range_obj(rng: Range) -> str:
@@ -74,3 +78,16 @@ def range_header(rng: Range) -> dict[str, str]:
     # :class:`dict` suitable to be passed to :meth:`httpx.Client.build_request`
     byte_range = byte_range_from_range_obj(rng)
     return {"range": f"bytes={byte_range}"}
+
+
+class PartialContentStatusError(Exception):
+    """
+    The response had any HTTP status code other than 206 (Partial Content).
+
+    May be raised when calling :meth:`~range_streams.range_request.RangeRequest.raise_for_status`
+    """
+
+    def __init__(self, *, request, response):
+        super().__init__(f"Got HTTP {response.status_code} not 206 (Partial Content)")
+        self.request = request
+        self.response = response
