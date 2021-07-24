@@ -80,10 +80,7 @@ class RangeStream:
             self.client = httpx.Client()
         self.pruning_level = pruning_level
         self._ranges = RangeDict()
-        if byte_range.isempty():
-            self.head_check()
-        else:
-            self.add(byte_range=byte_range)
+        self.add(byte_range=byte_range)
 
     def __repr__(self) -> str:
         return (
@@ -359,15 +356,14 @@ class RangeStream:
         Send a 'plain' HEAD request without range headers, to check the total content
         length without creating a RangeRequest (simply discard the response as it can
         only be associated with the empty range, which cannot be stored in a RangeDict),
-        raising for status ASAP.
+        raising for status ASAP. To be used when initialised with an empty byte range.
         """
         req = self.client.build_request("HEAD", self.url)
         resp = self.client.send(request=req)
         resp.raise_for_status()
+        key = "content-length"
         try:
-            total_length = detect_header_value(
-                headers=resp.headers, key="content-length"
-            )
+            total_length = detect_header_value(headers=resp.headers, key=key)
         except KeyError as exc:
             raise KeyError(f"HEAD request response was missing '{key}' header") from exc
         self.set_length(int(total_length))
@@ -397,13 +393,6 @@ class RangeStream:
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 
-    def head_check(self):
-        """
-        Send a HEAD request to check the total content length (to be used when
-        initialised with an empty byte range).
-        """
-        req = self.send_head_request()
-
     def add(
         self,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
@@ -411,8 +400,10 @@ class RangeStream:
     ) -> None:
         # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
-        # Do not send a request for an empty range if total length already checked
-        if not self._length_checked or not byte_range.isempty():
+        # Do not request an empty range if total length already checked
+        if not self._length_checked and byte_range.isempty():
+            self.send_head_request()
+        elif not byte_range.isempty():
             req = self.send_request(byte_range)
             if not self._length_checked:
                 self.set_length(req.total_content_length)
