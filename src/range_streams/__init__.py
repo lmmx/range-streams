@@ -68,7 +68,7 @@ as a `[a,b)` half-open interval.
 
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
 
-from . import http_utils, overlaps, range_utils
+from . import codecs, http_utils, overlaps, range_utils
 from .range_request import RangeRequest
 from .range_response import RangeResponse
 from .range_stream import RangeStream
@@ -80,6 +80,7 @@ __all__ = [
     "http_utils",
     "overlaps",
     "range_utils",
+    "codecs",
 ]
 
 __author__ = "Louis Maddox"
@@ -91,4 +92,7 @@ __email__ = "louismmx@gmail.com"
 
 _EXAMPLE_URL = (
     "https://github.com/lmmx/range-streams/raw/master/data/example_text_file.txt"
+)
+_EXAMPLE_ZIP_URL = (
+    "https://github.com/lmmx/range-streams/raw/master/data/example_text_file.txt.zip"
 )
