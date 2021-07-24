@@ -72,12 +72,14 @@ class RangeStream:
         client=None,  # don't hint httpx.Client (Sphinx gives error)
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
+        raise_for_status: bool = True,
     ):
         self.url = url
         self.client = client
         if self.client is None:
             self.client = httpx.Client()
         self.pruning_level = pruning_level
+        self.raise_for_status = raise_for_status
         self._ranges = RangeDict()
         self.add(byte_range=byte_range)
 
@@ -344,7 +346,12 @@ class RangeStream:
         self.active_range_response.seek(position=position, whence=whence)
 
     def send_request(self, byte_range: Range) -> RangeRequest:
-        return RangeRequest(byte_range=byte_range, url=self.url, client=self.client)
+        return RangeRequest(
+            byte_range=byte_range,
+            url=self.url,
+            client=self.client,
+            raise_for_status=self.raise_for_status,
+        )
 
     def set_length(self, length: int) -> None:
         self._length = length

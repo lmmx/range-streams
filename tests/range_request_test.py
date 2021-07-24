@@ -2,14 +2,20 @@ import httpx
 from pytest import fixture, mark, raises
 from ranges import Range
 
+from range_streams.http_utils import PartialContentStatusError
 from range_streams.range_request import RangeRequest
 
 from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
 
 
-def make_range_request(start, stop):
+def make_range_request(start, stop, raise_for_status=False):
     client = httpx.Client()
-    rng = RangeRequest(byte_range=Range(start, stop), url=EXAMPLE_URL, client=client)
+    rng = RangeRequest(
+        byte_range=Range(start, stop),
+        url=EXAMPLE_URL,
+        client=client,
+        raise_for_status=raise_for_status,
+    )
     return rng
 
 
@@ -40,11 +46,17 @@ def test_range_request_iter_raw(example_range_request):
     assert byte == b"P"
 
 
+@mark.parametrize("error_msg", ["Got HTTP 416 not 206.*Partial Content.*"])
 @mark.parametrize("start", [0])
+@mark.parametrize("raise_for_status", [True, False])
 @mark.parametrize("stop,expected", [(i, {"range": f"bytes=0-{i}"}) for i in range(2)])
-def test_range_length(start, stop, expected):
-    rng = make_range_request(start, stop)
-    assert rng.total_content_length == EXAMPLE_FILE_LENGTH
+def test_range_length(start, stop, expected, raise_for_status, error_msg):
+    if (stop > 0) or not raise_for_status:
+        rng = make_range_request(start, stop, raise_for_status=raise_for_status)
+        assert rng.total_content_length == EXAMPLE_FILE_LENGTH
+    else:
+        with raises(PartialContentStatusError, match=error_msg):
+            rng = make_range_request(start, stop, raise_for_status=raise_for_status)
 
 
 @mark.parametrize("error_msg", ["Response was missing 'content-range' header.*"])

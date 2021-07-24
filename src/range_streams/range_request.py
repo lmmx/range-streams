@@ -22,7 +22,7 @@ class RangeRequest:
     """
 
     def __init__(
-        self, byte_range: Range, url: str, client, raise_for_status: bool = False
+        self, byte_range: Range, url: str, client, raise_for_status: bool = True
     ):
         self.range = byte_range
         self.url = url

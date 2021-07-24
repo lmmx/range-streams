@@ -25,7 +25,7 @@ def test_overlapping_ranges(empty_range_stream):
 @mark.parametrize("stop", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_range_from_empty_same_as_from_nonempty(start, stop, empty_range_stream):
     empty_range_stream.add(Range(start, stop))
-    from_nonempty = make_range_stream(start, stop)
+    from_nonempty = make_range_stream(start, stop, raise_for_status=False)
     assert empty_range_stream.list_ranges() == from_nonempty.list_ranges()
 
 
