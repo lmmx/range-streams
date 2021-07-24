@@ -73,5 +73,8 @@ class RangeRequest:
             self.response.close()
 
     def check_client(self):
-        if not isinstance(self.client, httpx.Client):
+        """
+        Typing workaround (Sphinx type hint extension does not like httpx)
+        """
+        if not isinstance(self.client, httpx.Client):  # pragma: no cover
             raise NotImplementedError("Only HTTPX clients currently supported")
