@@ -110,3 +110,9 @@ def test_zipped_file_contents(
     assert example_conda_stream.meta_json == zf1
     assert example_conda_stream.info_tz == zf2
     assert example_conda_stream.pkg_tz == zf3
+
+
+def test_zst_decompression(example_conda_stream):
+    zf_info = example_conda_stream.pkg_tz
+    with raises(NotImplementedError):
+        d = example_conda_stream.decompress_zipped_file(zf_info)

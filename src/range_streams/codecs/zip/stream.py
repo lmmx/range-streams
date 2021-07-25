@@ -184,6 +184,16 @@ class ZipStream(RangeStream):
             self.check_central_dir_rec()
         return [f.filename for f in self.zipped_files]
 
+    def decompress_zipped_file(self, zf_info: ZippedFileInfo):
+        """
+        Given a :class:`ZippedFileInfo` object ``zf_info``, and (optionally)
+        its compression method [or else detecting that], decompress it
+        from the stream.
+        """
+        zf_range = zf_info.file_range
+        if zf_info.filename.endswith(""):
+            raise NotImplementedError("This will carry out the decompression")
+
 
 class CentralDirectoryInfo:
     _CD_SIGNATURE = 0
