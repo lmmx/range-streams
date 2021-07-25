@@ -49,7 +49,6 @@ class ZipStream(RangeStream):
         no_comment = eocd_bytes[-2:] == b"\000\000"
         if start_found and no_comment:
             self.data.E_O_CTRL_DIR_REC.start_pos = eocd_rng.start
-            print("Found")
         else:
             # self.search_back_to_end_of_central_dir()
             raise NotImplementedError("Brute force search is deprecated")
@@ -61,14 +60,11 @@ class ZipStream(RangeStream):
         """
         if self.data.E_O_CTRL_DIR_REC.start_pos is None:
             self.check_end_of_central_dir_start()
-        else:
-            print(f"{self.data.E_O_CTRL_DIR_REC.start_pos=}")
         eocd_rng = self.total_range
         eocd_rng.start = self.data.E_O_CTRL_DIR_REC.start_pos
         self.add(eocd_rng)
         b = self.active_range_response.read()[: self.data.E_O_CTRL_DIR_REC.get_size()]
         u = struct.unpack(self.data.E_O_CTRL_DIR_REC.struct, b)
-        print(u)
         _ECD_ENTRIES_TOTAL = 4
         _ECD_OFFSET = 6
         self.data.CTRL_DIR_REC.entry_count = u[_ECD_ENTRIES_TOTAL]
@@ -103,7 +99,6 @@ class ZipStream(RangeStream):
         cd_byte_store = b""
         cache_miss_size = len(target) - 1
         while cent_dir_rng.start > 0:
-            # print(f"Adding {cent_dir_rng}")
             self.add(cent_dir_rng)
             cd_bytes = self.active_range_response.read()
             cd_byte_store = cd_bytes + cd_byte_store
@@ -119,8 +114,6 @@ class ZipStream(RangeStream):
             raise ValueError(f"No central directory start signature found")
         # cent_dir_rng.end = self.data.E_O_CTRL_DIR_REC.start_pos
         cd_byte_store = cd_byte_store[offset:]
-        print(cd_byte_store)
-        print(cent_dir_rng.start + offset)
         return cd_byte_store
 
     def get_central_dir_files(self, step=20) -> list[tuple[bytes, bytes]]:
@@ -164,7 +157,6 @@ class ZipStream(RangeStream):
     #    # tail_byte_store = b""
     #    cache_miss_size = len(target) - 1
     #    while tail_rng.start > 0 and self.total_range.end - tail_rng.start < limit:
-    #        # print(f"Adding {tail_rng}")
     #        self.add(tail_rng)
     #        tail_bytes = self.active_range_response.read()
     #        # tail_byte_store = tail_bytes + tail_byte_store
