@@ -118,71 +118,6 @@ class ZipStream(RangeStream):
             self.zipped_files.append(zf_info)
         return
 
-    # def foo(self):
-    #    centdir = fp.read(sizeCentralDir)
-    #    if len(centdir) != sizeCentralDir:
-    #        raise BadZipFile("Truncated central directory")
-    #    centdir = struct.unpack(structCentralDir, centdir)
-    #    if centdir[_CD_SIGNATURE] != stringCentralDir:
-    #        raise BadZipFile("Bad magic number for central directory")
-    #    if self.debug > 2:
-    #        print(centdir)
-    #    filename = fp.read(centdir[_CD_FILENAME_LENGTH])
-    #    flags = centdir[5]
-    #    if flags & 0x800:
-    #        # UTF-8 file names extension
-    #        filename = filename.decode("utf-8")
-    #    else:
-    #        # Historical ZIP filename encoding
-    #        filename = filename.decode("cp437")
-    #    # Create ZipInfo instance to store file information
-    #    x = ZipInfo(filename)
-    #    x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
-    #    x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
-    #    x.header_offset = centdir[_CD_LOCAL_HEADER_OFFSET]
-    #    (
-    #        x.create_version,
-    #        x.create_system,
-    #        x.extract_version,
-    #        x.reserved,
-    #        x.flag_bits,
-    #        x.compress_type,
-    #        t,
-    #        d,
-    #        x.CRC,
-    #        x.compress_size,
-    #        x.file_size,
-    #    ) = centdir[1:12]
-    #    if x.extract_version > MAX_EXTRACT_VERSION:
-    #        raise NotImplementedError(
-    #            "zip file version %.1f" % (x.extract_version / 10)
-    #        )
-    #    x.volume, x.internal_attr, x.external_attr = centdir[15:18]
-    #    # Convert date/time code to (year, month, day, hour, min, sec)
-    #    x._raw_time = t
-    #    x.date_time = (
-    #        (d >> 9) + 1980,
-    #        (d >> 5) & 0xF,
-    #        d & 0x1F,
-    #        t >> 11,
-    #        (t >> 5) & 0x3F,
-    #        (t & 0x1F) * 2,
-    #    )
-    #
-    #    x._decodeExtra()
-    #    x.header_offset = x.header_offset + concat
-    #    self.filelist.append(x)
-    #    self.NameToInfo[x.filename] = x
-    #
-    #    # update total bytes read from central directory
-    #    total = (
-    #        total
-    #        + sizeCentralDir
-    #        + centdir[_CD_FILENAME_LENGTH]
-    #        + centdir[_CD_EXTRA_FIELD_LENGTH]
-    #        + centdir[_CD_COMMENT_LENGTH]
-    #    )
-
     def get_central_dir_bytes(self, step=20):
         """
         Using the stored start position of the End Of Central Directory Record
@@ -218,32 +153,15 @@ class ZipStream(RangeStream):
         cd_byte_store = cd_byte_store[offset:]
         return cd_byte_store
 
-    def get_central_dir_files(self, step=20) -> list[tuple[bytes, bytes]]:
-        """
-        Parse the central directory bytes into a list of files.
-        """
-        cdr_bytes = self.get_central_dir_bytes(step=step)
-        cdr_size = self.data.CTRL_DIR_REC.get_size()
-        cdr_bytes, cdr_post_bytes = cdr_bytes[:cdr_size], cdr_bytes[cdr_size:]
-        cdr_rec = struct.unpack(self.data.CTRL_DIR_REC.struct, cdr_bytes)
-        _CD_FILENAME_LENGTH = 12
-        _CD_EXTRA_FIELD_LENGTH = 13
-        cdr_fn_len = cdr_rec[_CD_FILENAME_LENGTH]
-        cdr_extra_field_len = cdr_rec[_CD_EXTRA_FIELD_LENGTH]
-        cdr_fn = cdr_post_bytes[:cdr_fn_len]
-        cdr_extra = cdr_post_bytes[cdr_fn_len : cdr_fn_len + cdr_extra_field_len]
-        cdr_files = [(cdr_fn, cdr_extra)]
-        return cdr_files
-
     @property
-    def file_list(self) -> list[bytes]:
+    def file_list(self) -> list[str]:
         """
         Return only the file name list from the stored list of 2-tuples
         of (filename, extra bytes).
         """
-        if not hasattr(self, "_file_list"):
-            self._file_info_list = self.get_central_dir_files()
-        return [fn for fn, extra in self._file_info_list]
+        if not hasattr(self, "zipped_files"):
+            self.check_central_dir_rec()
+        return [f.filename for f in self.zipped_files]
 
 
 class CentralDirectoryInfo:
@@ -259,6 +177,13 @@ class CentralDirectoryInfo:
 
 
 class ZippedFileInfo(CentralDirectoryInfo):
+    """
+    A class describing a zipped file according to the struct
+    defining its metadata. Only a subset of all the fields are
+    supported here (those useful for identifying and extracting
+    the file contents from a stream).
+    """
+
     def __init__(
         self,
         signature: bytes | int,
@@ -293,9 +218,13 @@ class ZippedFileInfo(CentralDirectoryInfo):
     @classmethod
     def from_central_directory_entry(
         cls,
-        cd_entry,  # : tuple[bytes, int, int, int, int, int, int, int, int]
+        cd_entry: tuple,
         filename: str | None = None,
     ):
+        """
+        Instantiate directly from an unpacked central directory struct
+        (describing the zipped file entry in a standardised entry order).
+        """
         signature = cd_entry[cls._CD_SIGNATURE]
         flags = cd_entry[cls._CD_FLAG_BITS]
         compress_type = cd_entry[cls._CD_COMPRESS_TYPE]

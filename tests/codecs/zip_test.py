@@ -38,9 +38,6 @@ def test_zip_cd_meta(entries, size, start_c, start_e):
     assert start_c + size == start_e
 
 
-@mark.parametrize("expected", [([b"example_text_file.txt"])])
-def test_zip_central_dir_unpack_files(example_zip_stream, expected):
-    f = example_zip_stream.get_central_dir_files()
-    f_prop = example_zip_stream.file_list
-    assert [fn[0] for fn in f] == expected
-    assert f_prop == expected
+@mark.parametrize("expected", [["example_text_file.txt"]])
+def test_zip_central_dir_list_files(example_zip_stream, expected):
+    assert example_zip_stream.file_list == expected
