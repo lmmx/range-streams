@@ -79,7 +79,7 @@ package manager:
 
     >>> EXAMPLE_CONDA_URL = "https://repo.anaconda.com/pkgs/main/linux-64/progressbar2-3.34.3-py27h93d0879_0.conda" # doctest: +SKIP
     >>> s = range_streams.codecs.CondaStream(url=EXAMPLE_CONDA_URL) # doctest: +SKIP
-    >>> print(s.ranges): # doctest: +SKIP
+    >>> s.ranges # doctest: +SKIP
     RangeDict{
       RangeSet{Range[77, 6427)}: RangeResponse ⠶ "info-progressbar2-3.34.3-py27h93d0879_0.tar.zst" [77, 6427) @ 'progressbar2-3.34.3-py27h93d0879_0.conda' from repo.anaconda.com
       RangeSet{Range[6503, 39968)}: RangeResponse ⠶ "pkg-progressbar2-3.34.3-py27h93d0879_0.tar.zst" [6503, 39968) @ 'progressbar2-3.34.3-py27h93d0879_0.conda' from repo.anaconda.com
