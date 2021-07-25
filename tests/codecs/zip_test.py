@@ -23,7 +23,9 @@ def test_zip_central_dir_bytes(example_zip_stream, expected):
     assert len(central_dir_bytes) == expected
 
 
-@mark.parametrize("expected", [None])
-def test_zip_central_dir_unpack(example_zip_stream, expected):
-    central_dir_bytes = example_zip_stream.get_central_dir_bytes()
-    # struct.unpack(example_zip_stream.CTRL_DIR_REC.struct, central_dir_bytes)
+@mark.parametrize("expected", [([b"example_text_file.txt"])])
+def test_zip_central_dir_unpack_files(example_zip_stream, expected):
+    f = example_zip_stream.get_central_dir_files()
+    f_prop = example_zip_stream.file_list
+    assert [fn[0] for fn in f] == expected
+    assert f_prop == expected

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import struct
+
 from ranges import Range
 
 from ...range_stream import RangeStream
@@ -94,6 +96,34 @@ class ZipStream(RangeStream, ZipDataMixIn):
         cd_byte_store = cd_byte_store[offset:]
         return cd_byte_store
 
+    def get_central_dir_files(self, step=20) -> list[tuple[bytes, bytes]]:
+        """
+        Parse the central directory bytes into a list of files.
+        """
+        cdr_bytes = self.get_central_dir_bytes(step=step)
+        cdr_size = self.CTRL_DIR_REC.get_size()
+        cdr_bytes, cdr_post_bytes = cdr_bytes[:cdr_size], cdr_bytes[cdr_size:]
+        cdr_rec = struct.unpack(self.CTRL_DIR_REC.struct, cdr_bytes)
+        _CD_FILENAME_LENGTH = 12
+        _CD_EXTRA_FIELD_LENGTH = 13
+        cdr_fn_len = cdr_rec[_CD_FILENAME_LENGTH]
+        cdr_extra_field_len = cdr_rec[_CD_EXTRA_FIELD_LENGTH]
+        cdr_fn = cdr_post_bytes[:cdr_fn_len]
+        cdr_extra = cdr_post_bytes[cdr_fn_len : cdr_fn_len + cdr_extra_field_len]
+        cdr_files = [(cdr_fn, cdr_extra)]
+        return cdr_files
+
     @property
-    def file_list(self):
+    def file_list(self) -> list[bytes]:
+        """
+        Return only the file name list from the stored list of 2-tuples
+        of (filename, extra bytes).
+        """
+        if not hasattr(self, "_file_list"):
+            self._file_info_list = self.get_central_dir_files()
+        return [fn for fn, extra in self._file_info_list]
+
+
+class ZipFileContentRecord:
+    def __init__(self, bytes):
         ...
