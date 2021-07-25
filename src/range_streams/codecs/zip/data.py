@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from struct import calcsize
 
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
@@ -32,7 +34,7 @@ class SimpleDataClass:
         raise NotImplementedError("SimpleDataClass must be subclassed with a struct")
 
     def __init__(self):
-        self.start_pos = None
+        self.start_pos: int | None = None
 
 
 class CentralDirectoryRec(SimpleDataClass):
@@ -48,7 +50,8 @@ class CentralDirectoryRec(SimpleDataClass):
 
     def __init__(self):
         super().__init__()
-        self.entry_count = None
+        self.entry_count: int | None = None
+        self.size: int | None = None
 
 
 class LocalFileHeader(SimpleDataClass):
