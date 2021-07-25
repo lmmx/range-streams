@@ -105,3 +105,8 @@ def test_zipped_file_contents(
     assert zf3.compressed_size == zf3.uncompressed_size
     assert zf3.file_range.start == rng_start3
     assert zf3.file_range.end == rng_end3
+
+    # This part confirms that the `validate_files` method succeeded
+    assert example_conda_stream.meta_json == zf1
+    assert example_conda_stream.info_tz == zf2
+    assert example_conda_stream.pkg_tz == zf3
