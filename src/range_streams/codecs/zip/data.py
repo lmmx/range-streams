@@ -8,6 +8,11 @@ __all__ = ["ZipData", "CentralDirectory"]
 
 
 class SimpleDataClass:
+    """
+    Provide a neat repr and common methods for the classes which become instance
+    attributes of :class:`ZipData`.
+    """
+
     def __repr__(self):
         # attrs = {k: getattr(cls, k) for k in DATA_ATTRS if k in dir(cls)}
         attrs = {
@@ -33,7 +38,8 @@ class SimpleDataClass:
 class CentralDirectoryRec(SimpleDataClass):
     """
     A class carrying attributes to describe the central directory of a zip file.
-    Inherited by :class:`ZipData`
+    Used in :class:`ZipData`, and updated with the number of entries (i.e.
+    compressed files) in the zip once this is identified.
     """
 
     start_sig = b"PK\x01\x02"
@@ -48,7 +54,7 @@ class CentralDirectoryRec(SimpleDataClass):
 class LocalFileHeader(SimpleDataClass):
     """
     A class carrying attributes to describe the local file header(s) of a zip file.
-    Inherited by :class:`ZipData`.
+    Used in :class:`ZipData`.
     """
 
     start_sig = b"PK\x03\x04"
@@ -56,11 +62,21 @@ class LocalFileHeader(SimpleDataClass):
 
 
 class Zip64EndOfCentralDirectoryRec(SimpleDataClass):
+    """
+    (Unused) A class carrying attributes to describe the 'end of central directory
+    record' of a zip file (the zip64 variant).
+    """
+
     start_sig = b"PK\x06\x06"
     struct = "<4sQ2H2L4Q"  # structEndArchive64
 
 
 class EndOfCentralDirectoryRec(SimpleDataClass):
+    """
+    A class carrying attributes to describe the 'end of central directory record' of a
+    zip file. Used in :class:`ZipData`.
+    """
+
     start_sig = b"PK\x05\x06"
     struct = b"<4s4H2LH"  # structEndArchive
 
