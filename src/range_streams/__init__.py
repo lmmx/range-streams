@@ -16,7 +16,7 @@ or without needing to download the entire file (non-streaming requests).
 A `RangeStream` is initialised by providing:
 
 - a URL (the file to be streamed)
-- a client (:class:`httpx.Client`)
+- (optionally) a client (:class:`httpx.Client`)
 - (optionally) a range, as either:
   `ranges.Range` from the `python-ranges` package [recommended];
   or a tuple of integers, presumed to be a half-open interval
@@ -64,6 +64,31 @@ as a `[a,b)` half-open interval.
       RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
       RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
     }
+
+Additionally, codecs are available for `.zip` and `.conda` archives, which will read and
+name the ranges corresponding to the archive's contents file list upon initialisation.
+
+    >>> s = ZipStream(url=range_streams._EXAMPLE_ZIP_URL) # doctest: +SKIP
+    >>> s.ranges # doctest: +SKIP
+    RangeDict{
+      RangeSet{Range[51, 62)}: RangeResponse ⠶ "example_text_file.txt" [51, 62) @ 'example_text_file.txt.zip' from github.com
+    }
+
+The `.conda` format is just a particular type of zip for Python packages on the conda
+package manager:
+
+    >>> EXAMPLE_CONDA_URL = "https://repo.anaconda.com/pkgs/main/linux-64/progressbar2-3.34.3-py27h93d0879_0.conda" # doctest: +SKIP
+    >>> s = range_streams.codecs.CondaStream(url=EXAMPLE_CONDA_URL) # doctest: +SKIP
+    >>> for rng, resp in s.ranges.items(): # doctest: +SKIP
+    ...     print(rng)
+    ...     print(resp)
+    ...
+    [RangeSet{Range[77, 6427)}]
+    RangeResponse ⠶ "info-progressbar2-3.34.3-py27h93d0879_0.tar.zst" [77, 6427) @ 'progressbar2-3.34.3-py27h93d0879_0.conda' from repo.anaconda.com
+    [RangeSet{Range[6503, 39968)}]
+    RangeResponse ⠶ "pkg-progressbar2-3.34.3-py27h93d0879_0.tar.zst" [6503, 39968) @ 'progressbar2-3.34.3-py27h93d0879_0.conda' from repo.anaconda.com
+    [RangeSet{Range[40011, 40042)}]
+    RangeResponse ⠶ "metadata.json" [40011, 40042) @ 'progressbar2-3.34.3-py27h93d0879_0.conda' from repo.anaconda.com
 """
 
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types

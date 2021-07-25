@@ -397,6 +397,7 @@ class RangeStream:
         self,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         activate: bool = True,
+        name: str = "",
     ) -> None:
         # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
@@ -411,7 +412,7 @@ class RangeStream:
                 pass  # trivial no-op when adding a range that already exists
             elif not byte_range.isempty():
                 # bytes are available in the RangeRequest.response stream
-                resp = RangeResponse(stream=self, range_request=req)
+                resp = RangeResponse(stream=self, range_request=req, range_name=name)
                 self.register_range(
                     rng=byte_range,
                     value=resp,

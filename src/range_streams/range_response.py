@@ -19,14 +19,17 @@ class RangeResponse:
         self,
         stream: range_streams.RangeStream,
         range_request: range_streams.RangeRequest,
+        range_name: str = "",
     ):
         self.parent_stream = stream
         self.request = range_request
         self._bytes = BytesIO()
+        self.range_name = range_name
 
     def __repr__(self):
+        rng_name = self.range_name if self.range_name == "" else f' "{self.range_name}"'
         return (
-            f"{self.__class__.__name__} ⠶ {self.request.range} @ "
+            f"{self.__class__.__name__} ⠶{rng_name} {self.request.range} @ "
             f"'{self.parent_stream.name}' from {self.parent_stream.domain}"
         )
 

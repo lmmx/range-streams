@@ -21,15 +21,19 @@ class ZipStream(RangeStream):
     ):
         """
         As for RangeStream, but if `scan_contents` is True, then immediately call
-        :meth:`check_central_dir_rec` on initialisation. This will perform a series
+        :meth:`check_central_dir_rec` on initialisation (which will perform a series
         of range requests to identify the files in the zip from the End of Central
-        Directory Record and Central Directory Record (note: low bandwidth operations).
-        If so, :attr:`zipped_files` will be set. This can be postponed until the first
-        access of the :attr:`filename_list` property. Once parsed, the file contents
-        are stored as a list of :class:`ZippedFileInfo` objects (in the order they
-        appear in the Central Directory Record) in the :attr:`zipped_files` attribute.
-        Each of these objects has a :meth:`~ZippedFileInfo.file_range` method which
-        gives the range of its file content bytes within the :class:`ZipStream`
+        Directory Record and Central Directory Record), setting :attr:`zipped_files`,
+        and :meth:`~RangeStream.add` their file content ranges to the stream.
+        Setting this can be postponed until first access of the :attr:`filename_list`
+        property (this will not :meth:`~RangeStream.add` them to the
+        :class:`ZipStream`).
+
+        Once parsed, the file contents are stored as a list of :class:`ZippedFileInfo`
+        objects (in the order they appear in the Central Directory Record) in the
+        :attr:`zipped_files` attribute.  Each of these objects has a
+        :meth:`~ZippedFileInfo.file_range` method which gives the range of its file
+        content bytes within the :class:`ZipStream`.
         """
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
@@ -37,6 +41,7 @@ class ZipStream(RangeStream):
         self.data = ZipData()
         if scan_contents:
             self.check_central_dir_rec()
+            self.add_file_ranges()
 
     def check_head_bytes(self):
         start_sig = self.data.LOC_F_H.start_sig
@@ -129,6 +134,10 @@ class ZipStream(RangeStream):
             zf_info = ZippedFileInfo.from_central_directory_entry(u, filename=filename)
             self.zipped_files.append(zf_info)
         return
+
+    def add_file_ranges(self):
+        for zf_info in self.zipped_files:
+            self.add(zf_info.file_range, name=zf_info.filename)
 
     def get_central_dir_bytes(self, step=20):
         """
