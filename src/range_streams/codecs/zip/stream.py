@@ -17,11 +17,26 @@ class ZipStream(RangeStream):
         client=None,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
+        scan_contents: bool = True,
     ):
+        """
+        As for RangeStream, but if `scan_contents` is True, then immediately call
+        :meth:`check_central_dir_rec` on initialisation. This will perform a series
+        of range requests to identify the files in the zip from the End of Central
+        Directory Record and Central Directory Record (note: low bandwidth operations).
+        If so, :attr:`zipped_files` will be set. This can be postponed until the first
+        access of the :attr:`filename_list` property. Once parsed, the file contents
+        are stored as a list of :class:`ZippedFileInfo` objects (in the order they
+        appear in the Central Directory Record) in the :attr:`zipped_files` attribute.
+        Each of these objects has a :meth:`~ZippedFileInfo.file_range` method which
+        gives the range of its file content bytes within the :class:`ZipStream`
+        """
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
         )
         self.data = ZipData()
+        if scan_contents:
+            self.check_central_dir_rec()
 
     def check_head_bytes(self):
         start_sig = self.data.LOC_F_H.start_sig
@@ -82,7 +97,6 @@ class ZipStream(RangeStream):
             self.check_end_of_central_dir_rec()
         size_cd_full = self.data.CTRL_DIR_REC.size  # total size of CDR (all entries)
         cd_read_offset = 0  # byte offset incremented after each entry
-        print(f"{self.data.CTRL_DIR_REC.entry_count=}")
         self.zipped_files = []
         entry_range = range(self.data.CTRL_DIR_REC.entry_count)  # type: ignore
         for entry_i in entry_range:
@@ -93,7 +107,6 @@ class ZipStream(RangeStream):
             self.add(cd_rng)
             cd_bytes = self.active_range_response.read()
             u = struct.unpack(self.data.CTRL_DIR_REC.struct, cd_bytes[:cd_size])
-            print(u)
             zf_info = ZippedFileInfo.from_central_directory_entry(u)
             target = self.data.CTRL_DIR_REC.start_sig
             sig = zf_info.signature
@@ -110,7 +123,6 @@ class ZipStream(RangeStream):
             else:
                 # Historical ZIP filename encoding
                 filename = filename.decode("cp437")
-            print(filename)
             extra_len = zf_info.extra_field_length
             comment_len = zf_info.comment_length
             cd_read_offset += cd_size + fn_len + extra_len + comment_len
@@ -154,7 +166,7 @@ class ZipStream(RangeStream):
         return cd_byte_store
 
     @property
-    def file_list(self) -> list[str]:
+    def filename_list(self) -> list[str]:
         """
         Return only the file name list from the stored list of 2-tuples
         of (filename, extra bytes).
@@ -246,3 +258,10 @@ class ZippedFileInfo(CentralDirectoryInfo):
             local_header_offset=local_header_offset,
             filename=filename,
         )
+
+    @property
+    def file_range(self):
+        sig_start = self.local_header_offset
+        start = sig_start + ZipData().LOC_F_H.get_size() + self.filename_length
+        end = start + self.compressed_size
+        return Range(start, end)

@@ -40,4 +40,23 @@ def test_zip_cd_meta(entries, size, start_c, start_e):
 
 @mark.parametrize("expected", [["example_text_file.txt"]])
 def test_zip_central_dir_list_files(example_zip_stream, expected):
-    assert example_zip_stream.file_list == expected
+    assert example_zip_stream.filename_list == expected
+
+
+@mark.parametrize(
+    "fname,fname_len,com_len,size,rng_start,rng_end",
+    [("example_text_file.txt", 21, 0, 11, 51, 62)],
+)
+def test_zipped_file_contents(
+    example_zip_stream, fname, fname_len, com_len, size, rng_start, rng_end
+):
+    zf_l = example_zip_stream.zipped_files
+    assert len(zf_l) == 1
+    zf = zf_l[0]
+    assert zf.filename == fname
+    assert zf.filename_length == fname_len
+    assert zf.comment_length == com_len
+    assert zf.compressed_size == size
+    assert zf.compressed_size == zf.uncompressed_size
+    assert zf.file_range.start == rng_start
+    assert zf.file_range.end == rng_end
