@@ -263,7 +263,7 @@ def test_bad_active_range_response(full_range_stream, error_msg):
     Design choice currently permits reassigning the full range if it was
     read, may change but for now just test to clarify behaviour. See issue #4.
     """
-    full_range_stream._active_range = 123
+    full_range_stream.set_active_range(123)
     with raises(ValueError, match=error_msg):
         full_range_stream.active_range_response
 

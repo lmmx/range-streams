@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import io
 import struct
 
+from pyzstd import ZstdFile
 from ranges import Range
 
 from ...range_stream import RangeStream
-from .data import ZipData
+from ..zstd import ZstdTarFile
+from .data import COMPRESSIONS, ZipData
 
 __all__ = ["ZipStream"]
 
@@ -184,15 +187,101 @@ class ZipStream(RangeStream):
             self.check_central_dir_rec()
         return [f.filename for f in self.zipped_files]
 
-    def decompress_zipped_file(self, zf_info: ZippedFileInfo):
+    def decompress_zipped_file(
+        self,
+        zf_info: ZippedFileInfo,
+        method: str | None = None,
+        ext: str | None = None,
+    ):
         """
         Given a :class:`ZippedFileInfo` object ``zf_info``, and (optionally)
-        its compression method [or else detecting that], decompress it
+        its compression method [or else detecting that], decompress its bytes
         from the stream.
+
+        Args:
+          zf_info : The compressed bytes
+          method  : Compression method (2-3 character abbreviated extension, lower case)
+          ext     : File extension to treat the bytes in the ``zf_info`` range as having
+                    (an option if ``zf_info`` is not being provided)
         """
         zf_range = zf_info.file_range
-        if zf_info.filename is not None and zf_info.filename.endswith(""):
-            raise NotImplementedError("This will carry out the decompression")
+        if method is None:
+            if ext:
+                try:
+                    method = next(
+                        (_ext, m)
+                        for _ext, m in COMPRESSIONS.items()
+                        if _ext == ext or ext.endswith(_ext)
+                    )  # type: ignore
+                except StopIteration:
+                    raise ValueError(f"No compression method for extension {ext}")
+                finally:
+                    fn_tar = zf_info.filename is not None and ".tar" in zf_info.filename
+                    is_tar = fn_tar or ext.startswith(".t")
+                    archive = "tar" if is_tar else None
+            else:
+                if zf_info.filename is None:
+                    raise NotImplementedError(
+                        "Cannot detect compression method from file extension"
+                        " (no file name provided)"
+                    )
+                try:
+                    ext, method = next(
+                        (ext, m)
+                        for ext, m in COMPRESSIONS.items()
+                        if zf_info.filename.endswith(ext)
+                    )
+                except StopIteration:
+                    raise ValueError(f"Could not detect '{zf_info}' compression method")
+                finally:
+                    assert ext is not None  # because mypy can't follow my logic
+                    is_tar = ext.startswith(".t") or ".tar" in zf_info.filename
+                    archive = "tar" if is_tar else None
+        elif method not in COMPRESSIONS.values():
+            raise ValueError(f"{method} is not a valid option ({COMPRESSIONS=})")
+        else:
+            archive = None  # Can't detect an archive without extension, ¯\_(ツ)_/¯
+        assert method is not None  # because mypy can't follow my logic
+        zf_rng = zf_info.file_range
+        if zf_rng not in self.ranges:
+            self.add(zf_rng)
+        else:
+            self.set_active_range(zf_rng)
+        zf_bytes = self.active_range_response.read()
+        return decompress(zf_bytes, method=method, archive=archive)
+
+
+def decompress(b: bytes, method: str, archive: str | None = None):
+    """
+    Decompress the given bytes under the given method.
+
+    Args:
+      b       : The compressed bytes
+      method  : The compression method (2-3 character abbreviated extension, lower case)
+      archive : The archive method to extract (either 'zip', 'tar', or None).
+    """
+    accepted_archive_types = [None, "zip", "tar"]
+    accepted_compression_types = set(COMPRESSIONS.values())
+    if archive not in accepted_archive_types:
+        raise TypeError(f"{archive=} is not one of {accepted_archive_types=}")
+    if method == "gz":
+        raise NotImplementedError("No gzip support yet...")
+    elif method == "xz":
+        raise NotImplementedError("No xz support yet...")
+    elif method == "bz2":
+        raise NotImplementedError("No bz2 support yet...")
+    elif method == "zst":
+        if archive == "tar":
+            d = ZstdTarFile(io.BytesIO(b))
+        elif archive == "zip":
+            raise NotImplementedError("No zip + zst support yet...")
+        else:
+            d = ZstdFile(io.BytesIO(b))
+    else:
+        raise TypeError(
+            f"Decompression not implemented for {method} (accepted_compression_types=)"
+        )
+    return d
 
 
 class CentralDirectoryInfo:

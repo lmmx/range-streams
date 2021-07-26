@@ -108,11 +108,61 @@ def test_zipped_file_contents(
 
     # This part confirms that the `validate_files` method succeeded
     assert example_conda_stream.meta_json == zf1
-    assert example_conda_stream.info_tz == zf2
-    assert example_conda_stream.pkg_tz == zf3
+    assert example_conda_stream.info_tzst == zf2
+    assert example_conda_stream.pkg_tzst == zf3
 
 
-def test_zst_decompression(example_conda_stream):
-    zf_info = example_conda_stream.pkg_tz
-    with raises(NotImplementedError):
-        d = example_conda_stream.decompress_zipped_file(zf_info)
+@mark.parametrize(
+    "expected",
+    [
+        [
+            "site-packages/tqdm/completion.sh",
+            "site-packages/tqdm-4.61.1.dist-info/INSTALLER",
+            "site-packages/tqdm-4.61.1.dist-info/WHEEL",
+            "site-packages/tqdm-4.61.1.dist-info/LICENCE",
+            "site-packages/tqdm-4.61.1.dist-info/RECORD",
+            "site-packages/tqdm-4.61.1.dist-info/METADATA",
+            "site-packages/tqdm-4.61.1.dist-info/REQUESTED",
+            "site-packages/tqdm/_dist_ver.py",
+            "site-packages/tqdm/__main__.py",
+            "site-packages/tqdm/_tqdm.py",
+            "site-packages/tqdm/_main.py",
+            "site-packages/tqdm/_tqdm_gui.py",
+            "site-packages/tqdm/_tqdm_notebook.py",
+            "site-packages/tqdm/version.py",
+            "site-packages/tqdm/_utils.py",
+            "site-packages/tqdm/contrib/bells.py",
+            "site-packages/tqdm/contrib/itertools.py",
+            "site-packages/tqdm/autonotebook.py",
+            "site-packages/tqdm/_tqdm_pandas.py",
+            "site-packages/tqdm/auto.py",
+            "site-packages/tqdm/contrib/utils_worker.py",
+            "site-packages/tqdm/dask.py",
+            "site-packages/tqdm/__init__.py",
+            "site-packages/tqdm/contrib/__init__.py",
+            "site-packages/tqdm/asyncio.py",
+            "site-packages/tqdm/_monitor.py",
+            "site-packages/tqdm/contrib/logging.py",
+            "site-packages/tqdm/contrib/discord.py",
+            "site-packages/tqdm/contrib/telegram.py",
+            "site-packages/tqdm/keras.py",
+            "site-packages/tqdm/contrib/concurrent.py",
+            "site-packages/tqdm/rich.py",
+            "site-packages/tqdm/gui.py",
+            "site-packages/tqdm/tk.py",
+            "site-packages/tqdm/utils.py",
+            "site-packages/tqdm/cli.py",
+            "site-packages/tqdm/notebook.py",
+            "site-packages/tqdm/std.py",
+            "site-packages/tqdm/tqdm.1",
+            "site-packages/tqdm-4.61.1.dist-info/direct_url.json",
+            "info/licenses/LICENCE",
+            "site-packages/tqdm-4.61.1.dist-info/top_level.txt",
+            "site-packages/tqdm-4.61.1.dist-info/entry_points.txt",
+        ]
+    ],
+)
+def test_tar_zst_decompression(example_conda_stream, expected):
+    zf_info = example_conda_stream.pkg_tzst
+    d = example_conda_stream.decompress_zipped_file(zf_info)
+    assert d.getnames() == expected

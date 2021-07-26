@@ -35,16 +35,18 @@ class CondaStream(ZipStream):
         ``metadata.json``. The simplest way to uniquely identify them is to sort
         alphabetically by filename and check file prefixes/suffixes.
         """
-        info_tz, meta_json, pkg_tz = sorted(self.zipped_files, key=lambda f: f.filename)
+        info_tzst, meta_json, pkg_tzst = sorted(
+            self.zipped_files, key=lambda f: f.filename
+        )
         prefixes = ["info-", "pkg-"]
-        info_tz_fn = info_tz.filename
-        pkg_tz_fn = pkg_tz.filename
+        info_tzst_fn = info_tzst.filename
+        pkg_tzst_fn = pkg_tzst.filename
         if not (
-            (info_tz_fn.startswith("info-") and info_tz_fn.endswith(".tar.zst"))
-            and (pkg_tz_fn.startswith("pkg-") and pkg_tz_fn.endswith(".tar.zst"))
+            (info_tzst_fn.startswith("info-") and info_tzst_fn.endswith(".tar.zst"))
+            and (pkg_tzst_fn.startswith("pkg-") and pkg_tzst_fn.endswith(".tar.zst"))
         ):
             raise ValueError("Invalid .conda archive")
-        self.info_tz = info_tz
+        self.info_tzst = info_tzst
         self.meta_json = meta_json
-        self.pkg_tz = pkg_tz
+        self.pkg_tzst = pkg_tzst
         return

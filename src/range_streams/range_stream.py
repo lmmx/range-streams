@@ -181,8 +181,15 @@ class RangeStream:
         # print(f"Adding: {rng=}")
         self._ranges.add(rng=rng, value=value)
         if activate:
-            self._active_range = rng
+            self.set_active_range(rng)
         # print(f"Post: {self._ranges=}")
+
+    def set_active_range(self, rng: Range):
+        """
+        Setter for the active range (through which active_range_response is also set).
+        """
+        if self._active_range != rng:
+            self._active_range = rng
 
     @property
     def active_range_response(self) -> RangeResponse:
@@ -236,7 +243,7 @@ class RangeStream:
         internal_rng = self.ext2int(ext_rng=overlapped_ext_rng)
         self._ranges.remove(internal_rng)
         # set `_active_range` to most recently registered internal range or None if empty
-        self._active_range = most_recent_range(self, internal=True)
+        self.set_active_range(most_recent_range(self, internal=True))
 
     def handle_overlap(
         self,
