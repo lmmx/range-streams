@@ -46,7 +46,7 @@ jobs:
       - name: "Run tox targets for ${{ matrix.python-version }}"
         run: |
           python -m pytest --version
-          python -m tox -v
+          python -m tox -v -p 2 # Only use 2 CPUs so coverage-report runs after pytest
 
       - name: "Get coverage"
         run: |
