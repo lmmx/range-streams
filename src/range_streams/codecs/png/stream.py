@@ -87,3 +87,8 @@ class PngStream(RangeStream):
             )
             chunks[chunk_type].append(chunk_info)
         return chunks
+
+    def get_chunk_data(self, chunk_info: PngChunkInfo) -> bytes:
+        self.add(chunk_info.data_range)
+        b = self.active_range_response.read()
+        return b

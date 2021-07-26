@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from struct import calcsize
 
+from ranges import Range
+
 __all__ = ["PngData"]
 
 
@@ -109,3 +111,12 @@ class PngChunkInfo:
             # if not callable(getattr(self, k))
         }
         return f"{self.__class__.__name__} :: {attrs}"
+
+    @property
+    def data_range(self):
+        """
+        Range on the parent :class`PngStream` of the chunk data.
+        """
+        data_start = self.start + (4 * 2)
+        data_end = self.end - 4
+        return Range(data_start, data_end)
