@@ -10,9 +10,11 @@ There are planned extensions to other archive and image formats.
 """
 
 from .conda import CondaStream
+from .png import PngStream
 from .zip import ZipStream
 
 __all__ = [
     "ZipStream",
     "CondaStream",
+    "PngStream",
 ]

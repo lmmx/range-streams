@@ -86,7 +86,7 @@ class EndOfCentralDirectoryRec(SimpleDataClass):
 
 class ZipData:
     """
-    A mixin class collecting other classes as attributes to provide format-specific
+    A class collecting other classes as attributes to provide format-specific
     information on zip files to the ZipStream class (alongside the generic stream
     behaviour it inherits from the RangeStream class).
     """

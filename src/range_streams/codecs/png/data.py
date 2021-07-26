@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from struct import calcsize
+
+__all__ = ["PngData"]
+
+
+class SimpleDataClass:
+    """
+    Provide a neat repr and common methods for the classes which become instance
+    attributes of :class:`PngData`.
+
+    (Note: Duplicate of the zip codec class of the same name)
+    """
+
+    def __repr__(self):
+        # attrs = {k: getattr(cls, k) for k in DATA_ATTRS if k in dir(cls)}
+        attrs = {
+            k: getattr(self, k)
+            for k in dir(self)
+            if not k.startswith("_")
+            if not callable(getattr(self, k))
+        }
+        # return f"{cls.__name__} :: {getattr(cls, 'start_sig')}"
+        return f"{self.__class__.__name__} :: {attrs}"
+
+    def get_size(self):
+        return calcsize(self.struct)
+
+    @property
+    def struct(self):
+        raise NotImplementedError("SimpleDataClass must be subclassed with a struct")
+
+    def __init__(self):
+        # self.start_pos: int | None = None
+        pass
+
+
+class IHDRHeaderInfo:
+    _IHDR_WIDTH = 0
+    _IHDR_HEIGHT = 1
+    _IHDR_BIT_DEPTH = 2
+    _IHDR_COLOUR_TYPE = 3
+    _IHDR_COMPRESSION = 4
+    _IHDR_FILTER_METHOD = 5
+    _IHDR_INTERLACING = 6
+
+
+class IHDRHeader(SimpleDataClass):
+    """
+    A class carrying attributes to describe the IHDR header of a PNG file.
+    Used in :class:`PngData`, and updated with the number of channels in
+    the PNG once this is identified.
+
+    The fields are: width (4 bytes), height (4 bytes), bit depth (1 byte),
+    colour type (1 byte), compression method (1 byte), filter method (1 byte),
+    interlacing method (1 byte); totalling 13 bytes.
+    """
+
+    start_pos = 16
+    end_pos = 29
+    struct = ">IIBBBBB"
+    parts = IHDRHeaderInfo
+
+    def __init__(self):
+        super().__init__()
+        self.width: int | None = None
+        self.height: int | None = None
+        self.bit_depth: int | None = None
+        self.colour_type: int | None = None
+        self.compression: int | None = None
+        self.filter_method: int | None = None
+        self.interlacing: int | None = None
+
+
+class PngData:
+    """
+    A class collecting other classes as attributes to provide format-specific
+    information on PNG files to :class:`PngStream` (alongside the generic
+    stream behaviour it inherits from :class`RangeStream`).
+    """
+
+    def __init__(self):
+        self.IHDR = IHDRHeader()
