@@ -191,7 +191,7 @@ class ZipStream(RangeStream):
         from the stream.
         """
         zf_range = zf_info.file_range
-        if zf_info.filename.endswith(""):
+        if zf_info.filename is not None and zf_info.filename.endswith(""):
             raise NotImplementedError("This will carry out the decompression")
 
 
