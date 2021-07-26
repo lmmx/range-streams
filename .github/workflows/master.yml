@@ -15,6 +15,7 @@ jobs:
     runs-on: "ubuntu-20.04"
     env:
       USING_COVERAGE: '3.8'
+      TOX_PARALLEL_NO_SPINNER: 1
 
     strategy:
       matrix:
