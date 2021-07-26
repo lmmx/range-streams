@@ -7,7 +7,7 @@ from range_streams import RangeStream
 from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
 
 
-@fixture
+@fixture(scope="session")
 def empty_range_stream():
     """
     By default, not passing the `byte_range` param to `RangeStream` will give the
@@ -18,6 +18,15 @@ def empty_range_stream():
 
 
 @fixture
+def empty_range_stream_fresh():
+    """
+    As for empty_range_stream, but regenerated on each use, for tests which modify it.
+    """
+    client = httpx.Client()
+    return RangeStream(url=EXAMPLE_URL, client=client)
+
+
+@fixture(scope="session")
 def full_range_stream():
     "A RangeStream covering the full [0,11) file range."
     client = httpx.Client()
@@ -26,8 +35,23 @@ def full_range_stream():
 
 
 @fixture
+def full_range_stream_fresh():
+    "As for full_range_stream, but regenerated on each use, for tests which modify it."
+    client = httpx.Client()
+    rng = Range(0, EXAMPLE_FILE_LENGTH)
+    return RangeStream(byte_range=rng, url=EXAMPLE_URL, client=client)
+
+
+@fixture(scope="session")
 def centred_range_stream():
     "A RangeStream covering the central range [3,7) of the full [0,11) file range."
+    client = httpx.Client()
+    return RangeStream(byte_range=Range(3, 7), url=EXAMPLE_URL, client=client)
+
+
+@fixture
+def centred_range_stream_fresh():
+    "As for centred_range_stream, but regenerated on each use, for tests which modify it."
     client = httpx.Client()
     return RangeStream(byte_range=Range(3, 7), url=EXAMPLE_URL, client=client)
 
@@ -91,14 +115,14 @@ def first_rngdict_key_int_ext_termini(rangestream):
     ]
 
 
-def test_range_update(full_range_stream):
-    int_termini, ext_termini = first_rngdict_key_int_ext_termini(full_range_stream)
-    assert int_termini == (0, 11)
-    assert ext_termini == (0, 11)
-    full_range_stream.read(4)
-    int_termini, ext_termini = first_rngdict_key_int_ext_termini(full_range_stream)
-    assert int_termini == (0, 11)
-    assert ext_termini == (4, 11)
+def test_range_update(full_range_stream_fresh):
+    int_term, ext_term = first_rngdict_key_int_ext_termini(full_range_stream_fresh)
+    assert int_term == (0, 11)
+    assert ext_term == (0, 11)
+    full_range_stream_fresh.read(4)
+    int_term, ext_term = first_rngdict_key_int_ext_termini(full_range_stream_fresh)
+    assert int_term == (0, 11)
+    assert ext_term == (4, 11)
 
 
 def test_range_stream_repr(full_range_stream):
@@ -130,32 +154,32 @@ def test_stream_tell_init(full_range_stream):
 
 
 @mark.parametrize("size", [0, 5, EXAMPLE_FILE_LENGTH])
-def test_stream_tell_read(full_range_stream, size):
-    full_range_stream.read(size=size)
-    assert full_range_stream.tell() == size
+def test_stream_tell_read(full_range_stream_fresh, size):
+    full_range_stream_fresh.read(size=size)
+    assert full_range_stream_fresh.tell() == size
 
 
 @mark.parametrize("pos", [0, 5, EXAMPLE_FILE_LENGTH])
-def test_stream_seek_tell(full_range_stream, pos):
-    full_range_stream.seek(position=pos)
-    assert full_range_stream.tell() == pos
+def test_stream_seek_tell(full_range_stream_fresh, pos):
+    full_range_stream_fresh.seek(position=pos)
+    assert full_range_stream_fresh.tell() == pos
 
 
-def test_active_range_changes(empty_range_stream):
-    assert empty_range_stream._active_range is None
+def test_active_range_changes(empty_range_stream_fresh):
+    assert empty_range_stream_fresh._active_range is None
     rng1 = Range(0, 1)
-    empty_range_stream.add(rng1)
-    assert empty_range_stream._active_range == rng1
+    empty_range_stream_fresh.add(rng1)
+    assert empty_range_stream_fresh._active_range == rng1
     rng2 = Range(4, 6)
-    empty_range_stream.add(rng2)
-    assert empty_range_stream._active_range == rng2
+    empty_range_stream_fresh.add(rng2)
+    assert empty_range_stream_fresh._active_range == rng2
 
 
-def test_add_range_no_activate(empty_range_stream):
-    assert empty_range_stream._active_range is None
+def test_add_range_no_activate(empty_range_stream_fresh):
+    assert empty_range_stream_fresh._active_range is None
     rng1 = Range(0, 1)
-    empty_range_stream.add(rng1, activate=False)
-    assert empty_range_stream._active_range is None
+    empty_range_stream_fresh.add(rng1, activate=False)
+    assert empty_range_stream_fresh._active_range is None
     rng2 = Range(4, 6)
-    empty_range_stream.add(rng2, activate=False)
-    assert empty_range_stream._active_range is None
+    empty_range_stream_fresh.add(rng2, activate=False)
+    assert empty_range_stream_fresh._active_range is None

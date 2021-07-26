@@ -10,8 +10,11 @@ from range_streams.range_utils import (
 
 from .range_stream_core_test import (
     centred_range_stream,
+    centred_range_stream_fresh,
     empty_range_stream,
+    empty_range_stream_fresh,
     full_range_stream,
+    full_range_stream_fresh,
     make_range_stream,
 )
 
@@ -22,7 +25,7 @@ from .range_stream_core_test import (
 @mark.parametrize("post_pos", [[2, 3, 5, 6]])
 @mark.parametrize("is_in_post", [True])
 def test_add_overlap_head(
-    centred_range_stream,
+    centred_range_stream_fresh,
     pruning_level,
     exp_init_whence,
     exp_final_whence,
@@ -40,23 +43,23 @@ def test_add_overlap_head(
     This used to test `handle_overlap` but was then rebuilt for `RangeStream.add`
     since that isn't a principle handler any more...
     """
-    initial_whence = centred_range_stream.overlap_whence(overlapping_range)
+    initial_whence = centred_range_stream_fresh.overlap_whence(overlapping_range)
     assert initial_whence == exp_init_whence
     for pre_position, is_in_pre in pre_pos_in:
-        check_pos_in_pre = pre_position in centred_range_stream._ranges
+        check_pos_in_pre = pre_position in centred_range_stream_fresh._ranges
         assert check_pos_in_pre is is_in_pre
-    centred_range_stream.add(byte_range=overlapping_range)
-    final_whence = centred_range_stream.overlap_whence(overlapping_range)
+    centred_range_stream_fresh.add(byte_range=overlapping_range)
+    final_whence = centred_range_stream_fresh.overlap_whence(overlapping_range)
     assert final_whence is exp_final_whence  # after handling, no overlap is detected
     for post_position in post_pos:
-        check_pos_in_post = post_position in centred_range_stream._ranges
+        check_pos_in_post = post_position in centred_range_stream_fresh._ranges
         assert check_pos_in_post is is_in_post
 
 
 @mark.parametrize("pruning_level", [0, 1])
 @mark.parametrize("overlapping_range", [Range(2, 5)])
 def test_handle_overlap_int_ext_rngdict_Head(
-    centred_range_stream,
+    centred_range_stream_fresh,
     pruning_level,
     overlapping_range,
 ):
@@ -73,10 +76,10 @@ def test_handle_overlap_int_ext_rngdict_Head(
     external RangeDict in the expected way after handling the overlapping range.
     Note: assumed the stream is initialised with (default) pruning level 0 (replant).
     """
-    centred_range_stream.pruning_level = pruning_level
-    centred_range_stream.handle_overlap(rng=overlapping_range)
+    centred_range_stream_fresh.pruning_level = pruning_level
+    centred_range_stream_fresh.handle_overlap(rng=overlapping_range)
     ext_count_changed, int_count_changed = count_rangedict_mutation(
-        centred_range_stream
+        centred_range_stream_fresh
     )
     assert int_count_changed == 0
     assert ext_count_changed == 0  # re-requested if replant, deleted if burn
@@ -142,13 +145,13 @@ def test_handle_overlap_int_ext_rngdict_Tail(
 
 
 @mark.parametrize("pos,disjoint_range,expected", [(4, Range(0, 1), Range(3, 7))])
-def test_range_containing(centred_range_stream, pos, disjoint_range, expected):
+def test_range_containing(centred_range_stream_fresh, pos, disjoint_range, expected):
     """
     Position 4 in the range [3,7) should identify the range. Also add
     a disjoint range to give full coverage of the generator expression condition.
     """
-    centred_range_stream.add(disjoint_range)
-    rng = get_range_containing(rng_dict=centred_range_stream.ranges, position=pos)
+    centred_range_stream_fresh.add(disjoint_range)
+    rng = get_range_containing(rng_dict=centred_range_stream_fresh.ranges, position=pos)
     assert rng == expected
 
 
@@ -164,17 +167,17 @@ def test_range_not_containing(centred_range_stream, pos, error_msg):
 
 
 @mark.parametrize("overlapping_range,expected", [(Range(5, 8), 2)])
-def test_overlap_tail(centred_range_stream, overlapping_range, expected):
+def test_overlap_tail(centred_range_stream_fresh, overlapping_range, expected):
     """
     Overlapping range [5,9) at the 'tail' of [3,7) with intersection length 2
     of total range length 4.  The overlap handler should "bite" off the tail of
     (i.e. trim) the pre-existing range, such that there is no longer an
     overlap detected by `overlap_whence`.
     """
-    initial_whence = centred_range_stream.overlap_whence(overlapping_range)
+    initial_whence = centred_range_stream_fresh.overlap_whence(overlapping_range)
     assert initial_whence == expected
-    centred_range_stream.handle_overlap(rng=overlapping_range, internal=False)
-    final_whence = centred_range_stream.overlap_whence(overlapping_range)
+    centred_range_stream_fresh.handle_overlap(rng=overlapping_range, internal=False)
+    final_whence = centred_range_stream_fresh.overlap_whence(overlapping_range)
     assert final_whence is None  # After handling, no overlap is detected
 
 
@@ -183,32 +186,34 @@ def test_overlap_tail(centred_range_stream, overlapping_range, expected):
 
 @mark.parametrize("error_msg", ["Range overlap not detected as the range is empty"])
 @mark.parametrize("empty_range", [Range(0, 0)])
-def test_no_overlap_empty_range(full_range_stream, empty_range, error_msg):
+def test_no_overlap_empty_range(full_range_stream_fresh, empty_range, error_msg):
     """
     The full range [0,11) cannot overlap with the empty range [0,0) because
     (trivially) the empty range has no possibly overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        full_range_stream.handle_overlap(rng=empty_range, internal=False)
+        full_range_stream_fresh.handle_overlap(rng=empty_range, internal=False)
 
 
 @mark.parametrize("error_msg", ["Range overlap not detected at termini.*"])
 @mark.parametrize("nonoverlapping_range", [Range(0, 5)])
 def test_no_overlap_empty_range_stream(
-    empty_range_stream, nonoverlapping_range, error_msg
+    empty_range_stream_fresh, nonoverlapping_range, error_msg
 ):
     """
     Non-overlapping range [0,5) cannot overlap with the empty range [0,0)
     because (trivially) the empty range has no possible overlapping ranges.
     """
     with raises(ValueError, match=error_msg):
-        empty_range_stream.handle_overlap(rng=nonoverlapping_range, internal=False)
+        empty_range_stream_fresh.handle_overlap(
+            rng=nonoverlapping_range, internal=False
+        )
 
 
 @mark.parametrize("initial_ranges", [[(2, 4), (6, 9)]])
 @mark.parametrize("overlapping_range", [Range(3, 7)])
 def test_partial_overlap_multiple_ranges(
-    empty_range_stream, initial_ranges, overlapping_range
+    empty_range_stream_fresh, initial_ranges, overlapping_range
 ):
     """
     Partial overlap with termini of the centred range [3,7) covered on multiple
@@ -216,7 +221,7 @@ def test_partial_overlap_multiple_ranges(
     entirety of this interval is not within the initial ranges: specifically
     because these ranges [2,4) and [6,9) are not contiguous.
     """
-    stream = empty_range_stream
+    stream = empty_range_stream_fresh
     for rng_start, rng_end in initial_ranges:
         stream.add(byte_range=Range(rng_start, rng_end))
     spanning_rng_pre = stream.spanning_range

@@ -15,11 +15,7 @@ from range_streams.range_utils import (
     validate_range,
 )
 
-from .range_stream_core_test import (
-    centred_range_stream,
-    empty_range_stream,
-    full_range_stream,
-)
+from .range_stream_core_test import empty_range_stream, full_range_stream
 
 termini_test_triples = [(0, 3, (0, 2)), (1, 4, (1, 3))]
 

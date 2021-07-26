@@ -8,7 +8,7 @@ from range_streams.codecs import CondaStream
 from .data import EXAMPLE_CONDA_URL
 
 
-@fixture
+@fixture(scope="session")
 def example_conda_stream():
     return CondaStream(url=EXAMPLE_CONDA_URL)
 

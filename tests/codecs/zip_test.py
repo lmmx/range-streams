@@ -8,7 +8,7 @@ from range_streams.codecs import ZipStream
 from .data import EXAMPLE_ZIP_URL
 
 
-@fixture
+@fixture(scope="session")
 def example_zip_stream():
     return ZipStream(url=EXAMPLE_ZIP_URL)
 

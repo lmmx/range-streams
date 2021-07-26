@@ -14,14 +14,12 @@ class SimpleDataClass:
     """
 
     def __repr__(self):
-        # attrs = {k: getattr(cls, k) for k in DATA_ATTRS if k in dir(cls)}
         attrs = {
             k: getattr(self, k)
             for k in dir(self)
             if not k.startswith("_")
             if not callable(getattr(self, k))
         }
-        # return f"{cls.__name__} :: {getattr(cls, 'start_sig')}"
         return f"{self.__class__.__name__} :: {attrs}"
 
     def get_size(self):
@@ -36,7 +34,7 @@ class SimpleDataClass:
         pass
 
 
-class IHDRHeaderInfo:
+class IHDRInfo:
     _IHDR_WIDTH = 0
     _IHDR_HEIGHT = 1
     _IHDR_BIT_DEPTH = 2
@@ -46,7 +44,7 @@ class IHDRHeaderInfo:
     _IHDR_INTERLACING = 6
 
 
-class IHDRHeader(SimpleDataClass):
+class IHDRChunk(SimpleDataClass):
     """
     A class carrying attributes to describe the IHDR header of a PNG file.
     Used in :class:`PngData`, and updated with the number of channels in
@@ -60,7 +58,7 @@ class IHDRHeader(SimpleDataClass):
     start_pos = 16
     end_pos = 29
     struct = ">IIBBBBB"
-    parts = IHDRHeaderInfo
+    parts = IHDRInfo
 
     def __init__(self):
         super().__init__()
@@ -81,4 +79,33 @@ class PngData:
     """
 
     def __init__(self):
-        self.IHDR = IHDRHeader()
+        self.IHDR = IHDRChunk()
+        # self.PLTE = PLTEChunk()
+        # self.IDAT = IDATChunk()
+        # self.IEND = IENDChunk()
+        # self.ancillary_chunks = AncillaryChunks()
+
+
+class PngChunkInfo:
+    _meta_chunk_total_size = 4 * 3  # Three 4-byte chunks (length, type, CRC)
+
+    def __init__(self, type: str, start: int, length: int):
+        self.start: int = start
+        self.type: str = type
+        self.length: int = length
+
+    @property
+    def end(self):
+        """
+        Exclusive end, i.e. for a half-closed range ``[start, end)``.
+        """
+        return self.start + self.length + self._meta_chunk_total_size
+
+    def __repr__(self):
+        attrs = {
+            k: getattr(self, k)
+            for k in dir(self)
+            if not k.startswith("_")
+            # if not callable(getattr(self, k))
+        }
+        return f"{self.__class__.__name__} :: {attrs}"
