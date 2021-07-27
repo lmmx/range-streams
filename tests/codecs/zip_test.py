@@ -60,3 +60,8 @@ def test_zipped_file_contents(
     assert zf.compressed_size == zf.uncompressed_size
     assert zf.file_range.start == rng_start
     assert zf.file_range.end == rng_end
+
+
+@mark.parametrize("expected", ["ZippedFileInfo 'example_text_file.txt' @ 0: 11B"])
+def test_zip_repr(example_zip_stream, expected):
+    assert example_zip_stream.zipped_files[0].__repr__() == expected

@@ -51,8 +51,8 @@ class ZipStream(RangeStream):
         head_byte_range = Range(0, len(start_sig))
         self.add(head_byte_range)
         start_bytes = self.active_range_response.read()
-        if start_bytes != start_sig:
-            # Actually think this will be if zip is empty? Test...
+        if start_bytes != start_sig:  # pragma: no cover
+            # Actually think this will be if zip is empty
             raise ValueError(
                 f"Invalid zip header sequence {start_bytes=!r}: expected {start_sig!r}"
             )
@@ -101,7 +101,7 @@ class ZipStream(RangeStream):
         Read the range corresponding to the Central Directory Record
         (after :meth:`check_end_of_central_dir_rec` has been called).
         """
-        if self.data.CTRL_DIR_REC.size is None:
+        if self.data.CTRL_DIR_REC.size is None:  # pragma: no cover
             self.check_end_of_central_dir_rec()
         size_cd_full = self.data.CTRL_DIR_REC.size  # total size of CDR (all entries)
         cd_read_offset = 0  # byte offset incremented after each entry
@@ -118,14 +118,14 @@ class ZipStream(RangeStream):
             zf_info = ZippedFileInfo.from_central_directory_entry(u)
             target = self.data.CTRL_DIR_REC.start_sig
             sig = zf_info.signature
-            if sig != target:
+            if sig != target:  # pragma: no cover
                 raise ValueError(f"Bad Central Directory signature at {cd_start}")
             fn_len = zf_info.filename_length
             fn_rng = Range(cd_end, cd_end + fn_len)
             self.add(fn_rng)
             filename = self.active_range_response.read()
             flags = zf_info.flags
-            if flags & 0x800:
+            if flags & 0x800:  # pragma: no cover
                 # UTF-8 file names extension
                 filename = filename.decode("utf-8")
             else:
@@ -150,7 +150,7 @@ class ZipStream(RangeStream):
         from the start of the End of Central Directory Record signature until
         finding the start of the Central Directory Record.
         """
-        if self.data.E_O_CTRL_DIR_REC.start_pos is None:
+        if self.data.E_O_CTRL_DIR_REC.start_pos is None:  # pragma: no cover
             self.check_end_of_central_dir_rec()
         pre_eocd = self.data.E_O_CTRL_DIR_REC.start_pos
         cent_dir_rng = Range(pre_eocd - step, pre_eocd)
@@ -171,7 +171,7 @@ class ZipStream(RangeStream):
             else:
                 cent_dir_rng.start -= step
                 cent_dir_rng.end -= step
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"No central directory start signature found")
         # cent_dir_rng.end = self.data.E_O_CTRL_DIR_REC.start_pos
         cd_byte_store = cd_byte_store[offset:]
@@ -183,7 +183,7 @@ class ZipStream(RangeStream):
         Return only the file name list from the stored list of 2-tuples
         of (filename, extra bytes).
         """
-        if not hasattr(self, "zipped_files"):
+        if not hasattr(self, "zipped_files"):  # pragma: no cover
             self.check_central_dir_rec()
         return [f.filename for f in self.zipped_files]
 
@@ -207,7 +207,7 @@ class ZipStream(RangeStream):
         zf_range = zf_info.file_range
         if method is None:
             if ext:
-                try:
+                try:  # pragma: no cover
                     method = next(
                         (_ext, m)
                         for _ext, m in COMPRESSIONS.items()
@@ -220,7 +220,7 @@ class ZipStream(RangeStream):
                     is_tar = fn_tar or ext.startswith(".t")
                     archive = "tar" if is_tar else None
             else:
-                if zf_info.filename is None:
+                if zf_info.filename is None:  # pragma: no cover
                     raise NotImplementedError(
                         "Cannot detect compression method from file extension"
                         " (no file name provided)"
@@ -231,19 +231,19 @@ class ZipStream(RangeStream):
                         for ext, m in COMPRESSIONS.items()
                         if zf_info.filename.endswith(ext)
                     )
-                except StopIteration:
+                except StopIteration:  # pragma: no cover
                     raise ValueError(f"Could not detect '{zf_info}' compression method")
                 finally:
                     assert ext is not None  # because mypy can't follow my logic
                     is_tar = ext.startswith(".t") or ".tar" in zf_info.filename
-                    archive = "tar" if is_tar else None
-        elif method not in COMPRESSIONS.values():
+                    archive = "tar" if is_tar else None  # pragma: no cover
+        elif method not in COMPRESSIONS.values():  # pragma: no cover
             raise ValueError(f"{method} is not a valid option ({COMPRESSIONS=})")
-        else:
+        else:  # pragma: no cover
             archive = None  # Can't detect an archive without extension, ¯\_(ツ)_/¯
         assert method is not None  # because mypy can't follow my logic
         zf_rng = zf_info.file_range
-        if zf_rng not in self.ranges:
+        if zf_rng not in self.ranges:  # pragma: no cover
             self.add(zf_rng)
         else:
             self.set_active_range(zf_rng)
@@ -262,22 +262,22 @@ def decompress(b: bytes, method: str, archive: str | None = None):
     """
     accepted_archive_types = [None, "zip", "tar"]
     accepted_compression_types = set(COMPRESSIONS.values())
-    if archive not in accepted_archive_types:
+    if archive not in accepted_archive_types:  # pragma: no cover
         raise TypeError(f"{archive=} is not one of {accepted_archive_types=}")
-    if method == "gz":
+    if method == "gz":  # pragma: no cover
         raise NotImplementedError("No gzip support yet...")
-    elif method == "xz":
+    elif method == "xz":  # pragma: no cover
         raise NotImplementedError("No xz support yet...")
-    elif method == "bz2":
+    elif method == "bz2":  # pragma: no cover
         raise NotImplementedError("No bz2 support yet...")
     elif method == "zst":
         if archive == "tar":
             d = ZstdTarFile(io.BytesIO(b))
-        elif archive == "zip":
+        elif archive == "zip":  # pragma: no cover
             raise NotImplementedError("No zip + zst support yet...")
-        else:
+        else:  # pragma: no cover
             d = ZstdFile(io.BytesIO(b))
-    else:
+    else:  # pragma: no cover
         raise TypeError(
             f"Decompression not implemented for {method} (accepted_compression_types=)"
         )

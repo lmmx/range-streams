@@ -5,7 +5,7 @@ __all__ = ["PaethPredictor"]
 
 def reconstruct_idat(
     idat_bytes: bytes, channels: int, height: int, width: int
-) -> list[int]:
+) -> list[int]:  # pragma: no cover
     """
     Parse a list of (zlib-decompressed) bytes into a flat list of integers (the pixel
     values), validating that the resulting list is the correct length.
@@ -58,7 +58,7 @@ def reconstruct_idat(
     return recon_vals
 
 
-def PaethPredictor(a: int, b: int, c: int) -> int:
+def PaethPredictor(a: int, b: int, c: int) -> int:  # pragma: no cover
     """
     See: http://www.libpng.org/pub/png/spec/1.2/PNG-Filters.html
 

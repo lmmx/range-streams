@@ -22,12 +22,12 @@ class ZstdTarFile(TarFile):
             self.zstd_file.close()
             raise
 
-    def close(self):
+    def close(self):  # pragma: no cover
         super().close()
         self.zstd_file.close()
 
 
-def extract_zst(zst: bytes, file_paths: list[str]) -> list[bytes]:
+def extract_zst(zst: bytes, file_paths: list[str]) -> list[bytes]:  # pragma: no cover
     zstd_tar = ZstdTarFile(io.BytesIO(zst))
     zstd_files = zstd_tar.getnames()
     r = []
