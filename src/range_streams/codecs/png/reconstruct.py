@@ -7,6 +7,9 @@ def reconstruct_idat(
     idat_bytes: bytes, channels: int, height: int, width: int
 ) -> list[int]:
     """
+    Parse a list of (zlib-decompressed) bytes into a flat list of integers (the pixel
+    values), validating that the resulting list is the correct length.
+
     Adapted from demo implementation at https://pyokagan.name/blog/2019-10-14-png/
 
     Args:

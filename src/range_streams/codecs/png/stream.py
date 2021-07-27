@@ -102,8 +102,9 @@ class PngStream(RangeStream):
     def get_idat_data(self) -> list[int]:
         """
         Decompress the IDAT chunk(s) and concatenate, then confirm the length is
-        exactly equal to ``height * (1 + width * bit_depth)``. This still needs
-        to be filtered.
+        exactly equal to ``height * (1 + width * bit_depth)``, and filter it
+        (removing the filter byte at the start of each scanline) using
+        :func:`reconstruct_idat`.
         """
         if self.data.IHDR.colour_type is None:
             self.scan_ihdr()
