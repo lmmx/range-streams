@@ -23,7 +23,7 @@ def test_png_total_bytes(example_png_stream, expected):
     assert example_png_stream.total_bytes == expected
 
 
-@mark.parametrize("expected", [1347])
+@mark.parametrize("expected", [5124])
 def test_semitransp_png_total_bytes(example_semitransp_png_stream, expected):
     assert example_semitransp_png_stream.total_bytes == expected
 
@@ -44,11 +44,10 @@ def test_png_chunks(example_png_stream, expected):
                 "IHDR",
                 "zTXt",
                 "iCCP",
-                "PLTE",
-                "tRNS",
                 "bKGD",
                 "pHYs",
                 "tIME",
+                "tEXt",
                 "IDAT",
                 "IEND",
             ]
