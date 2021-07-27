@@ -72,6 +72,34 @@ class IHDRChunk(SimpleDataClass):
         self.filter_method: int | None = None
         self.interlacing: int | None = None
 
+    @property
+    def channel_count(self) -> int | None:
+        if self.colour_type is None:
+            # Early return! This is an edge case (IHDR chunk not parsed)
+            # Should only occur when printing the __repr__ before parsing
+            return None
+        elif not hasattr(self, "_channels"):
+            self.count_channels()
+        return self._channels
+
+    def count_channels(self) -> None:
+        """
+        Calculate channel count (e.g. RGB=3, RGBA=4) from colour type,
+        and populate the :attr:`_channels` attribute (accessible via the
+        :attr:`channel_count` property).
+        """
+        if self.colour_type is None:
+            raise ValueError("Process the IHDR chunk before counting channels")
+        assert self.colour_type is not None
+        self._has_colourmap: bool = bool(self.colour_type & 1)
+        self._is_grayscale: bool = not (self.colour_type & 2)
+        self._has_alpha_channel: bool = bool(self.colour_type & 4)
+        self._colour_channel_count: int = (
+            1 if (self._is_grayscale or self._has_colourmap) else 3
+        )
+        self._channels: int = self._colour_channel_count + int(self._has_alpha_channel)
+        return
+
 
 class PngData:
     """

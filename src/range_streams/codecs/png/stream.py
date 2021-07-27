@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import struct
+import zlib
 
 from ranges import Range
 
 from ...range_stream import RangeStream
 from .data import PngChunkInfo, PngData
+from .reconstruct import reconstruct_idat
 
 __all__ = ["PngStream"]
 
@@ -49,6 +51,8 @@ class PngStream(RangeStream):
         self.add(ihdr_rng)
         ihdr_bytes = self.active_range_response.read()
         ihdr_u = struct.unpack(self.data.IHDR.struct, ihdr_bytes)
+        if None in ihdr_u:
+            raise ValueError(f"Got a null from unpacking IHDR bytes {ihdr_u}")
         self.data.IHDR.width = ihdr_u[self.data.IHDR.parts._IHDR_WIDTH]
         self.data.IHDR.height = ihdr_u[self.data.IHDR.parts._IHDR_HEIGHT]
         self.data.IHDR.bit_depth = ihdr_u[self.data.IHDR.parts._IHDR_BIT_DEPTH]
@@ -88,7 +92,32 @@ class PngStream(RangeStream):
             chunks[chunk_type].append(chunk_info)
         return chunks
 
-    def get_chunk_data(self, chunk_info: PngChunkInfo) -> bytes:
+    def get_chunk_data(
+        self, chunk_info: PngChunkInfo, zlib_decompress: bool = False
+    ) -> bytes:
         self.add(chunk_info.data_range)
         b = self.active_range_response.read()
-        return b
+        return zlib.decompress(b) if zlib_decompress else b
+
+    def get_idat_data(self) -> list[int]:
+        """
+        Decompress the IDAT chunk(s) and concatenate, then confirm the length is
+        exactly equal to ``height * (1 + width * bit_depth)``. This still needs
+        to be filtered.
+        """
+        if self.data.IHDR.colour_type is None:
+            self.scan_ihdr()
+        height = self.data.IHDR.height
+        width = self.data.IHDR.width
+        channels = self.data.IHDR.channel_count
+        assert height is not None and width is not None and channels is not None
+        expected_length = height * (1 + width * channels)
+        b = b"".join(
+            self.get_chunk_data(chunk_info, zlib_decompress=True)
+            for chunk_info in self.chunks["IDAT"]
+        )
+        if len(b) != expected_length:
+            raise ValueError(f"Expected {expected_length} but got {len(b)}")
+        return reconstruct_idat(
+            idat_bytes=b, channels=channels, height=height, width=width
+        )

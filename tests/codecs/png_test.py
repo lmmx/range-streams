@@ -18,6 +18,10 @@ def example_semitransp_png_stream():
     return PngStream(url=EXAMPLE_SEMITRANSPARENT_PNG_URL)
 
 
+def example_semitransp_png_stream_fresh():
+    return PngStream(url=EXAMPLE_SEMITRANSPARENT_PNG_URL)
+
+
 @mark.parametrize("expected", [276])
 def test_png_total_bytes(example_png_stream, expected):
     assert example_png_stream.total_bytes == expected
@@ -56,3 +60,12 @@ def test_png_chunks(example_png_stream, expected):
 )
 def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
     assert list(example_semitransp_png_stream.chunks) == expected
+
+
+@mark.parametrize("expected", [(40000)])
+def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
+    """
+    Method should be self-testing but do so explicitly here to ensure
+    the length value being checked against remains calculated correctly.
+    """
+    assert len(example_semitransp_png_stream.get_idat_data()) == expected
