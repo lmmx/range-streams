@@ -1,6 +1,7 @@
 r""":mod:`range_streams.range_stream` exposes a class
-:py:func:`RangeStream`, whose key property (once initialised) is `ranges`,
-which provides a `RangeDict` comprising the ranges of
+:py:func:`RangeStream`, whose key property (once initialised) is
+:attr:`~range_streams.range_stream.RangeStream.ranges`,
+which provides a :class:`ranges.RangeDict` comprising the ranges of
 the file being streamed.
 
 The method :py:func:`RangeStream.add` will request further ranges,
@@ -49,12 +50,13 @@ class RangeStream:
     yourself). Further ranges may be requested on the `RangeStream` by
     calling `add`.
 
-    Both the `RangeStream.__init__` and `RangeStream.add`
-    methods support the specification of a range interval as either a
-    tuple of two integers or a `Range` from the mod:`python-ranges`
+    Both the :meth:`~range_streams.range_stream.RangeStream.__init__` and
+    :meth:`~range_streams.range_stream.RangeStream.add` methods support
+    the specification of a range interval as either a tuple of two
+    integers or a :class:`~ranges.Range` from the :mod:`python-ranges` package
     (an external requirement installed alongside this package). Either
     way, the interval created is interpreted to be the standard Python
-    convention of a half-open interval `[start,stop)`.
+    convention of a half-open interval ``[start,stop)``.
     """
 
     _length_checked: bool = False
@@ -104,7 +106,11 @@ class RangeStream:
             raise ValueError(f"{rng} is not a sub-range of {self.total_range}")
 
     def check_range_integrity(self) -> None:
-        "Every `RangeSet` in the `_ranges: ranges.RangeDict` keys must contain 1 Range each"
+        """
+        Every :class:`~ranges.RangeSet` in the
+        :attr:`~range_streams.range_stream.RangeStream._ranges``
+        :class:`~ranges.RangeDict` keys must contain 1 :class:`~ranges.Range` each
+        """
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
             bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
             for rset in bad_rs:
@@ -120,13 +126,17 @@ class RangeStream:
 
     def compute_external_ranges(self) -> RangeDict:
         """
-        Modifying the `_ranges` attribute to account for the bytes consumed
-        (from the head) and tail mark offset of where a range was already
-        trimmed to avoid an overlap (from the tail).
+        Modifying the :attr:`~range_streams.range_stream.RangeStream._ranges`
+        attribute to account for the bytes consumed (from the head)
+        and tail mark offset of where a range was already trimmed to avoid
+        an overlap (from the tail).
 
-        While the RangeSet keys are a deep copy of the _ranges RangeDict keys (and
-        therefore will not propagate if modified), the RangeResponse values are
-        references, therefore will propagate to the `_ranges` RangeDict if modified.
+        While the :class:`~ranges.RangeSet` keys are a deep copy of the
+        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :class:`~ranges.RangeDict` keys (and therefore will not propagate if modified),
+        the RangeResponse values are references, therefore will propagate to the
+        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :class:`~ranges.RangeDict` if modified.
         """
         prepared_rangedict = RangeDict()
         internal_rangedict = self._ranges.items()
@@ -150,13 +160,16 @@ class RangeStream:
     @property
     def ranges(self):
         """
-        Read-only view on the RangeDict stored in the ``_ranges`` attribute, modifying
+        Read-only view on the :class:`~ranges.RangeDict` stored in the
+        :attr:`~range_streams.range_stream.RangeStream._ranges` attribute, modifying
         it to account for the bytes consumed (from the head) and tail mark offset
         of where a range was already trimmed to avoid an overlap (from the tail).
 
-        Each ``ranges`` RangeDict key is a RangeSet containing 1 Range. Check
-        this assumption (singleton RangeSet "integrity") holds and retrieve
-        this list of RangeSet keys in ascending order, as a list of ``Range``.
+        Each :attr:`~range_streams.range_stream.RangeStream.ranges` :class:`~ranges.RangeDict`
+        key is a :class:`~ranges.RangeSet` containing 1 :class:`~ranges.Range`. Check
+        this assumption (singleton :class:`~ranges.RangeSet` "integrity") holds and retrieve
+        this list of :class:`~ranges.RangeSet` keys in ascending order, as a list of
+        :class:`~ranges.Range`.
         """
         self.check_range_integrity()
         return self.compute_external_ranges()
@@ -214,7 +227,7 @@ class RangeStream:
         return the internal :class:`~ranges.Range` stored on the
         :attr:`_ranges` attribute of the
         :attr:`~range_streams.range_stream.RangeStream`, by looking up the
-        shared :class:`RangeResponse` value.
+        shared :class:`~range_streams.range_response.RangeResponse` value.
 
         Args:
           ext_rng : A :class:`ranges.Range` from the 'external'
@@ -256,7 +269,7 @@ class RangeStream:
         0. "replant" ranges overlapped at the head with fresh, disjoint ranges 'downstream'
            or mark their tails to effectively truncate them if overlapped at the tail
         1. "burn" existing ranges overlapped anywhere by the new range
-        2. "strict" will throw a ValueError
+        2. "strict" will throw a :class:`ValueError`
         """
         ranges = self._ranges if internal else self.ranges
         if self.pruning_level not in range(3):
@@ -318,10 +331,18 @@ class RangeStream:
 
     @property
     def total_bytes(self) -> int | None:
+        """
+        The total number of bytes (i.e. the length) of the file being streamed.
+        """
         return self._length if self._length_checked else None
 
     def isempty(self) -> bool:
-        return self._ranges.isempty()
+        """
+        Whether the internal :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :class:`~ranges.RangeDict` is empty (contains no range-RangeResponse key-value
+        pairs).
+        """
+        return self.ranges.isempty()
 
     @property
     def spanning_range(self) -> Range:
@@ -362,8 +383,9 @@ class RangeStream:
         """
         Send a 'plain' HEAD request without range headers, to check the total content
         length without creating a RangeRequest (simply discard the response as it can
-        only be associated with the empty range, which cannot be stored in a RangeDict),
-        raising for status ASAP. To be used when initialised with an empty byte range.
+        only be associated with the empty range, which cannot be stored in a
+        :class:`~ranges.RangeDict`), raising for status ASAP.
+        To be used when initialised with an empty byte range.
         """
         req = self.client.build_request("HEAD", self.url)
         resp = self.client.send(request=req)
@@ -381,22 +403,24 @@ class RangeStream:
 
     def list_ranges(self) -> list[Range]:
         """
-        Retrieve ascending order list of RangeSet keys, as a :py:class:`list` of
-        :class:`ranges.Range`.
+        Retrieve ascending order list of RangeSet keys, as a :class:`list` of
+        :class:`~ranges.Range`.
 
-        The :class:`RangeSet` to :class:`ranges.Range` transformation is permitted because the `ranges`
+        The :class:`~ranges.RangeSet` to :class:`~ranges.Range` transformation is
+        permitted because the :attr:`~range_streams.range_stream.RangeStream.ranges`
         property method begins by checking range integrity, which requires
-        each :class:`RangeSet` to be a singleton set (of a single :class:`ranges.Range`).
+        each :class:`~ranges.RangeSet` to be a singleton set (of a single
+        :class:`~ranges.Range`).
 
-        If `activate` is True (the default), the range will be made the active range
-        of the :class:`RangeStream` upon being registered (if it meets the criteria for
-        registration).
+        If ``activate`` is ``True`` (the default), the range will be made the active range
+        of the :class:`~range_streams.range_stream.RangeStream` upon being
+        registered (if it meets the criteria for registration).
 
-        If `pruning_level` is 0 then overlaps are handled using a "replant" policy
+        If ``pruning_level`` is ``0`` then overlaps are handled using a "replant" policy
         (redefine and overwrite the existing range to be disjoint when the new range
-        would overlap it), if it's 1 they are handled with a "burn" policy (simply
+        would overlap it), if it's ``1`` they are handled with a "burn" policy (simply
         dispose of the existing range to eliminate any potential overlap), and if
-        it's 2 using a "strict" policy (raising errors upon detecting overlap).
+        it's ``2`` using a "strict" policy (raising errors upon detecting overlap).
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 

@@ -33,18 +33,16 @@ exhausted or removed due to overlap with another range. See the design
 docs for further details.
 
 Example
--------
+=======
 
 -  Adapted from ``tests/range_stream_core_test.py``
    (`source <https://github.com/lmmx/range-streams/blob/master/tests/range_stream_core_test.py>`__)
 
 .. code:: py
 
-   import httpx
-
    from range_streams import RangeStream, _EXAMPLE_URL
 
-   stream = RangeStream(url=_EXAMPLE_URL, client=httpx.Client())
+   stream = RangeStream(url=_EXAMPLE_URL)
    stream.add(byte_range=(0,3)) # or pass ranges.Range(0,3)
 
    stream.ranges
