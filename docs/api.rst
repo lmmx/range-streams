@@ -87,3 +87,31 @@ the data structures which store ranges.
    :members:
    :undoc-members:
    :show-inheritance:
+
+Streaming codecs
+================
+
+Codecs for PNG, ZIP, and .conda formats to assist in handling these file types
+in regard to the information in header sections defined in their specifications.
+
+----
+
+
+.. automodule:: range_streams.codecs.zip
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+.. automodule:: range_streams.codecs.conda
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+.. automodule:: range_streams.codecs.png
+   :members:
+   :undoc-members:
+   :show-inheritance:
