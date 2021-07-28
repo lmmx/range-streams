@@ -4,9 +4,8 @@ from struct import calcsize
 
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
 
-__all__ = ["ZipData", "CentralDirectory"]
 
-# DATA_ATTRS = ["start_sig", "end_sig"]
+__all__ = ["ZipData", "CentralDirectory"]
 
 
 class SimpleDataClass:
@@ -16,14 +15,12 @@ class SimpleDataClass:
     """
 
     def __repr__(self):
-        # attrs = {k: getattr(cls, k) for k in DATA_ATTRS if k in dir(cls)}
         attrs = {
             k: getattr(self, k)
             for k in dir(self)
             if not k.startswith("_")
             if not callable(getattr(self, k))
         }
-        # return f"{cls.__name__} :: {getattr(cls, 'start_sig')}"
         return f"{self.__class__.__name__} :: {attrs}"
 
     def get_size(self):

@@ -35,11 +35,20 @@ class PngStream(RangeStream):
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
         )
+        if enumerate_chunks:
+            self.populate_chunks()
         self.data = PngData()
         if scan_ihdr:
             self.scan_ihdr()
-        if enumerate_chunks:
-            self.chunks: dict[str, list[PngChunkInfo]] = self.enumerate_chunks()
+
+    def populate_chunks(self):
+        self._chunks: dict[str, list[PngChunkInfo]] = self.enumerate_chunks()
+
+    @property
+    def chunks(self):
+        if not hasattr(self, "_chunks"):
+            self.populate_chunks()
+        return self._chunks
 
     def scan_ihdr(self):
         """
@@ -122,3 +131,61 @@ class PngStream(RangeStream):
         return reconstruct_idat(
             idat_bytes=b, channels=channels, height=height, width=width
         )
+
+    def has_chunk(self, chunk_type: str) -> bool:
+        """
+        Determine whether the given chunk type is one of the chunks defined in the PNG.
+        If the chunks have not yet been parsed, they will first be enumerated.
+        """
+        return chunk_type in self.chunks
+
+    @property
+    def alpha_as_direct(self):
+        """
+        To avoid distinguishing 'direct' image transparency (in IDAT) from
+        'indirect' (or computed, from tRNS) palette transparency, check for
+        a colour map and then check for a tRNS chunk to determine overall
+        whether this image has an alpha channel in whichever way.
+        """
+        if not hasattr(self.data.IHDR, "_has_alpha_channel"):
+            self.scan_ihdr()  # parse the IHDR chunk if not already done
+        # To avoid handling palettes as done in PyPNG, give alpha "directly"
+        # https://github.com/drj11/pypng/blob/main/code/png.py#L1948-L1953
+        has_alpha = self.data.IHDR._has_alpha_channel  # based on colour type
+        if self.data.IHDR._has_colourmap:
+            # Allow alpha to switch on if tRNS chunk present
+            has_alpha |= self.has_chunk(chunk_type="tRNS")
+        return has_alpha
+
+    @property
+    def channel_count_as_direct(self):
+        """
+        If the image is indexed on a palette, then the channel count in the IHDR
+        will be 1 even though the underlying sample contains 3 channels (R,G,B).
+        To avoid distinguishing 'direct' image channels (in IDAT) from 'indirect'
+        (or computed, from tRNS) palette channels, check for a colour map and then
+        check for a tRNS chunk to determine overall whether this image has an extra
+        channel for transparency.
+        """
+        if self.data.IHDR.channel_count is None:
+            self.scan_ihdr()  # parse the IHDR chunk if not already done
+        # To avoid handling palettes as done in PyPNG, give channel count "directly"
+        # https://github.com/drj11/pypng/blob/main/code/png.py#L1948-L1953
+        channel_count = self.data.IHDR.channel_count  # based on colour type
+        if self.data.IHDR._has_colourmap:
+            # Allow alpha to switch on if tRNS chunk present
+            channel_count = 3 + int(self.alpha_as_direct)
+        return channel_count
+
+    @property
+    def bit_depth_as_direct(self):
+        """
+        Indexed images may report an IHDR bit depth other than 8, however the PLTE
+        uses 8 bits per sample regardless of image bit depth, so override it to avoid
+        distinguishing 'direct' bit depth from 'indirect' palette bit depth.
+        """
+        if self.data.IHDR.bit_depth is None:
+            self.scan_ihdr()  # parse the IHDR chunk if not already done
+        # To avoid handling palettes as done in PyPNG, give bit depth "directly"
+        # https://github.com/drj11/pypng/blob/main/code/png.py#L1948-L1953
+        return 8 if self.data.IHDR._has_colourmap else self.data.IHDR.bit_depth

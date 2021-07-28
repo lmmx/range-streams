@@ -90,7 +90,6 @@ class IHDRChunk(SimpleDataClass):
         """
         if self.colour_type is None:
             raise ValueError("Process the IHDR chunk before counting channels")
-        assert self.colour_type is not None
         self._has_colourmap: bool = bool(self.colour_type & 1)
         self._is_grayscale: bool = not (self.colour_type & 2)
         self._has_alpha_channel: bool = bool(self.colour_type & 4)
