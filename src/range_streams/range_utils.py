@@ -36,7 +36,7 @@ def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 
 def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
     """For all of the :class:~range_streams.range_response.RangeResponse`
-    values in the :class:`ranges.RangeDict`, list the ranges from their
+    values in the :class:`~ranges.RangeDict`, list the ranges from their
     original :attribute:~range_streams.range_response.RangeResponse.request`
     in order of registration.
 
@@ -50,14 +50,15 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 def most_recent_range(
     stream: range_streams.range_stream.RangeStream, internal: bool = True
 ) -> Range | None:
-    """For all of the :class:`~range_streams.range_response.RangeResponse`
-    values in the :class:`ranges.RangeDict`, list the ranges from their
+    """
+    For all of the :class:`~range_streams.range_response.RangeResponse`
+    values in the :class:`~ranges.RangeDict`, list the ranges from their
     original :attr:`~range_streams.range_response.RangeResponse.request`
     in order of registration.
 
     If ``internal`` is ``True``, use
     :attr:`~range_streams.range_stream.RangeStream._ranges` as the
-    :class:`ranges.RangeDict`, else use the 'external' (computed) property
+    :class:`~ranges.RangeDict`, else use the 'external' (computed) property
     :attr:`~range_streams.range_stream.RangeStream.ranges`. The external
     ones take into account the position the file has been read/seeked to.
 
@@ -76,7 +77,7 @@ def most_recent_range(
 
 def range_termini(rng: Range) -> tuple[int, int]:
     """Get the inclusive start and end positions ``[start,end]``
-    from a :class`ranges.Range`. These are referred to as the
+    from a :class:`ranges.Range`. These are referred to as the
     'termini'. Ranges are always ascending.
 
     Args:
@@ -130,7 +131,7 @@ def validate_range(
     byte_range: Range | tuple[int, int], allow_empty: bool = True
 ) -> Range:
     """Validate ``byte_range`` and convert to a half-closed (i.e.
-    not inclusive of the end position) ``[start,end)`` :class:`ranges.Range`
+    not inclusive of the end position) ``[start,end)`` :class:`~ranges.Range`
     if given as integer tuple.
 
     Args:
@@ -163,7 +164,7 @@ def range_span(ranges: list[Range]) -> Range:
     (i.e. the range spanned from their minimum to maximum). This span
     may of course not be completely 'covered' by the ranges in the list.
 
-    Assumes input list of :class:`RangeSets` are in ascending order,
+    Assumes input list of :class:`~ranges.RangeSet` are in ascending order,
     switches if not.
 
     Args:

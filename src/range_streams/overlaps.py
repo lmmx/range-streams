@@ -13,7 +13,7 @@ __all__ = ["get_range_containing", "overlap_whence"]
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
 def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
-    """Get a :class:`ranges.Range` from ``rng_dict`` by looking up the ``position`` it
+    """Get a :class:`~ranges.Range` from ``rng_dict`` by looking up the ``position`` it
     contains, where ``rng_dict`` is either the internal
     :obj:`RangeStream._ranges` attribute
     or the external :obj:`~range_streams.range_stream.RangeStream.ranges` property.
@@ -41,11 +41,12 @@ def overlap_whence(
 ) -> int | None:
     """
     Determine if any overlap exists, whence (i.e. from where) on the pre-existing
-    range it overlapped. 0 if the new range overlapped at the start ('head') of
-    the existing range, 1 if fully contained (in the 'body'), 2 if at the end
-    ('tail'), or None if the range is non-overlapping with any pre-existing range.
+    range it overlapped. ``0`` if the new range overlapped at the start ('head') of
+    the existing range, ``1`` if fully contained (in the 'body'), ``2`` if at the end
+    ('tail'), or ``None`` if the range is non-overlapping with any pre-existing range.
 
-    Note: same convention as Python io module's SEEK_SET, SEEK_CUR, and SEEK_END.
+    Note: same convention as Python io module's
+    :obj:`~io.SEEK_SET`, :obj:`~io.SEEK_CUR`, and :obj:`~io.SEEK_END`.
     """
     if rng in rng_dict:
         # Full overlap (i.e. in middle of pre-existing range)

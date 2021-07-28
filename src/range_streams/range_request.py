@@ -16,9 +16,13 @@ __all__ = ["RangeRequest"]
 class RangeRequest:
     """
     Store a GET request and the response stream while keeping a reference to
-    the client that spawned it, providing an overridable `_iterator` attribute
-    [by default giving access to `iter_raw()`] on the underlying response,
-    suitable for `RangeResponse` to wrap in a `io.BytesIO` buffered stream.
+    the client that spawned it, providing an overridable
+    :attr:`~range_streams.range_response.RangeResponse._iterator` attribute
+    [by default giving access to
+    :meth:`~range_streams.range_response.RangeResponse.iter_raw`] on the
+    underlying ``httpx.Response``, suitable for
+    :class:`~range_streams.range_response.RangeResponse`
+    to wrap in a :class:`io.BytesIO` buffered stream.
     """
 
     def __init__(self, byte_range: Range, url: str, client):
@@ -36,7 +40,7 @@ class RangeRequest:
 
     def setup_stream(self) -> None:
         """
-        `client.stream("GET", url)` but leave the stream to be manually closed
+        ``client.stream("GET", url)`` but leave the stream to be manually closed
         rather than using a context manager
         """
         self.request = self.client.build_request(
@@ -57,24 +61,42 @@ class RangeRequest:
 
     def content_range_header(self) -> str:
         """
-        Validate request was range request by presence of `content-range` header
+        Validate request was range request by presence of ``content-range`` header
         """
         return detect_header_value(headers=self.response.headers, key="content-range")
 
     @property
     def total_content_length(self) -> int:
+        """
+        Obtain the total content length from the ``content-range`` header of a
+        partial content HTTP GET request. This method is not used for the HTTP HEAD
+        request sent when a :class:`~range_streams.range_stream.RangeStream` is
+        initialised with an empty :class:`~ranges.Range` (since that is not a partial
+        content request it returns a ``content-length`` header which can be read
+        as an integer directly).
+        """
         return int(self.content_range.split("/")[-1])
 
     def iter_raw(self) -> Iterator[bytes]:
+        """
+        Wrap the :meth:`iter_raw` method of the underlying :class:`httpx.Response`
+        object within the :class:`~range_streams.range_response.RangeResponse` in
+        :attr:`~range_streams.range_request.RangeRequest.response`.
+        """
         return self.response.iter_raw()
 
     def close(self) -> None:
+        """
+        Close the :attr:`~range_streams.range_request.RangeRequest.response`
+        :class:`~range_streams.range_response.RangeResponse`.
+        """
         if not self.response.is_closed:
             self.response.close()
 
     def check_client(self):
         """
-        Typing workaround (Sphinx type hint extension does not like httpx)
+        Type checking workaround (Sphinx type hint extension does not like httpx
+        so check the type manually with a method called at initialisation).
         """
         if not isinstance(self.client, httpx.Client):  # pragma: no cover
             raise NotImplementedError("Only HTTPX clients currently supported")

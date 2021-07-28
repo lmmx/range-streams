@@ -42,10 +42,30 @@ class PngStream(RangeStream):
             self.scan_ihdr()
 
     def populate_chunks(self):
+        """
+        Call :meth:`~range_streams.codecs.png.PngStream.enumerate_chunks`
+        and store in the internal
+        :attr:`~range_streams.codecs.png.PngStream._chunks` attribute,
+        accessible through the :attr:`~range_streams.codecs.png.PngStream.chunks`
+        property.
+
+        If the :attr:`~range_streams.codecs.png.PngStream.chunks` property is
+        called 'prematurely', to avoid an access error it will 'proactively'
+        call this method before returning the gated internal attribute.
+        """
         self._chunks: dict[str, list[PngChunkInfo]] = self.enumerate_chunks()
 
     @property
     def chunks(self):
+        """
+        'Gate' to the internal :attr:`~range_streams.codecs.png.PngStream._chunks`
+        attribute.
+
+        If this property is called before the internal attribute is set,
+        ('prematurely'), to avoid an access error it will 'proactively'
+        call :meth:`~range_streams.codecs.png.PngStream.populate_chunks`
+        before returning the gated internal attribute.
+        """
         if not hasattr(self, "_chunks"):
             self.populate_chunks()
         return self._chunks
@@ -77,6 +97,13 @@ class PngStream(RangeStream):
         possible). Build a dictionary of all chunks with keys of the chunk type (four
         letter strings) and values of lists (since some chunks e.g. IDAT can appear
         multiple times in the PNG).
+
+        See `the official specification
+        <http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html>`_ for full details
+        (or `Wikipedia
+        <https://en.wikipedia.org/wiki/
+        Portable_Network_Graphics#%22Chunks%22_within_the_file>`_,
+        or `the W3C <https://www.w3.org/TR/PNG/#5Chunk-layout>`_).
         """
         png_signature = 8  # PNG files start with an 8-byte signature
         chunk_preamble_size = 8  # 4-byte length chunk + 4-byte type chunk

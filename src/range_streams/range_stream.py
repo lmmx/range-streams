@@ -1,7 +1,7 @@
 r""":mod:`range_streams.range_stream` exposes a class
 :py:func:`RangeStream`, whose key property (once initialised) is
 :attr:`~range_streams.range_stream.RangeStream.ranges`,
-which provides a :class:`ranges.RangeDict` comprising the ranges of
+which provides a :class:`~ranges.RangeDict` comprising the ranges of
 the file being streamed.
 
 The method :py:func:`RangeStream.add` will request further ranges,
@@ -66,7 +66,7 @@ class RangeStream:
     """
     `'Internal'` ranges attribute. Start position is not affected by
     reading in bytes from the :class:`RangeResponse` (unlike the
-    'externa' :attr:`ranges` property)
+    'external' :attr:`~range_streams.range_stream.RangeStream.ranges` property)
     """
 
     def __init__(
@@ -199,18 +199,22 @@ class RangeStream:
 
     def set_active_range(self, rng: Range):
         """
-        Setter for the active range (through which active_range_response is also set).
+        Setter for the active range (through which
+        :attr:`~range_streams.range_stream.RangeStream.active_range_response`
+        is also set).
         """
         if self._active_range != rng:
             self._active_range = rng
 
     @property
     def active_range_response(self) -> RangeResponse:
-        """Look up the :class:`RangeResponse` object associated with the
-        currently active range by using
+        """
+        Look up the :class:`~range_streams.range_response.RangeResponse`
+        object associated with the currently active range by using
         :attr:`~range_streams.range_stream.RangeStream._active_range` as the
-        :class:`Range` key for the internal
-        :attr:`~range_streams.range_stream.RangeStream._ranges` :class:`RangeDict`.
+        :class:`~ranges.Range` key for the internal
+        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :class:`RangeDict`.
         """
         try:
             return self._ranges[self._active_range]
@@ -221,7 +225,8 @@ class RangeStream:
             raise ValueError(f"{e_pre}({self._active_range=}")
 
     def ext2int(self, ext_rng: Range) -> RangeResponse:
-        """Given the external range `ext_rng` and the :class:`RangeStream`
+        """
+        Given the external range `ext_rng` and the :class:`RangeStream`
         on which it is 'stored' (or rather, computed, in the
         :attr:`~range_streams.range_stream.RangeStream.ranges` property),
         return the internal :class:`~ranges.Range` stored on the
@@ -230,7 +235,7 @@ class RangeStream:
         shared :class:`~range_streams.range_response.RangeResponse` value.
 
         Args:
-          ext_rng : A :class:`ranges.Range` from the 'external'
+          ext_rng : A :class:`~ranges.Range` from the 'external'
                     :attr:`~range_streams.range_stream.RangeStream.ranges`
                     with which to cross-reference in
                     :attr:`~range_streams.range_stream.RangeStream._ranges`

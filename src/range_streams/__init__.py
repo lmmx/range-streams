@@ -1,8 +1,8 @@
 r"""
 :mod:`range_streams` provides file-like object handling through
 an API familiar to users of the standard library
-:mod:`io` module.  It uses :class:`ranges.Range`, :class:`ranges.RangeSet`,
-and :class:`ranges.RangeDict` classes (from the externally maintained
+:mod:`io` module.  It uses :class:`~ranges.Range`, :class:`~ranges.RangeSet`,
+and :class:`~ranges.RangeDict` classes (from the externally maintained
 `python-ranges <https://python-ranges.readthedocs.io/en/latest/>`_ library)
 to represent and look up range operations in an efficient linked
 list data structure.
@@ -50,7 +50,7 @@ into account whether the bytes in each range's
 or removed due to overlap with another range. See the docs for further details.
 
 Further ranges are requested by simply calling the :meth:`~range_streams.range_stream.RangeStream.add`
-method with another :class:`ranges.Range` object. To create this implicitly, you can
+method with another :class:`~ranges.Range` object. To create this implicitly, you can
 simply provide a byte range to the `add` method as a tuple of two integers,
 which will be interpreted per the usual convention for ranges in Python,
 as an ``[a,b)`` half-open interval.
