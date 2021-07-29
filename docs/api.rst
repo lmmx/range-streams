@@ -62,13 +62,13 @@ and handling the response as a file-like object.
 ----
 
 
-.. automodule:: range_streams.range_request
+.. automodule:: range_streams.request
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-.. automodule:: range_streams.range_response
+.. automodule:: range_streams.response
    :members:
    :undoc-members:
    :show-inheritance:
@@ -91,7 +91,7 @@ the data structures which store ranges.
 Streaming codecs
 ================
 
-Codecs for PNG, ZIP, and .conda formats to assist in handling these file types
+Codecs for PNG, ZIP, and .conda, and TAR formats to assist in handling these file types
 in regard to the information in header sections defined in their specifications.
 
 ----
@@ -109,6 +109,11 @@ in regard to the information in header sections defined in their specifications.
    :undoc-members:
    :show-inheritance:
 
+
+.. automodule:: range_streams.codecs.tar
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 .. automodule:: range_streams.codecs.png
