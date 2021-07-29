@@ -46,7 +46,7 @@ acquires the first entry in the :class:`~ranges.RangeDict` stored on the
 :attr:`~range_streams.range_stream.RangeStream.ranges` attribute. This gates access
 to the internal ``_ranges`` attribute :class:`~ranges.RangeDict`), which takes
 into account whether the bytes in each range's
-:class:`~range_streams.range_response.RangeResponse` are exhausted
+:class:`~range_streams.response.RangeResponse` are exhausted
 or removed due to overlap with another range. See the docs for further details.
 
 Further ranges are requested by simply calling the :meth:`~range_streams.range_stream.RangeStream.add`
@@ -125,14 +125,14 @@ of the PyPNG library.
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
 
 from . import codecs, http_utils, overlaps, range_utils
-from .range_request import RangeRequest
-from .range_response import RangeResponse
 from .range_stream import RangeStream
+from .request import RangeRequest
+from .response import RangeResponse
 
 __all__ = [
     "range_stream",
-    "range_request",
-    "range_response",
+    "request",
+    "response",
     "http_utils",
     "overlaps",
     "range_utils",

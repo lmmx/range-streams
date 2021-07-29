@@ -25,8 +25,6 @@ from ranges import Range, RangeDict
 
 from .http_utils import detect_header_value
 from .overlaps import get_range_containing, overlap_whence
-from .range_request import RangeRequest
-from .range_response import RangeResponse
 from .range_utils import (
     most_recent_range,
     range_max,
@@ -35,6 +33,8 @@ from .range_utils import (
     ranges_in_reg_order,
     validate_range,
 )
+from .request import RangeRequest
+from .response import RangeResponse
 
 __all__ = ["RangeStream"]
 
@@ -209,7 +209,7 @@ class RangeStream:
     @property
     def active_range_response(self) -> RangeResponse:
         """
-        Look up the :class:`~range_streams.range_response.RangeResponse`
+        Look up the :class:`~range_streams.response.RangeResponse`
         object associated with the currently active range by using
         :attr:`~range_streams.range_stream.RangeStream._active_range` as the
         :class:`~ranges.Range` key for the internal
@@ -232,7 +232,7 @@ class RangeStream:
         return the internal :class:`~ranges.Range` stored on the
         :attr:`_ranges` attribute of the
         :attr:`~range_streams.range_stream.RangeStream`, by looking up the
-        shared :class:`~range_streams.range_response.RangeResponse` value.
+        shared :class:`~range_streams.response.RangeResponse` value.
 
         Args:
           ext_rng : A :class:`~ranges.Range` from the 'external'

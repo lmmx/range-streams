@@ -17,11 +17,11 @@ class RangeRequest:
     """
     Store a GET request and the response stream while keeping a reference to
     the client that spawned it, providing an overridable
-    :attr:`~range_streams.range_response.RangeResponse._iterator` attribute
+    :attr:`~range_streams.response.RangeResponse._iterator` attribute
     [by default giving access to
-    :meth:`~range_streams.range_response.RangeResponse.iter_raw`] on the
+    :meth:`~range_streams.response.RangeResponse.iter_raw`] on the
     underlying ``httpx.Response``, suitable for
-    :class:`~range_streams.range_response.RangeResponse`
+    :class:`~range_streams.response.RangeResponse`
     to wrap in a :class:`io.BytesIO` buffered stream.
     """
 
@@ -80,15 +80,15 @@ class RangeRequest:
     def iter_raw(self) -> Iterator[bytes]:
         """
         Wrap the :meth:`iter_raw` method of the underlying :class:`httpx.Response`
-        object within the :class:`~range_streams.range_response.RangeResponse` in
-        :attr:`~range_streams.range_request.RangeRequest.response`.
+        object within the :class:`~range_streams.response.RangeResponse` in
+        :attr:`~range_streams.request.RangeRequest.response`.
         """
         return self.response.iter_raw()
 
     def close(self) -> None:
         """
-        Close the :attr:`~range_streams.range_request.RangeRequest.response`
-        :class:`~range_streams.range_response.RangeResponse`.
+        Close the :attr:`~range_streams.request.RangeRequest.response`
+        :class:`~range_streams.response.RangeResponse`.
         """
         if not self.response.is_closed:
             self.response.close()

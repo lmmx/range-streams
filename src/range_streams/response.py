@@ -118,12 +118,12 @@ class RangeResponse:
 
     def is_consumed(self) -> bool:
         """
-        Whether the :meth:`~range_streams.range_response.RangeResponse.tell`
+        Whether the :meth:`~range_streams.response.RangeResponse.tell`
         position (indicating 'consumed' or 'read so far') along with the
-        :attr:`~range_streams.range_response.RangeResponse.tail_mark` indicates
+        :attr:`~range_streams.response.RangeResponse.tail_mark` indicates
         whether the stream should be considered consumed.
 
-        The :attr:`~range_streams.range_response.RangeResponse.tail_mark`
+        The :attr:`~range_streams.response.RangeResponse.tail_mark`
         is part of a mechanism to 'shorten' ranges when an overlap is detected,
         to preserve the one-to-one integrity of the :class:`~ranges.RangeDict`
         (see notes on the "replant" policy of

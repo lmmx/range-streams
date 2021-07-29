@@ -72,8 +72,8 @@ def range_header(rng: Range) -> dict[str, str]:
 
     Returns:
       :class:`dict` suitable to be passed to ``httpx.Client.build_request``
-      in :meth:`~range_streams.range_request.RangeRequest.setup_stream` through
-      :attr:`~range_streams.range_request.RangeRequest.range_header`
+      in :meth:`~range_streams.request.RangeRequest.setup_stream` through
+      :attr:`~range_streams.request.RangeRequest.range_header`
     """
     # :class:`dict` suitable to be passed to :meth:`httpx.Client.build_request`
     byte_range = byte_range_from_range_obj(rng)
@@ -85,7 +85,7 @@ class PartialContentStatusError(Exception):
     The response had any HTTP status code other than 206 (Partial Content).
 
     May be raised when calling
-    :meth:`~range_streams.range_request.RangeRequest.raise_for_non_partial_content`
+    :meth:`~range_streams.request.RangeRequest.raise_for_non_partial_content`
     """
 
     def __init__(self, *, request, response):

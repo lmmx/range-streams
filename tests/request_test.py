@@ -3,12 +3,12 @@ from pytest import fixture, mark, raises
 from ranges import Range
 
 from range_streams.http_utils import PartialContentStatusError
-from range_streams.range_request import RangeRequest
+from range_streams.request import RangeRequest
 
 from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
 
 
-def make_range_request(start, stop):
+def make_request(start, stop):
     client = httpx.Client()
     rng = RangeRequest(
         byte_range=Range(start, stop),
@@ -22,25 +22,25 @@ def make_range_request(start, stop):
     "start,stop,expected", [(0, i + 1, {"range": f"bytes=0-{i}"}) for i in range(3)]
 )
 def test_range_headers(start, stop, expected):
-    rng = make_range_request(start, stop)
+    rng = make_request(start, stop)
     assert rng.range_header == expected
 
 
 @fixture
-def example_range_request():
+def example_request():
     start, stop = 0, 1
-    return make_range_request(start, stop)
+    return make_request(start, stop)
 
 
-def test_range_response_closing(example_range_request):
-    assert example_range_request.response.is_closed is False
-    example_range_request.close()
-    assert example_range_request.response.is_closed is True
-    example_range_request.close()
+def test_response_closing(example_request):
+    assert example_request.response.is_closed is False
+    example_request.close()
+    assert example_request.response.is_closed is True
+    example_request.close()
 
 
-def test_range_request_iter_raw(example_range_request):
-    iterator = example_range_request.iter_raw()
+def test_request_iter_raw(example_request):
+    iterator = example_request.iter_raw()
     byte = next(iterator)
     assert byte == b"P"
 
@@ -50,15 +50,15 @@ def test_range_request_iter_raw(example_range_request):
 @mark.parametrize("stop,expected", [(i, {"range": f"bytes=0-{i}"}) for i in range(2)])
 def test_range_length(start, stop, expected, error_msg):
     if stop > 0:
-        rng = make_range_request(start, stop)
+        rng = make_request(start, stop)
         assert rng.total_content_length == EXAMPLE_FILE_LENGTH
     else:
         with raises(PartialContentStatusError, match=error_msg):
-            rng = make_range_request(start, stop)
+            rng = make_request(start, stop)
 
 
 @mark.parametrize("error_msg", ["Response was missing 'content-range' header.*"])
-def test_range_header_missing(example_range_request, error_msg):
-    del example_range_request.response.headers["content-range"]
+def test_range_header_missing(example_request, error_msg):
+    del example_request.response.headers["content-range"]
     with raises(KeyError, match=error_msg):
-        example_range_request.content_range_header()
+        example_request.content_range_header()

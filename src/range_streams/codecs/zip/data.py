@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from struct import calcsize
 
+from ..share import COMPRESSIONS
+
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
 
 
@@ -93,21 +95,3 @@ class ZipData:
         self.LOC_F_H = LocalFileHeader()
         self.Z64_E_O_CTRL_DIR_REC = Zip64EndOfCentralDirectoryRec()
         self.E_O_CTRL_DIR_REC = EndOfCentralDirectoryRec()
-
-
-COMPRESSIONS = {
-    # gz
-    ".gz": "gz",
-    ".tgz": "gz",
-    # xz
-    ".xz": "xz",
-    ".txz": "xz",
-    # bz2
-    ".bz2": "bz2",
-    ".tbz": "bz2",
-    ".tbz2": "bz2",
-    ".tb2": "bz2",
-    # zst
-    ".zst": "zst",
-    ".tzst": "zst",
-}

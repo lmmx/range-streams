@@ -35,9 +35,9 @@ def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 
 
 def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
-    """For all of the :class:~range_streams.range_response.RangeResponse`
+    """For all of the :class:~range_streams.response.RangeResponse`
     values in the :class:`~ranges.RangeDict`, list the ranges from their
-    original :attribute:~range_streams.range_response.RangeResponse.request`
+    original :attribute:~range_streams.response.RangeResponse.request`
     in order of registration.
 
     Args:
@@ -51,9 +51,9 @@ def most_recent_range(
     stream: range_streams.range_stream.RangeStream, internal: bool = True
 ) -> Range | None:
     """
-    For all of the :class:`~range_streams.range_response.RangeResponse`
+    For all of the :class:`~range_streams.response.RangeResponse`
     values in the :class:`~ranges.RangeDict`, list the ranges from their
-    original :attr:`~range_streams.range_response.RangeResponse.request`
+    original :attr:`~range_streams.response.RangeResponse.request`
     in order of registration.
 
     If ``internal`` is ``True``, use
