@@ -15,7 +15,7 @@ class TarStream(RangeStream):
     """
     As for :class:`~range_streams.stream.RangeStream`, but if ``scan_headers``
     is ``True``, then immediately call
-    :meth:`~range_streams.codecs.tar.TarStream.check_header_rec`
+    :meth:`~range_streams.codecs.tar.TarStream.check_header_recs`
     on initialisation (which will perform the necessary
     of range request to identify the files in the tar from the header record),
     setting :attr:`~range_streams.codecs.tar.TarStream.tarred_files`, and
