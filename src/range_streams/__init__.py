@@ -146,10 +146,10 @@ __url__ = "https://github.com/lmmx/range-streams"
 __uri__ = __url__
 __email__ = "louismmx@gmail.com"
 
-_EXAMPLE_URL = (
-    "https://github.com/lmmx/range-streams/raw/master/data/example_text_file.txt"
-)
-_EXAMPLE_ZIP_URL = (
-    "https://github.com/lmmx/range-streams/raw/master/data/example_text_file.txt.zip"
-)
-_EXAMPLE_PNG_URL = "https://github.com/lmmx/range-streams/raw/master/data/red_square_rgba_semitransparent.png"
+_EXAMPLE_DATA_URL = "https://github.com/lmmx/range-streams/raw/master/data/"
+_EXAMPLE_URL = f"{_EXAMPLE_DATA_URL}example_text_file.txt"
+_EXAMPLE_ZIP_URL = f"{_EXAMPLE_DATA_URL}example_text_file.txt.zip"
+_EXAMPLE_TAR_URL = f"{_EXAMPLE_DATA_URL}data.tar"
+# _EXAMPLE_TAR_GZ_URL = f"{_EXAMPLE_TAR_URL}.gz"
+# _EXAMPLE_TAR_BZ2_URL = f"{_EXAMPLE_TAR_URL}.bz2"
+_EXAMPLE_PNG_URL = f"{_EXAMPLE_DATA_URL}red_square_rgba_semitransparent.png"
