@@ -55,6 +55,9 @@ class HeaderData(SimpleDataClass):
     _H_CHECKSUM_SIZE = 8
     _H_LINK_INDICATOR_SIZE = 1
     _H_LINKED_NAME_SIZE = 100
+    _H_PAD_SIZE = 512
+    # Standard end-of-file padding is 2 padding records
+    _H_END_PAD_SIZE = 2 * _H_PAD_SIZE
 
 
 class TarData:
