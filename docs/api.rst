@@ -16,11 +16,11 @@ ranges.
 ----
 
 
-.. automodule:: range_streams.range_stream
+.. automodule:: range_streams.stream
    :members:
    :undoc-members:
-   :private-members: _ranges
-   :special-members: __ranges_repr__
+   :private-members: _ranges, _active_range
+   :special-members: __init__, __ranges_repr__
    :show-inheritance:
 
 
@@ -100,6 +100,7 @@ in regard to the information in header sections defined in their specifications.
 .. automodule:: range_streams.codecs.zip
    :members:
    :undoc-members:
+   :special-members: __init__
    :show-inheritance:
 
 
@@ -107,16 +108,19 @@ in regard to the information in header sections defined in their specifications.
 .. automodule:: range_streams.codecs.conda
    :members:
    :undoc-members:
+   :special-members: __init__
    :show-inheritance:
 
 
 .. automodule:: range_streams.codecs.tar
    :members:
    :undoc-members:
+   :special-members: __init__
    :show-inheritance:
 
 
 .. automodule:: range_streams.codecs.png
    :members:
    :undoc-members:
+   :special-members: __init__
    :show-inheritance:

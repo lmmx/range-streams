@@ -16,7 +16,7 @@ def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
     """Get a :class:`~ranges.Range` from ``rng_dict`` by looking up the ``position`` it
     contains, where ``rng_dict`` is either the internal
     :obj:`RangeStream._ranges` attribute
-    or the external :obj:`~range_streams.range_stream.RangeStream.ranges` property.
+    or the external :obj:`~range_streams.stream.RangeStream.ranges` property.
 
     Presumes range integrity has been checked.
 

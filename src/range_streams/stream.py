@@ -1,6 +1,6 @@
-r""":mod:`range_streams.range_stream` exposes a class
+r""":mod:`range_streams.stream` exposes a class
 :py:func:`RangeStream`, whose key property (once initialised) is
-:attr:`~range_streams.range_stream.RangeStream.ranges`,
+:attr:`~range_streams.stream.RangeStream.ranges`,
 which provides a :class:`~ranges.RangeDict` comprising the ranges of
 the file being streamed.
 
@@ -47,11 +47,12 @@ class RangeStream:
 
     When the class is initialised its length checked upon the first range
     request, and the client provided is not closed (you must handle this
-    yourself). Further ranges may be requested on the `RangeStream` by
-    calling `add`.
+    yourself). Further ranges may be requested on the
+    :class:`~range_streams.stream.RangeStream` by calling
+    :meth:`~range_streams.stream.RangeStream.add`.
 
-    Both the :meth:`~range_streams.range_stream.RangeStream.__init__` and
-    :meth:`~range_streams.range_stream.RangeStream.add` methods support
+    Both the :meth:`~range_streams.stream.RangeStream.__init__` and
+    :meth:`~range_streams.stream.RangeStream.add` methods support
     the specification of a range interval as either a tuple of two
     integers or a :class:`~ranges.Range` from the :mod:`python-ranges` package
     (an external requirement installed alongside this package). Either
@@ -61,12 +62,19 @@ class RangeStream:
 
     _length_checked: bool = False
     _active_range: Range | None = None
+    """
+    Set by :meth:`~range_streams.stream.RangeStream.set_active_range`,
+    through which the
+    :attr:`~range_streams.stream.RangeStream.active_range_response`
+    property gives access to the currently 'active' range (usually
+    the most recently created).
+    """
 
     _ranges: RangeDict
     """
     `'Internal'` ranges attribute. Start position is not affected by
     reading in bytes from the :class:`RangeResponse` (unlike the
-    'external' :attr:`~range_streams.range_stream.RangeStream.ranges` property)
+    'external' :attr:`~range_streams.stream.RangeStream.ranges` property)
     """
 
     def __init__(
@@ -76,6 +84,40 @@ class RangeStream:
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
     ):
+        """
+        Set up a stream for the file at ``url``, with either an initial
+        range to be requested (HTTP partial content request), or if left
+        as the empty range (default: ``Range(0,0)``) a HEAD request will
+        be sent instead, so as to set the total size of the target
+        file on the :attr:`~range_streams.stream.RangeStream.total_bytes`
+        property.
+
+        By default (if ``client`` is left as ``None``) a fresh
+        :class:`httpx.Client` will be created for each stream.
+
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
+        object, or 2-tuple of integers (``(start, end)``), interpreted
+        either way as a half-closed interval ``[start, end)``, as given by
+        Python's built-in :class:`range`.
+
+        The ``pruning_level`` controls the policy for overlap handling
+        (``0`` will resize overlapped ranges, ``1`` will delete overlapped
+        ranges, and ``2`` will raise an error when a new range is added
+        which overlaps a pre-existing range).
+
+        - See docs for the
+          :meth:`~range_streams.stream.RangeStream.handle_overlap`
+          method for further details.
+
+        Args:
+          url           : (:class:`str`) The URL of the file to be streamed
+          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
+                          to use for HTTP requests
+          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                          of positions on the file to be requested
+          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                          or ``2`` ('strict')
+        """
         self.url = url
         self.client = client
         if self.client is None:
@@ -108,7 +150,7 @@ class RangeStream:
     def check_range_integrity(self) -> None:
         """
         Every :class:`~ranges.RangeSet` in the
-        :attr:`~range_streams.range_stream.RangeStream._ranges``
+        :attr:`~range_streams.stream.RangeStream._ranges``
         :class:`~ranges.RangeDict` keys must contain 1 :class:`~ranges.Range` each
         """
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
@@ -126,16 +168,16 @@ class RangeStream:
 
     def compute_external_ranges(self) -> RangeDict:
         """
-        Modifying the :attr:`~range_streams.range_stream.RangeStream._ranges`
+        Modifying the :attr:`~range_streams.stream.RangeStream._ranges`
         attribute to account for the bytes consumed (from the head)
         and tail mark offset of where a range was already trimmed to avoid
         an overlap (from the tail).
 
         While the :class:`~ranges.RangeSet` keys are a deep copy of the
-        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`~ranges.RangeDict` keys (and therefore will not propagate if modified),
         the RangeResponse values are references, therefore will propagate to the
-        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`~ranges.RangeDict` if modified.
         """
         prepared_rangedict = RangeDict()
@@ -161,11 +203,11 @@ class RangeStream:
     def ranges(self):
         """
         Read-only view on the :class:`~ranges.RangeDict` stored in the
-        :attr:`~range_streams.range_stream.RangeStream._ranges` attribute, modifying
+        :attr:`~range_streams.stream.RangeStream._ranges` attribute, modifying
         it to account for the bytes consumed (from the head) and tail mark offset
         of where a range was already trimmed to avoid an overlap (from the tail).
 
-        Each :attr:`~range_streams.range_stream.RangeStream.ranges` :class:`~ranges.RangeDict`
+        Each :attr:`~range_streams.stream.RangeStream.ranges` :class:`~ranges.RangeDict`
         key is a :class:`~ranges.RangeSet` containing 1 :class:`~ranges.Range`. Check
         this assumption (singleton :class:`~ranges.RangeSet` "integrity") holds and retrieve
         this list of :class:`~ranges.RangeSet` keys in ascending order, as a list of
@@ -200,7 +242,7 @@ class RangeStream:
     def set_active_range(self, rng: Range):
         """
         Setter for the active range (through which
-        :attr:`~range_streams.range_stream.RangeStream.active_range_response`
+        :attr:`~range_streams.stream.RangeStream.active_range_response`
         is also set).
         """
         if self._active_range != rng:
@@ -211,9 +253,9 @@ class RangeStream:
         """
         Look up the :class:`~range_streams.response.RangeResponse`
         object associated with the currently active range by using
-        :attr:`~range_streams.range_stream.RangeStream._active_range` as the
+        :attr:`~range_streams.stream.RangeStream._active_range` as the
         :class:`~ranges.Range` key for the internal
-        :attr:`~range_streams.range_stream.RangeStream._ranges`
+        :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`RangeDict`.
         """
         try:
@@ -228,17 +270,17 @@ class RangeStream:
         """
         Given the external range `ext_rng` and the :class:`RangeStream`
         on which it is 'stored' (or rather, computed, in the
-        :attr:`~range_streams.range_stream.RangeStream.ranges` property),
+        :attr:`~range_streams.stream.RangeStream.ranges` property),
         return the internal :class:`~ranges.Range` stored on the
         :attr:`_ranges` attribute of the
-        :attr:`~range_streams.range_stream.RangeStream`, by looking up the
+        :attr:`~range_streams.stream.RangeStream`, by looking up the
         shared :class:`~range_streams.response.RangeResponse` value.
 
         Args:
           ext_rng : A :class:`~ranges.Range` from the 'external'
-                    :attr:`~range_streams.range_stream.RangeStream.ranges`
+                    :attr:`~range_streams.stream.RangeStream.ranges`
                     with which to cross-reference in
-                    :attr:`~range_streams.range_stream.RangeStream._ranges`
+                    :attr:`~range_streams.stream.RangeStream._ranges`
                     to identify the corresponding 'internal' range.
         """
         rng_response = self.ranges[ext_rng]
@@ -252,7 +294,7 @@ class RangeStream:
         position on the range) from the external one (which may differ if the seek position
         has advanced from the start position, usually due to reading bytes from the range).
         Once this internal range has been identified, delete it, and set the
-        :attr:`~range_streams.range_stream.RangeStream._active_range` to the most recent
+        :attr:`~range_streams.stream.RangeStream._active_range` to the most recent
         (or if the stream becomes empty, set it to ``None``).
 
         Args:
@@ -343,7 +385,7 @@ class RangeStream:
 
     def isempty(self) -> bool:
         """
-        Whether the internal :attr:`~range_streams.range_stream.RangeStream._ranges`
+        Whether the internal :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`~ranges.RangeDict` is empty (contains no range-RangeResponse key-value
         pairs).
         """
@@ -412,13 +454,13 @@ class RangeStream:
         :class:`~ranges.Range`.
 
         The :class:`~ranges.RangeSet` to :class:`~ranges.Range` transformation is
-        permitted because the :attr:`~range_streams.range_stream.RangeStream.ranges`
+        permitted because the :attr:`~range_streams.stream.RangeStream.ranges`
         property method begins by checking range integrity, which requires
         each :class:`~ranges.RangeSet` to be a singleton set (of a single
         :class:`~ranges.Range`).
 
         If ``activate`` is ``True`` (the default), the range will be made the active range
-        of the :class:`~range_streams.range_stream.RangeStream` upon being
+        of the :class:`~range_streams.stream.RangeStream` upon being
         registered (if it meets the criteria for registration).
 
         If ``pruning_level`` is ``0`` then overlaps are handled using a "replant" policy
@@ -435,6 +477,37 @@ class RangeStream:
         activate: bool = True,
         name: str = "",
     ) -> None:
+        """
+        Add a range to the stream. If it is empty and the length of the stream has not
+        already been determined, this will initiate a HEAD request to check the file's
+        total size. In all other cases, only add the :class:`~ranges.Range` to the
+        :class:`~ranges.RangeDict` of :attr:`~range_streams.stream.RangeStream.ranges`,
+        set up a streaming partial content GET request, but do not try to read any
+        bytes from it (so response data will be downloaded upon creation).
+
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
+        object, or 2-tuple of integers (``(start, end)``), interpreted
+        either way as a half-closed interval ``[start, end)``, as given by
+        Python's built-in :class:`range`.
+
+        If ``activate`` is ``True``, make this range the active range upon adding it
+        to the stream (allowing access to the associated response through the
+        :attr:`~range_streams.stream.RangeStream.active_range_response` property).
+
+        If a ``name`` is provided (used in subclasses where the stream is an archive
+        with individually named files within it), assign this name to the
+        :class:`~range_streams.response.RangeResponse` (as its ``range_name`` argument).
+
+        Args:
+          byte_range : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                       of positions on the file to be requested and stored in
+                       the :class:`~ranges.RangeDict` on
+                       :attr:`~range_streams.stream.RangeStream.ranges`
+          activate   : (:class:`bool`) Whether to make this newly added
+                       :class:`~ranges.Range` the active range on the stream upon
+                       creating it.
+          name       : (:class:`str`) A name (default: ``''``) to give to the range.
+        """
         # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not request an empty range if total length already checked

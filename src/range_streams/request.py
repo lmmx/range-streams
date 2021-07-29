@@ -70,7 +70,7 @@ class RangeRequest:
         """
         Obtain the total content length from the ``content-range`` header of a
         partial content HTTP GET request. This method is not used for the HTTP HEAD
-        request sent when a :class:`~range_streams.range_stream.RangeStream` is
+        request sent when a :class:`~range_streams.stream.RangeStream` is
         initialised with an empty :class:`~ranges.Range` (since that is not a partial
         content request it returns a ``content-length`` header which can be read
         as an integer directly).

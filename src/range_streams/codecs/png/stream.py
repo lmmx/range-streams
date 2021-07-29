@@ -5,7 +5,7 @@ import zlib
 
 from ranges import Range
 
-from ...range_stream import RangeStream
+from ...stream import RangeStream
 from .data import PngChunkInfo, PngData
 from .reconstruct import reconstruct_idat
 
@@ -13,6 +13,19 @@ __all__ = ["PngStream"]
 
 
 class PngStream(RangeStream):
+    """
+    As for RangeStream, but if `scan_ihdr` is True, then immediately call
+    :meth:`~range_streams.codecs.png.PngStream.scan_ihdr` on initialisation
+    (which will perform the necessary range request to read PNG metadata
+    from its IHDR chunk), setting various attributes on the
+    :attr:`~range_streams.codecs.png.PngStream.data.IHDR` object.
+
+    Populating these attributes can be postponed [until manually calling
+    :meth:`~range_streams.codecs.png.PngStream.scan_ihdr` and
+    :meth:`~range_streams.codecs.png.PngStream.enumerate_chunks`]
+    to avoid sending any range requests at initialisation.
+    """
+
     def __init__(
         self,
         url: str,
@@ -23,14 +36,43 @@ class PngStream(RangeStream):
         enumerate_chunks: bool = True,
     ):
         """
-        As for RangeStream, but if `scan_ihdr` is True, then immediately call
-        :meth:`~PngStream.scan_ihdr` on initialisation (which will perform the
-        necessary range request to read PNG metadata from its IHDR chunk), setting
-        various attributes on the :attr:`PngStream.data.IHDR` object.
+        Set up a stream for the PNG file at ``url``, with either an initial
+        range to be requested (HTTP partial content request), or if left
+        as the empty range (default: ``Range(0,0)``) a HEAD request will
+        be sent instead, so as to set the total size of the target
+        file on the :attr:`~range_streams.stream.RangeStream.total_bytes`
+        property.
 
-        Populating these attributes can be postponed [until manually calling
-        :meth:`PngStream.scan_ihdr` and :meth:`PngStream.enumerate_chunks`]
-        to avoid sending any range requests at initialisation.
+        By default (if ``client`` is left as ``None``) a fresh
+        :class:`httpx.Client` will be created for each stream.
+
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
+        object, or 2-tuple of integers (``(start, end)``), interpreted
+        either way as a half-closed interval ``[start, end)``, as given by
+        Python's built-in :class:`range`.
+
+        The ``pruning_level`` controls the policy for overlap handling
+        (``0`` will resize overlapped ranges, ``1`` will delete overlapped
+        ranges, and ``2`` will raise an error when a new range is added
+        which overlaps a pre-existing range).
+
+        - See docs for the
+          :meth:`~range_streams.stream.RangeStream.handle_overlap`
+          method for further details.
+
+        Args:
+          url             : (:class:`str`) The URL of the file to be streamed
+          client          : (:class:`httpx.Client` | ``None``) The HTTPX client
+                            to use for HTTP requests
+          byte_range      : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                            of positions on the file to be requested
+          pruning_level   : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                            or ``2`` ('strict')
+          scan_ihdr       : (:class:`bool`) Whether to scan the IHDR chunk on
+                            initialisation
+          enumerate_chunks: (:class:`bool`) Whether to step through each chunk
+                            (read its metadata, and proceed until all chunks have
+                            been identified) upon initialisation
         """
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
@@ -73,8 +115,9 @@ class PngStream(RangeStream):
     def scan_ihdr(self):
         """
         Request a range on the stream corresponding to the IHDR chunk, and populate
-        the :attr:`PngStream.data.IHDR` object (an instance of :class:`IHDRChunk`
-        from the :mod:`range_streams.codecs.png.data` module) according to the spec.
+        the :attr:`~range_streams.codecs.png.PngStream.data.IHDR` object (an instance
+        of :class:`IHDRChunk` from the :mod:`range_streams.codecs.png.data` module)
+        according to the spec.
         """
         ihdr_rng = Range(self.data.IHDR.start_pos, self.data.IHDR.end_pos)
         self.add(ihdr_rng)

@@ -23,7 +23,7 @@ class RangeResponse:
     """
     The amount by which to shorten the 'tail' (i.e. the upper end) of the
     range when deciding if it is 'consumed'. Incremented within the
-    :meth:`~range_streams.range_stream.RangeStream.handle_overlap` method
+    :meth:`~range_streams.stream.RangeStream.handle_overlap` method
     when the ``pruning_level`` is set to ``1`` (indicating a "replant" policy).
 
     Under a 'replant' policy, when a new range is to be added and would overlap
@@ -62,16 +62,16 @@ class RangeResponse:
     @property
     def url(self) -> str:
         """
-        A wrapper to access the :attr:`~range_streams.range_stream.RangeStream.url`
-        of the 'parent' :class:`~range_streams.range_stream.RangeStream`.
+        A wrapper to access the :attr:`~range_streams.stream.RangeStream.url`
+        of the 'parent' :class:`~range_streams.stream.RangeStream`.
         """
         return self.parent_stream.url
 
     @property
     def name(self) -> str:
         """
-        A wrapper to access the :attr:`~range_streams.range_stream.RangeStream.name`
-        of the 'parent' :class:`~range_streams.range_stream.RangeStream`.
+        A wrapper to access the :attr:`~range_streams.stream.RangeStream.name`
+        of the 'parent' :class:`~range_streams.stream.RangeStream`.
         """
         return self.parent_stream.name
 
@@ -127,9 +127,9 @@ class RangeResponse:
         is part of a mechanism to 'shorten' ranges when an overlap is detected,
         to preserve the one-to-one integrity of the :class:`~ranges.RangeDict`
         (see notes on the "replant" policy of
-        :meth:`~range_streams.range_stream.RangeStream.handle_overlap`, set
+        :meth:`~range_streams.stream.RangeStream.handle_overlap`, set
         by the ``pruning_level`` passed into
-        :class:`~range_streams.range_stream.RangeStream` on initialisation).
+        :class:`~range_streams.stream.RangeStream` on initialisation).
 
         Note that there is (absolutely!) nothing stopping a stream from being
         re-consumed, but this library works on the assumption that all streams
@@ -137,10 +137,10 @@ class RangeResponse:
         either used once only or else will be reused from the first output rather
         than re-accessed directly from the stream itself).
 
-        To this end, :class:`~range_streams.range_stream.RangeStream` has measures
+        To this end, :class:`~range_streams.stream.RangeStream` has measures
         in place to "decommission" ranges once they are consumed (see in particular
-        :meth:`~range_streams.range_stream.RangeStream.burn_range` and
-        :meth:`~range_streams.range_stream.RangeStream.handle_overlap`).
+        :meth:`~range_streams.stream.RangeStream.burn_range` and
+        :meth:`~range_streams.stream.RangeStream.handle_overlap`).
         """
         read_so_far = self.tell()
         len_to_read = range_len(self.request.range) - self.tail_mark

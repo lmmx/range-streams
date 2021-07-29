@@ -5,13 +5,35 @@ import struct
 
 from ranges import Range
 
-from ...range_stream import RangeStream
+from ...stream import RangeStream
 from .data import COMPRESSIONS, TarData
 
-__all__ = ["ZipStream"]
+__all__ = ["TarStream", "TarredFileInfo"]
 
 
 class TarStream(RangeStream):
+    """
+    As for :class:`~range_streams.stream.RangeStream`, but if ``scan_headers``
+    is ``True``, then immediately call
+    :meth:`~range_streams.codecs.tar.TarStream.check_header_rec`
+    on initialisation (which will perform the necessary
+    of range request to identify the files in the tar from the header record),
+    setting :attr:`~range_streams.codecs.tar.TarStream.tarred_files`, and
+    :meth:`~range_streams.stream.RangeStream.add` their file content ranges to the stream.
+
+    Setting this can be postponed until first access of the :attr:`filename_list`
+    property (this will not :meth:`~range_streams.stream.RangeStream.add` them to the
+    :class:`~range_streams.codecs.tar.TarStream`).
+
+    Once parsed, the file contents are stored as a list of
+    :class:`~range_streams.codecs.tar.stream.TarredFileInfo`
+    objects (in the order they appear in the header record) in the
+    :attr:`tarred_files` attribute.  Each of these objects has a
+    :meth:`~range_streams.codecs.tar.stream.TarredFileInfo.file_range`
+    method which gives the range of its file content bytes within the
+    :class:`~range_streams.codecs.tar.TarStream`.
+    """
+
     def __init__(
         self,
         url: str,
@@ -21,21 +43,40 @@ class TarStream(RangeStream):
         scan_headers: bool = True,
     ):
         """
-        As for RangeStream, but if `scan_headers` is True, then immediately call
-        :meth:`check_header_rec` on initialisation (which will perform the necessary
-        of range request to identify the files in the tar from the header record),
-        setting :attr:`tarred_files`, and :meth:`~RangeStream.add` their file content
-        ranges to the stream.
+        Set up a stream for the ZIP archive at ``url``, with either an initial
+        range to be requested (HTTP partial content request), or if left
+        as the empty range (default: ``Range(0,0)``) a HEAD request will
+        be sent instead, so as to set the total size of the target
+        file on the :attr:`~range_streams.stream.RangeStream.total_bytes`
+        property.
 
-        Setting this can be postponed until first access of the :attr:`filename_list`
-        property (this will not :meth:`~RangeStream.add` them to the
-        :class:`TarStream`).
+        By default (if ``client`` is left as ``None``) a fresh
+        :class:`httpx.Client` will be created for each stream.
 
-        Once parsed, the file contents are stored as a list of :class:`TarredFileInfo`
-        objects (in the order they appear in the header record) in the
-        :attr:`tarred_files` attribute.  Each of these objects has a
-        :meth:`~TarredFileInfo.file_range` method which gives the range of its file
-        content bytes within the :class:`TarStream`.
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
+        object, or 2-tuple of integers (``(start, end)``), interpreted
+        either way as a half-closed interval ``[start, end)``, as given by
+        Python's built-in :class:`range`.
+
+        The ``pruning_level`` controls the policy for overlap handling
+        (``0`` will resize overlapped ranges, ``1`` will delete overlapped
+        ranges, and ``2`` will raise an error when a new range is added
+        which overlaps a pre-existing range).
+
+        - See docs for the
+          :meth:`~range_streams.stream.RangeStream.handle_overlap`
+          method for further details.
+
+        Args:
+          url           : (:class:`str`) The URL of the file to be streamed
+          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
+                          to use for HTTP requests
+          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                          of positions on the file to be requested
+          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                          or ``2`` ('strict')
+          scan_headers  : (:class:`bool`) Whether to scan the archive headers
+                          upon initialisation and add the archive's file ranges
         """
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
@@ -48,7 +89,7 @@ class TarStream(RangeStream):
     def check_header_recs(self):
         """
         Scan through all header records in the file, building a list of
-        :class:`range_streams.codecs.tar.TarredFileInfo` objects describing the
+        :class:`~range_streams.codecs.tar.stream.TarredFileInfo` objects describing the
         files described by the headers (but do not download those corresponding
         archived file ranges).
 
@@ -82,6 +123,14 @@ class TarStream(RangeStream):
             )
 
     def read_file_name(self, start_pos_offset: int = 0) -> str:
+        """
+        Return the file name by reading the file name for the header block starting at
+        ``start_pos_offset`` (which for the first file will be ``0``, the default).
+        Tar archives end with at least two empty blocks (i.e. 1024 bytes of padding),
+        but there may be more than that. To catch this possibility, this method will
+        raise a :class`StopIteration` error if the file name if NULL (i.e. if what was
+        expected to be a file name is actually padding).
+        """
         file_name_rng_start = start_pos_offset + self.data.HEADER._H_FILENAME_START
         file_name_rng_end = file_name_rng_start + self.data.HEADER._H_FILENAME_SIZE
         file_name_rng = Range(file_name_rng_start, file_name_rng_end)
@@ -92,6 +141,10 @@ class TarStream(RangeStream):
         return file_name_b.decode("ascii")
 
     def read_file_size(self, start_pos_offset: int = 0) -> int:
+        """
+        Parse the file size field of the archived file whose header record begins at
+        ``start_pos_offset``.
+        """
         file_size_rng_start = start_pos_offset + self.data.HEADER._H_FILE_SIZE_START
         file_size_rng_end = file_size_rng_start + self.data.HEADER._H_FILE_SIZE_SIZE
         file_size_rng = Range(file_size_rng_start, file_size_rng_end)

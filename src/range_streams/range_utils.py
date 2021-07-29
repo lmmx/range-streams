@@ -29,7 +29,7 @@ def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 
     Args:
       ranges : Either the internal or external ranges of a
-               :class:`~range_streams.range_stream.RangeStream`.
+               :class:`~range_streams.stream.RangeStream`.
     """
     return [k[0].ranges()[0] for k, v in ranges.items()]
 
@@ -42,13 +42,13 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 
     Args:
       ranges : Either the internal or external ranges of a
-               :class:`~range_streams.range_stream.RangeStream`.
+               :class:`~range_streams.stream.RangeStream`.
     """
     return [v.request.range for k, v in ranges.items()]
 
 
 def most_recent_range(
-    stream: range_streams.range_stream.RangeStream, internal: bool = True
+    stream: range_streams.stream.RangeStream, internal: bool = True
 ) -> Range | None:
     """
     For all of the :class:`~range_streams.response.RangeResponse`
@@ -57,14 +57,14 @@ def most_recent_range(
     in order of registration.
 
     If ``internal`` is ``True``, use
-    :attr:`~range_streams.range_stream.RangeStream._ranges` as the
+    :attr:`~range_streams.stream.RangeStream._ranges` as the
     :class:`~ranges.RangeDict`, else use the 'external' (computed) property
-    :attr:`~range_streams.range_stream.RangeStream.ranges`. The external
+    :attr:`~range_streams.stream.RangeStream.ranges`. The external
     ones take into account the position the file has been read/seeked to.
 
     Args:
       stream   : Either the internal or external ranges of a
-                 :class:`~range_streams.range_stream.RangeStream`.
+                 :class:`~range_streams.stream.RangeStream`.
       internal : Whether to use the internal or external ranges.
     """
     if stream._ranges.isempty():

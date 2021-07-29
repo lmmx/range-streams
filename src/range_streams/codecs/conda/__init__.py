@@ -1,3 +1,3 @@
-from .conda_archive import CondaStream
+from .stream import CondaStream
 
 __all__ = ["CondaStream"]

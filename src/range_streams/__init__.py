@@ -13,7 +13,7 @@ can provide partial content requests, avoiding the need to download
 and consume linearly from the start of a file when streaming,
 or without needing to download the entire file (non-streaming requests).
 
-A :class:`~range_streams.range_stream.RangeStream` is initialised by providing:
+A :class:`~range_streams.stream.RangeStream` is initialised by providing:
 
 - a URL (the file to be streamed)
 - (optionally) a client (:class:`httpx.Client`), or else a fresh one
@@ -28,8 +28,8 @@ A :class:`~range_streams.range_stream.RangeStream` is initialised by providing:
 If no range (or the empty range) is given, a HTTP HEAD request will be
 sent instead of a GET request, to check the total length of the file being streamed.
 Either way therefore determines the total file length upon initialisation
-(:attr:`~range_streams.range_stream.RangeStream.total_bytes`, also available as the range spanning
-the entire file :attr:`~range_streams.range_stream.RangeStream.total_range`).
+(:attr:`~range_streams.stream.RangeStream.total_bytes`, also available as the range spanning
+the entire file :attr:`~range_streams.stream.RangeStream.total_range`).
 
 The following example shows the basic setup for a single range.
 
@@ -41,15 +41,15 @@ The following example shows the basic setup for a single range.
     >>> s.ranges # doctest: +SKIP
     RangeDict{RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com}
 
-Once a request is made for a non-empty range, the :class:`~range_streams.range_stream.RangeStream`
+Once a request is made for a non-empty range, the :class:`~range_streams.stream.RangeStream`
 acquires the first entry in the :class:`~ranges.RangeDict` stored on the
-:attr:`~range_streams.range_stream.RangeStream.ranges` attribute. This gates access
+:attr:`~range_streams.stream.RangeStream.ranges` attribute. This gates access
 to the internal ``_ranges`` attribute :class:`~ranges.RangeDict`), which takes
 into account whether the bytes in each range's
 :class:`~range_streams.response.RangeResponse` are exhausted
 or removed due to overlap with another range. See the docs for further details.
 
-Further ranges are requested by simply calling the :meth:`~range_streams.range_stream.RangeStream.add`
+Further ranges are requested by simply calling the :meth:`~range_streams.stream.RangeStream.add`
 method with another :class:`~ranges.Range` object. To create this implicitly, you can
 simply provide a byte range to the `add` method as a tuple of two integers,
 which will be interpreted per the usual convention for ranges in Python,
@@ -125,12 +125,12 @@ of the PyPNG library.
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
 
 from . import codecs, http_utils, overlaps, range_utils
-from .range_stream import RangeStream
 from .request import RangeRequest
 from .response import RangeResponse
+from .stream import RangeStream
 
 __all__ = [
-    "range_stream",
+    "stream",
     "request",
     "response",
     "http_utils",

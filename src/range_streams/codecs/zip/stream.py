@@ -6,14 +6,38 @@ import struct
 from pyzstd import ZstdFile
 from ranges import Range
 
-from ...range_stream import RangeStream
+from ...stream import RangeStream
 from ..zstd import ZstdTarFile
 from .data import COMPRESSIONS, ZipData
 
-__all__ = ["ZipStream"]
+__all__ = ["ZipStream", "ZippedFileInfo"]
 
 
 class ZipStream(RangeStream):
+    """
+    As for :class:`~range_streams.stream.RangeStream`, but if ``scan_contents``
+    is True, then immediately call
+    :meth:`~range_streams.codecs.zip.ZipStream.check_central_dir_rec`
+    on initialisation (which will perform a series of range requests
+    to identify the files in the zip from the End of Central
+    Directory Record and Central Directory Record), setting
+    :attr:`~range_streams.codecs.zip.ZipStream.zipped_files`,
+    and :meth:`~range_streams.stream.RangeStream.add` their file content
+    ranges to the stream.
+
+    Setting this can be postponed until first access of the
+    :attr:`~range_streams.codecs.zip.ZipStream.filename_list`
+    property (this will not :meth:`~range_streams.stream.RangeStream.add`
+    them to the :class:`~range_streams.codecs.zip.ZipStream`).
+
+    Once parsed, the file contents are stored as a list of :class:`ZippedFileInfo`
+    objects (in the order they appear in the Central Directory Record) in the
+    :attr:`~range_streams.codecs.zip.ZipStream.zipped_files` attribute.
+    Each of these objects has a :meth:`~ZippedFileInfo.file_range` method which
+    gives the range of its file content bytes within the
+    :class:`~range_streams.codecs.zip.ZipStream`.
+    """
+
     def __init__(
         self,
         url: str,
@@ -23,20 +47,40 @@ class ZipStream(RangeStream):
         scan_contents: bool = True,
     ):
         """
-        As for RangeStream, but if `scan_contents` is True, then immediately call
-        :meth:`check_central_dir_rec` on initialisation (which will perform a series
-        of range requests to identify the files in the zip from the End of Central
-        Directory Record and Central Directory Record), setting :attr:`zipped_files`,
-        and :meth:`~RangeStream.add` their file content ranges to the stream.
-        Setting this can be postponed until first access of the :attr:`filename_list`
-        property (this will not :meth:`~RangeStream.add` them to the
-        :class:`ZipStream`).
+        Set up a stream for the ZIP archive at ``url``, with either an initial
+        range to be requested (HTTP partial content request), or if left
+        as the empty range (default: ``Range(0,0)``) a HEAD request will
+        be sent instead, so as to set the total size of the target
+        file on the :attr:`~range_streams.stream.RangeStream.total_bytes`
+        property.
 
-        Once parsed, the file contents are stored as a list of :class:`ZippedFileInfo`
-        objects (in the order they appear in the Central Directory Record) in the
-        :attr:`zipped_files` attribute.  Each of these objects has a
-        :meth:`~ZippedFileInfo.file_range` method which gives the range of its file
-        content bytes within the :class:`ZipStream`.
+        By default (if ``client`` is left as ``None``) a fresh
+        :class:`httpx.Client` will be created for each stream.
+
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
+        object, or 2-tuple of integers (``(start, end)``), interpreted
+        either way as a half-closed interval ``[start, end)``, as given by
+        Python's built-in :class:`range`.
+
+        The ``pruning_level`` controls the policy for overlap handling
+        (``0`` will resize overlapped ranges, ``1`` will delete overlapped
+        ranges, and ``2`` will raise an error when a new range is added
+        which overlaps a pre-existing range).
+
+        - See docs for the
+          :meth:`~range_streams.stream.RangeStream.handle_overlap`
+          method for further details.
+
+        Args:
+          url           : (:class:`str`) The URL of the file to be streamed
+          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
+                          to use for HTTP requests
+          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                          of positions on the file to be requested
+          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                          or ``2`` ('strict')
+          scan_contents : (:class:`bool`) Whether to scan the archive contents
+                          upon initialisation and add the archive's file ranges
         """
         super().__init__(
             url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
@@ -194,9 +238,9 @@ class ZipStream(RangeStream):
         ext: str | None = None,
     ):
         """
-        Given a :class:`ZippedFileInfo` object ``zf_info``, and (optionally)
-        its compression method [or else detecting that], decompress its bytes
-        from the stream.
+        Given a :class:`~range_streams.codecs.zip.stream.ZippedFileInfo` object
+        ``zf_info``, and (optionally) its compression method
+        [or else detecting that], decompress its bytes from the stream.
 
         Args:
           zf_info : The compressed bytes
