@@ -150,7 +150,7 @@ class RangeStream:
     def check_range_integrity(self) -> None:
         """
         Every :class:`~ranges.RangeSet` in the
-        :attr:`~range_streams.stream.RangeStream._ranges``
+        :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`~ranges.RangeDict` keys must contain 1 :class:`~ranges.Range` each
         """
         if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
