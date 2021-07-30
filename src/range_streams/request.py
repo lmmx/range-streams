@@ -98,5 +98,7 @@ class RangeRequest:
         Type checking workaround (Sphinx type hint extension does not like httpx
         so check the type manually with a method called at initialisation).
         """
-        if not isinstance(self.client, httpx.Client):  # pragma: no cover
+        if not any(
+            isinstance(self.client, c) for c in (httpx.Client, httpx.AsyncClient)
+        ):  # pragma: no cover
             raise NotImplementedError("Only HTTPX clients currently supported")

@@ -83,6 +83,7 @@ class RangeStream:
         client=None,  # don't hint httpx.Client (Sphinx gives error)
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
+        force_async: bool = False,
     ):
         """
         Set up a stream for the file at ``url``, with either an initial
@@ -117,11 +118,12 @@ class RangeStream:
                           of positions on the file to be requested
           pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
                           or ``2`` ('strict')
+          force_async   : (:class:`bool` | ``None``) Whether to require the client
+                          to be ``httpx.AsyncClient``, and if no client is given,
+                          to create one on initialisation.
         """
         self.url = url
-        self.client = client
-        if self.client is None:
-            self.client = httpx.Client()
+        self.set_client(client=client, force_async=force_async)
         self.pruning_level = pruning_level
         self._ranges = RangeDict()
         self.add(byte_range=byte_range)
@@ -132,13 +134,42 @@ class RangeStream:
             f"'{self.name}' from {self.domain}"
         )
 
-    # @property
-    # def _ranges(self):
-    #    return self.__ranges__
+    def set_client(self, client, force_async: bool) -> None:
+        """
+        Check client type explicitly to handle a/sync and optional HTTPX client.
 
-    # @_ranges.setter
-    # def _ranges(self, val):
-    #    self.__ranges__ = val
+        Args:
+          client      : (:class:`httpx.Client` | class:`httpx.AsyncClient` | ``None``)
+                        The client to be used for all HTTP requests made on the
+                        `range_streams.stream.RangeStream`. If ``None``, a fresh one
+                        will be created.
+          force_async : (:class:`bool`) If the ``client`` is ``None``, this parameter
+                        determines whether :class:`httpx.Client` or
+                        class:`httpx.AsyncClient` is set as the client. If a
+                        synchronous client is given and ``force_async`` is ``True``,
+                        an error will be raised.
+        """
+        if client is None:
+            client = httpx.AsyncClient() if force_async else httpx.Client()
+        elif isinstance(client, httpx.Client):
+            if force_async:
+                raise TypeError(f"{client=} is not async (`httpx.AsyncClient`)")
+        elif not isinstance(client, httpx.AsyncClient):
+            raise TypeError(f"{client=} is not a HTTPX client")
+        self.client = client
+
+    @property
+    def client_is_async(self):
+        return isinstance(self.client, httpx.AsyncClient)
+
+    @property
+    def sync_client(self):  # returns httpx.Client | httpx.AsyncClient | None
+        """
+        Provide a synchronous client: either the stream's client, or a fresh one
+        if the stream's client is asynchronous. Used for HEAD requests on an async
+        RangeStream. Presumes a client has been set correctly.
+        """
+        return httpx.Client() if self.client_is_async else self.client
 
     def __ranges_repr__(self) -> str:
         return ", ".join(map(str, self.list_ranges()))
@@ -420,6 +451,8 @@ class RangeStream:
         self.active_range_response.seek(position=position, whence=whence)
 
     def send_request(self, byte_range: Range) -> RangeRequest:
+        if self.client_is_async:
+            raise NotImplementedError("Async client support WIP")
         return RangeRequest(
             byte_range=byte_range,
             url=self.url,
@@ -433,9 +466,11 @@ class RangeStream:
         only be associated with the empty range, which cannot be stored in a
         :class:`~ranges.RangeDict`), raising for status ASAP.
         To be used when initialised with an empty byte range.
+        If the :attr:`range_streams.stream.RangeStream.client` is asynchronous, use
+        a synchronous client (created for this single request).
         """
-        req = self.client.build_request("HEAD", self.url)
-        resp = self.client.send(request=req)
+        req = self.sync_client.build_request("HEAD", self.url)
+        resp = self.sync_client.send(request=req)
         resp.raise_for_status()
         key = "content-length"
         try:
