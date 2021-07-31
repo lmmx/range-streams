@@ -5,7 +5,11 @@ from ranges import Range
 
 from range_streams.codecs import PngStream
 
-from .data import EXAMPLE_PNG_URL, EXAMPLE_SEMITRANSPARENT_PNG_URL
+from .data import (
+    EXAMPLE_MULTI_IDAT_PNG_URL,
+    EXAMPLE_PNG_URL,
+    EXAMPLE_SEMITRANSPARENT_PNG_URL,
+)
 
 
 @fixture(scope="session")
@@ -60,3 +64,9 @@ def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
     the length value being checked against remains calculated correctly.
     """
     assert len(example_semitransp_png_stream.get_idat_data()) == expected
+
+
+@mark.parametrize("expected", [(921600)])
+def test_multi_idat_png_chunk_parse(expected):
+    idat = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL).get_idat_data()
+    assert len(idat) == expected

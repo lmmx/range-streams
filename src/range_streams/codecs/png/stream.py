@@ -171,12 +171,10 @@ class PngStream(RangeStream):
             chunks[chunk_type].append(chunk_info)
         return chunks
 
-    def get_chunk_data(
-        self, chunk_info: PngChunkInfo, zlib_decompress: bool = False
-    ) -> bytes:
+    def get_chunk_data(self, chunk_info: PngChunkInfo) -> bytes:
         self.add(chunk_info.data_range)
         b = self.active_range_response.read()
-        return zlib.decompress(b) if zlib_decompress else b
+        return b
 
     def get_idat_data(self) -> list[int]:
         """
@@ -192,9 +190,10 @@ class PngStream(RangeStream):
         channels = self.data.IHDR.channel_count
         assert height is not None and width is not None and channels is not None
         expected_length = height * (1 + width * channels)
-        b = b"".join(
-            self.get_chunk_data(chunk_info, zlib_decompress=True)
-            for chunk_info in self.chunks["IDAT"]
+        b = zlib.decompress(
+            b"".join(
+                self.get_chunk_data(chunk_info) for chunk_info in self.chunks["IDAT"]
+            )
         )
         if len(b) != expected_length:
             raise ValueError(f"Expected {expected_length} but got {len(b)}")
