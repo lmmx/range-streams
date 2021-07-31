@@ -219,6 +219,7 @@ class PngStream(RangeStream):
         """
         if not hasattr(self.data.IHDR, "_has_alpha_channel"):
             self.scan_ihdr()  # parse the IHDR chunk if not already done
+            _ = self.data.IHDR.channel_count  # Ensure colour type is processed
         # To avoid handling palettes as done in PyPNG, give alpha "directly"
         # https://github.com/drj11/pypng/blob/main/code/png.py#L1948-L1953
         has_alpha = self.data.IHDR._has_alpha_channel  # based on colour type
