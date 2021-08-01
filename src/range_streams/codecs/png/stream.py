@@ -227,17 +227,24 @@ class PngStream(RangeStream):
             has_alpha |= self.has_chunk(chunk_type="tRNS")
         return has_alpha
 
-    @property
-    def any_semitransparent_idat(self):
+    def any_semitransparent_idat(self, nonzero: bool = True):
         """
         Whether there are any non-255 values in the alpha channel of the PNG,
         determined from IDAT chunk alone. If not, the alpha channel serves no
         purpose in practice, and the image may be considered non-transparent.
 
-        Note: presumes :meth:`~range_streams.codecs.png.PngStream.alpha_as_direct`
-        has already been called, so the image is known to have 4 channels.
+        If ``nonzero`` is True (the default), check for semitransparent, rather
+        than nontransparent values (i.e. ``0 < A < 255`` rather than ``0 <= A < 255``).
+
+        Note: presumes :meth:`~range_streams.codecs.png.PngStream.alpha_as_direct` has
+        already been called, so the image is known to have 4 channels.
+
+        Args:
+          nonzero : Whether to return ``True`` only if the image has 'intermediate'
+                    (between 0 and 255) values, otherwise whether they're below 255.
         """
-        return any(a < 255 for a in self.get_idat_data()[3::4])
+        A = self.get_idat_data()[3::4]  # alpha channel values
+        return any(0 < v < 255 for v in A) if nonzero else any(v < 255 for v in A)
 
     @property
     def channel_count_as_direct(self):
