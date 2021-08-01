@@ -57,16 +57,21 @@ def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
     assert list(example_semitransp_png_stream.chunks) == expected
 
 
-@mark.parametrize("expected", [(40000)])
-def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
+@mark.parametrize("expected_len,expected_semitransp", [(40000, True)])
+def test_semitransp_png_chunks(
+    example_semitransp_png_stream, expected_len, expected_semitransp
+):
     """
     Method should be self-testing but do so explicitly here to ensure
     the length value being checked against remains calculated correctly.
     """
-    assert len(example_semitransp_png_stream.get_idat_data()) == expected
+    assert len(example_semitransp_png_stream.get_idat_data()) == expected_len
+    assert example_semitransp_png_stream.any_semitransparent_idat == expected_semitransp
 
 
-@mark.parametrize("expected", [(921600)])
-def test_multi_idat_png_chunk_parse(expected):
-    idat = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL).get_idat_data()
-    assert len(idat) == expected
+@mark.parametrize("expected_len,expected_semitransp", [(921600, False)])
+def test_multi_idat_png_chunk_parse(expected_len, expected_semitransp):
+    stream = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL)
+    idat = stream.get_idat_data()
+    assert len(idat) == expected_len
+    assert stream.any_semitransparent_idat == expected_semitransp
