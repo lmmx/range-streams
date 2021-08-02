@@ -351,9 +351,13 @@ class RangeStream:
         :class:`~ranges.Range` key for the internal
         :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`RangeDict`.
+        
+        Look it up in the :attr:`~range_streams.stream.RangeStream._ranges`
+        :class:`RangeDict` instead if in single request mode.
         """
+        internal_rng_dict = self._range_windows if self.single_request else self._ranges
         try:
-            return self._ranges[self._active_range]
+            return internal_rng_dict[self._active_range]
         except KeyError:
             e_pre = "Cannot get active range response "
             if self._active_range is None:
