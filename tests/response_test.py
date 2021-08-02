@@ -1,13 +1,48 @@
 from io import SEEK_END, SEEK_SET
 
+import httpx
 from pytest import fixture, mark, raises
 from ranges import Range
 
+from range_streams.request import RangeRequest
 from range_streams.response import RangeResponse
+from range_streams.stream import RangeStream
 
-from .data import EXAMPLE_FILE_LENGTH
-from .range_stream_core_test import empty_range_stream
-from .request_test import example_request, make_request
+from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
+
+# from .request_test import example_request, make_request
+
+
+client = httpx.Client()
+
+
+@fixture(scope="session")
+def empty_range_stream():
+    """
+    By default, not passing the `byte_range` param to `RangeStream` will give the
+    empty `Range(0,0)`. Create a fixture as a "starting point" for other tests.
+
+    Duplicate of the one in :mod:`range_stream_core_test` (fresh client)
+    """
+    return RangeStream(url=EXAMPLE_URL, client=client)
+
+
+def make_request(start, stop):
+    """
+    Duplicate of the one in :mod:`request_test` (fresh client)
+    """
+    rng = RangeRequest(
+        byte_range=Range(start, stop),
+        url=EXAMPLE_URL,
+        client=client,
+    )
+    return rng
+
+
+@fixture
+def example_request():
+    start, stop = 0, 1
+    return make_request(start, stop)
 
 
 @fixture
@@ -34,8 +69,8 @@ def test_response_repr(example_response):
     )
 
 
-def test_response_client(example_response, example_request):
-    assert example_response.client is example_request.client
+# def test_response_client(example_response, example_request):
+#    assert example_response.client is example_request.client
 
 
 def test_response_url(example_response, example_request):

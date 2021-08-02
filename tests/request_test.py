@@ -6,10 +6,10 @@ from range_streams.http_utils import PartialContentStatusError
 from range_streams.request import RangeRequest
 
 from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
+from .share import client
 
 
 def make_request(start, stop):
-    client = httpx.Client()
     rng = RangeRequest(
         byte_range=Range(start, stop),
         url=EXAMPLE_URL,

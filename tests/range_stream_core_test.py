@@ -5,6 +5,7 @@ from ranges import Range
 from range_streams import RangeStream
 
 from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
+from .share import client
 
 
 @fixture(scope="session")
@@ -13,7 +14,6 @@ def empty_range_stream():
     By default, not passing the `byte_range` param to `RangeStream` will give the
     empty `Range(0,0)`. Create a fixture as a "starting point" for other tests.
     """
-    client = httpx.Client()
     return RangeStream(url=EXAMPLE_URL, client=client)
 
 
@@ -22,14 +22,12 @@ def empty_range_stream_fresh():
     """
     As for empty_range_stream, but regenerated on each use, for tests which modify it.
     """
-    client = httpx.Client()
     return RangeStream(url=EXAMPLE_URL, client=client)
 
 
 @fixture(scope="session")
 def full_range_stream():
     "A RangeStream covering the full [0,11) file range."
-    client = httpx.Client()
     rng = Range(0, EXAMPLE_FILE_LENGTH)
     return RangeStream(byte_range=rng, url=EXAMPLE_URL, client=client)
 
@@ -37,7 +35,6 @@ def full_range_stream():
 @fixture
 def full_range_stream_fresh():
     "As for full_range_stream, but regenerated on each use, for tests which modify it."
-    client = httpx.Client()
     rng = Range(0, EXAMPLE_FILE_LENGTH)
     return RangeStream(byte_range=rng, url=EXAMPLE_URL, client=client)
 
@@ -45,14 +42,12 @@ def full_range_stream_fresh():
 @fixture(scope="session")
 def centred_range_stream():
     "A RangeStream covering the central range [3,7) of the full [0,11) file range."
-    client = httpx.Client()
     return RangeStream(byte_range=Range(3, 7), url=EXAMPLE_URL, client=client)
 
 
 @fixture
 def centred_range_stream_fresh():
     "As for centred_range_stream, but regenerated on each use, for tests which modify it."
-    client = httpx.Client()
     return RangeStream(byte_range=Range(3, 7), url=EXAMPLE_URL, client=client)
 
 
@@ -69,7 +64,7 @@ def test_active_range(start, stop):
     The `_active_range` attribute is set for all except the
     empty range (where it remains `None` as in the classdef)
     """
-    stream = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop, client)
     assert stream._active_range == Range(start, stop)
 
 
@@ -80,7 +75,7 @@ def test_active_range_empty(start, stop):
     empty range (where it remains `None` as in the classdef)
     so test this assumption.
     """
-    stream = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop, client)
     assert stream._active_range is None
 
 
@@ -88,8 +83,7 @@ def test_empty_range_total_bytes(empty_range_stream):
     assert empty_range_stream.total_bytes == EXAMPLE_FILE_LENGTH
 
 
-def make_range_stream(start, stop):
-    client = httpx.Client()
+def make_range_stream(start, stop, client):
     return RangeStream(
         byte_range=Range(start, stop),
         url=EXAMPLE_URL,
@@ -99,7 +93,7 @@ def make_range_stream(start, stop):
 
 @fixture(params=[(0, 1), (0, 2), (0, 3)])
 def test_range(start, stop):
-    stream = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop, client)
     assert stream._active_range == Range(start, stop)
 
 
@@ -142,7 +136,7 @@ def test_empty_range_span(empty_range_stream):
 @mark.parametrize("start,stop", [(0, 4)])
 @mark.parametrize("range_pairs", [[(0, 4), (6, 11)], [(2, 3), (5, 6), (8, 9)]])
 def test_multiple_range_span(start, stop, range_pairs):
-    stream = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop, client)
     for rng_start, rng_stop in range_pairs:
         stream.add(byte_range=Range(rng_start, rng_stop))
     rng_min, rng_max = range_pairs[0][0], range_pairs[-1][-1]

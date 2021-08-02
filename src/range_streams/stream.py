@@ -1,12 +1,12 @@
 r""":mod:`range_streams.stream` exposes a class
-:py:func:`RangeStream`, whose key property (once initialised) is
+:class:`~range_streams.stream.RangeStream`, whose key property (once initialised) is
 :attr:`~range_streams.stream.RangeStream.ranges`,
 which provides a :class:`~ranges.RangeDict` comprising the ranges of
 the file being streamed.
 
-The method :py:func:`RangeStream.add` will request further ranges,
-and (unlike the other methods in this module) will accept
-a tuple of two integers as its argument (``byte_range``).
+The method :meth:`~range_streams.stream.RangeStream.add` will request further ranges,
+and (unlike the other methods in this module) will accept a tuple of two integers as its
+argument (``byte_range``).
 """
 
 from __future__ import annotations
@@ -84,6 +84,7 @@ class RangeStream:
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
         force_async: bool = False,
+        single_request: bool = False,
     ):
         """
         Set up a stream for the file at ``url``, with either an initial
@@ -100,6 +101,31 @@ class RangeStream:
         object, or 2-tuple of integers (``(start, end)``), interpreted
         either way as a half-closed interval ``[start, end)``, as given by
         Python's built-in :class:`range`.
+
+        If ``byte_range`` is passed as the empty range ``Range(0,0)`` (its default),
+        then a HEAD request is sent to ``url`` on initialisation, setting the
+        :attr:`~range_streams.stream.RangeStream.total_bytes` value from the
+        ``content-length`` header in the subsequent response.
+
+        If ``single_request`` is ``True`` (default: ``False``), then the behaviour when
+        an empty ``byte_range`` is passed instead becomes to send a standard streaming
+        GET request (not a partial content request at all), and instead the class will
+        then facilitate an interface that 'simulates' these calls, i.e. as if each time
+        :meth:`~range_streams.stream.RangeStream.add` was used the range requests were
+        being returned instantly (as everything needed was already obtained on the first
+        request at initialisation).
+
+        Note: internally, this single request is known as 'the monostream', and is
+        stored on the :attr:`~range_streams.stream.RangeStream.monostream` property.
+
+        Note: a single request will not be as efficient if streaming the response
+        non-linearly (since reading a byte in the stream requires loading all bytes up
+        to it). This will mean it is only performant to use for certain file types or
+        applications (e.g. a ZIP file is read "in a principled manner" from the end
+        [the Central Directory] first, so gains greatly from using multiple partial
+        content requests rather than a single stream, whereas a PNG file can only be
+        read "in a principled manner" linearly, iterating through the chunks from the
+        start).
 
         The ``pruning_level`` controls the policy for overlap handling
         (``0`` will resize overlapped ranges, ``1`` will delete overlapped
@@ -125,7 +151,9 @@ class RangeStream:
         self.url = url
         self.set_client(client=client, force_async=force_async)
         self.pruning_level = pruning_level
+        self.single_request = single_request
         self._ranges = RangeDict()
+        self._range_windows = RangeDict()
         self.add(byte_range=byte_range)
 
     def __repr__(self) -> str:
@@ -133,6 +161,15 @@ class RangeStream:
             f"{self.__class__.__name__} ⠶ {self.__ranges_repr__()} @@ "
             f"'{self.name}' from {self.domain}"
         )
+
+    @property
+    def freely_requestable(self):
+        """
+        Trivial opposite of the :attr:`~range_streams.stream.RangeStream.single_request`
+        attribute, so that conditional blocks can treat this as the 'conventional' case
+        and the single request case be the alternative (which looks better).
+        """
+        return not self.single_request
 
     def set_client(self, client, force_async: bool) -> None:
         """
@@ -197,23 +234,30 @@ class RangeStream:
             if bad_rs:
                 raise ValueError(f"Each RangeSet must contain 1 Range: found {bad_rs=}")
 
-    def compute_external_ranges(self) -> RangeDict:
+    def compute_external_ranges(self, use_windows: bool = False) -> RangeDict:
         """
-        Modifying the :attr:`~range_streams.stream.RangeStream._ranges`
-        attribute to account for the bytes consumed (from the head)
-        and tail mark offset of where a range was already trimmed to avoid
-        an overlap (from the tail).
+        If ``use_windows`` is ``True``, the ``internal_range_dict``
+        is :attr:`~range_streams.stream.RangeStream._range_windows`
+        rather than :attr:`~range_streams.stream.RangeStream._ranges`
+        when ``use_windows`` is ``False`` (default: ``False``).
+
+        Modifying the ``internal_range_dict`` attribute to account for the bytes
+        consumed (from the head) and tail mark offset of where a range was already
+        trimmed to avoid an overlap (from the tail).
 
         While the :class:`~ranges.RangeSet` keys are a deep copy of the
-        :attr:`~range_streams.stream.RangeStream._ranges`
-        :class:`~ranges.RangeDict` keys (and therefore will not propagate if modified),
-        the RangeResponse values are references, therefore will propagate to the
-        :attr:`~range_streams.stream.RangeStream._ranges`
-        :class:`~ranges.RangeDict` if modified.
+        ``internal_range_dict`` :class:`~ranges.RangeDict` keys (and therefore will not
+        propagate if modified), the RangeResponse values are references, therefore will
+        propagate to the ``internal_range_dict`` :class:`~ranges.RangeDict` if modified
+        (primarily when ``read``).
+
+        When ``use_windows`` is ``True``, these RangeResponse values are 'simulations'
+        (a.k.a. mock/dummy objects) of the range response that would be received from a
+        partial content request (they in fact merely came from a streamed GET request).
         """
         prepared_rangedict = RangeDict()
-        internal_rangedict = self._ranges.items()
-        for rng_set, rng_response in internal_rangedict:
+        internal_rangedict = self._range_windows if use_windows else self._ranges
+        for rng_set, rng_response in internal_rangedict.items():
             requested_range = rng_response.request.range
             rng = deepcopy(requested_range)
             # if (rng_response.start, rng_response.end) < 0:
@@ -240,15 +284,29 @@ class RangeStream:
 
         Each :attr:`~range_streams.stream.RangeStream.ranges` :class:`~ranges.RangeDict`
         key is a :class:`~ranges.RangeSet` containing 1 :class:`~ranges.Range`. Check
-        this assumption (singleton :class:`~ranges.RangeSet` "integrity") holds and retrieve
-        this list of :class:`~ranges.RangeSet` keys in ascending order, as a list of
-        :class:`~ranges.Range`.
+        this assumption (singleton :class:`~ranges.RangeSet` "integrity") holds and
+        retrieve this list of :class:`~ranges.RangeSet` keys in ascending order, as a
+        list of :class:`~ranges.Range`.
+
+        Requests are restricted to not re-request already-requested file ranges, so give
+        windows onto the underlying range that can be consumed (but the underlying
+        :class:~range_streams.response.RangeResponse` will persist and cannot be
+        consumed by reading).
         """
         self.check_range_integrity()
-        return self.compute_external_ranges()
+        if self.freely_requestable:
+            # Not limited to a single request
+            ranges = self.compute_external_ranges()
+        else:
+            # Single request limit: can only add a window onto already requested range
+            ranges = self.compute_external_ranges(use_windows=True)
+        return ranges
 
-    def overlap_whence(self, rng: Range, internal: bool = False) -> int | None:
-        rng_dict = self._ranges if internal else self.ranges
+    def overlap_whence(
+        self, rng: Range, internal: bool = False, use_windows: bool = False
+    ) -> int | None:
+        internal_rng_dict = self._range_windows if use_windows else self._ranges
+        rng_dict = internal_rng_dict if internal else self.ranges
         return overlap_whence(rng_dict, rng)
 
     def register_range(
@@ -256,16 +314,21 @@ class RangeStream:
         rng: Range,
         value: RangeResponse,
         activate: bool = True,
+        use_windows: bool = False,
     ):
         if self._length_checked:
             self.check_is_subrange(rng)
         else:
             raise ValueError("Stream length must be set before registering a range")
-        if self.overlap_whence(rng, internal=False) is not None:
-            self.handle_overlap(rng, internal=False)
+        if (
+            self.overlap_whence(rng, internal=False, use_windows=use_windows)
+            is not None
+        ):
+            self.handle_overlap(rng, internal=False, use_windows=use_windows)
         # print(f"Pre: {self._ranges=}")
         # print(f"Adding: {rng=}")
-        self._ranges.add(rng=rng, value=value)
+        ranges = self._range_windows if use_windows else self._ranges
+        ranges.add(rng=rng, value=value)
         if activate:
             self.set_active_range(rng)
         # print(f"Post: {self._ranges=}")
@@ -340,6 +403,7 @@ class RangeStream:
         self,
         rng: Range,
         internal: bool = False,
+        use_windows: bool = False,
     ) -> None:
         """
         Handle overlaps with a given pruning level:
@@ -349,7 +413,8 @@ class RangeStream:
         1. "burn" existing ranges overlapped anywhere by the new range
         2. "strict" will throw a :class:`ValueError`
         """
-        ranges = self._ranges if internal else self.ranges
+        internal_rng_dict = self._range_windows if use_windows else self._ranges
+        ranges = internal_rng_dict if internal else self.ranges
         if self.pruning_level not in range(3):
             raise ValueError("Pruning level must be 0, 1, or 2")
         # print(f"Handling {rng=} with {self.pruning_level=}")
@@ -459,6 +524,72 @@ class RangeStream:
             client=self.client,
         )
 
+    def simulate_request(
+        self, byte_range: Range, parent_range_request: RangeRequest | None = None
+    ) -> RangeRequest:
+        """
+        Simulate the :class:`~range_streams.request.RangeRequest` obtained from a
+        partial content request for ``byte_range`` on the stream's URL through a
+        "window" on ``range_request`` (expected to be a streamed GET request for the
+        full file range).
+
+        If no ``parent_range_request`` is provided, it is assumed to be the one on the
+        :class:`~range_streams.response.RangeResponse` in the internal
+        :attr:`~range_streams.stream.RangeStream._ranges` :class:`~ranges.RangeDict`
+
+        Args:
+          byte_range           : The :class:`~ranges.Range` to simulate a partial
+                                 content request for.
+          parent_range_request : The :class:`~range_streams.request.RangeRequest` over
+                                 which to use a "window" to simulate the range request.
+        """
+        if parent_range_request is None:
+            access_pos = byte_range.start
+            if access_pos not in self._ranges:
+                msg = f"{access_pos} is not in internal RangeDict\n{self._ranges=}"
+                raise ValueError(msg)
+            parent_range_response = self._ranges[access_pos]
+            parent_range_request = parent_range_response.request
+        return RangeRequest.windowed_request(
+            byte_range=byte_range,
+            range_request=parent_range_request,
+        )
+
+    def get_monostream(self) -> None:
+        """
+        Send a 'plain' (streaming) GET request without range headers, to obtain the
+        total range. Suitable for higher performance (to avoid repeated requests on
+        the :class:`~range_streams.stream.RangeStream` which accrue a time cost) or
+        for servers which do not support range requests.
+
+        Called at initialisation (within the first) when
+        :class:`~range_streams.stream.RangeStream` is passed ``single_request`` as
+        ``True``.
+        """
+        # put this in the RangeRequest init procedure, if monostream=True:
+        req = self.client.build_request(method="GET", url=self.url)
+        resp = self.client.send(request=req, stream=True)
+        resp.raise_for_status()
+        total_length = self.check_response_length(headers=resp.headers, req=req.method)
+        self.set_length(length=total_length)
+
+        # This is where self.send_request would give a RangeRequest...
+        range_req = RangeRequest.from_get_stream(
+            byte_range=self.total_range,
+            client=self.client,
+            req=req,
+            resp=resp,
+        )
+
+        # then just use the req to create a RangeResponse and register as usual
+        resp = RangeResponse(stream=self, range_request=range_req, range_name="")
+        self.register_range(
+            rng=self.total_range,
+            value=resp,
+            activate=False,  # Don't set the active range as this is 'internal'
+            use_windows=False,
+        )
+
     def send_head_request(self) -> None:
         """
         Send a 'plain' HEAD request without range headers, to check the total content
@@ -469,15 +600,25 @@ class RangeStream:
         If the :attr:`range_streams.stream.RangeStream.client` is asynchronous, use
         a synchronous client (created for this single request).
         """
-        req = self.sync_client.build_request("HEAD", self.url)
+        req = self.sync_client.build_request(method="HEAD", url=self.url)
         resp = self.sync_client.send(request=req)
         resp.raise_for_status()
-        key = "content-length"
-        try:
-            total_length = detect_header_value(headers=resp.headers, key=key)
-        except KeyError as exc:
-            raise KeyError(f"HEAD request response was missing '{key}' header") from exc
-        self.set_length(int(total_length))
+        total_length = self.check_response_length(headers=resp.headers, req=req.method)
+        self.set_length(length=total_length)
+
+    def check_response_length(self, headers: dict[str, str], req: str) -> int:
+        """
+        Return the length of the response from its ``content-length`` header (after
+        checking it contains this header, else raising :class:`KeyError`), as an integer.
+
+        Args:
+          headers : The response headers
+          req     : The request method (to be reported in any :class:`KeyError` raised)
+        """
+        total_length = detect_header_value(
+            headers=headers, key="content-length", source=f"{req} request response"
+        )
+        return int(total_length)
 
     def set_length(self, length: int) -> None:
         self._length = length
@@ -545,20 +686,39 @@ class RangeStream:
         """
         # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
-        # Do not request an empty range if total length already checked
+        # Do not request an empty range if total length already checked (at init)
         if not self._length_checked and byte_range.isempty():
-            self.send_head_request()
+            if self.single_request:
+                self.get_monostream()
+            else:
+                self.send_head_request()
         elif not byte_range.isempty():
-            req = self.send_request(byte_range)
-            if not self._length_checked:
-                self.set_length(req.total_content_length)
-            if byte_range in ranges_in_reg_order(self.ranges):
-                pass  # trivial no-op when adding a range that already exists
-            elif not byte_range.isempty():
-                # bytes are available in the RangeRequest.response stream
+            if self.single_request:
+                # register a window onto the original range in the ``_ranges``
+                # RangeDict rather than add a new range entry to the dict (which would
+                # A) clash with the single entire range B) require another request
+                req = self.simulate_request(byte_range=byte_range)
                 resp = RangeResponse(stream=self, range_request=req, range_name=name)
                 self.register_range(
                     rng=byte_range,
                     value=resp,
                     activate=activate,
+                    use_windows=True,
                 )
+            else:
+                req = self.send_request(byte_range=byte_range)
+                if not self._length_checked:
+                    self.set_length(length=req.total_content_length)
+                if byte_range in ranges_in_reg_order(self.ranges):
+                    pass  # trivial no-op when adding a range that already exists
+                elif not byte_range.isempty():
+                    # bytes are available in the RangeRequest.response stream
+                    resp = RangeResponse(
+                        stream=self, range_request=req, range_name=name
+                    )
+                    self.register_range(
+                        rng=byte_range,
+                        value=resp,
+                        activate=activate,
+                        use_windows=False,
+                    )

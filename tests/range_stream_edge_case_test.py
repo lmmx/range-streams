@@ -13,6 +13,7 @@ from .range_stream_core_test import (
     full_range_stream_fresh,
     make_range_stream,
 )
+from .share import client
 
 
 def test_overlapping_ranges(empty_range_stream_fresh):
@@ -27,7 +28,7 @@ def test_overlapping_ranges(empty_range_stream_fresh):
 @mark.parametrize("stop", [0, 5, EXAMPLE_FILE_LENGTH])
 def test_range_from_empty_same_as_from_nonempty(start, stop, empty_range_stream_fresh):
     empty_range_stream_fresh.add(Range(start, stop))
-    from_nonempty = make_range_stream(start, stop)
+    from_nonempty = make_range_stream(start, stop, client)
     assert empty_range_stream_fresh.list_ranges() == from_nonempty.list_ranges()
 
 

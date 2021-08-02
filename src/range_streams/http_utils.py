@@ -27,7 +27,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 from .range_utils import range_termini
 
-__all__ = ["byte_range_from_range_obj", "range_header", "PartialContentStatusError"]
+__all__ = [
+    "byte_range_from_range_obj",
+    "range_header",
+    "PartialContentStatusError",
+    "detect_header_value",
+]
 
 
 def byte_range_from_range_obj(rng: Range) -> str:
@@ -94,7 +99,7 @@ class PartialContentStatusError(Exception):
         self.response = response
 
 
-def detect_header_value(headers: dict, key: str):
+def detect_header_value(headers: dict, key: str, source: str = "Response"):
     """
     Detect a title case, lower case, or capitalised version of the given string.
     """
@@ -102,4 +107,4 @@ def detect_header_value(headers: dict, key: str):
     try:
         return next(headers.get(k) for k in variants if k in headers)
     except StopIteration:
-        raise KeyError(f"Response was missing '{key}' header")
+        raise KeyError(f"{source} was missing '{key}' header")

@@ -17,6 +17,7 @@ from .range_stream_core_test import (
     full_range_stream_fresh,
     make_range_stream,
 )
+from .share import client
 
 
 @mark.parametrize("pruning_level,exp_final_whence", [(0, 1), (1, 1)])
@@ -120,7 +121,7 @@ def test_handle_overlap_int_ext_rngdict_Tail(
     external RangeDict in the expected way after handling the overlapping range.
     Note: assumed the stream is initialised with (default) pruning level 0 (replant).
     """
-    stream = make_range_stream(start, stop)
+    stream = make_range_stream(start, stop, client)
     stream.pruning_level = pruning_level
     stream.handle_overlap(rng=overlapping_range)
     ext_count_changed, int_count_changed = count_rangedict_mutation(stream)

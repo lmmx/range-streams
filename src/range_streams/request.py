@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import TYPE_CHECKING, Iterator
 
 MYPY = False  # when using mypy will be overrided as True
@@ -9,6 +10,7 @@ if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
 from .http_utils import PartialContentStatusError, detect_header_value, range_header
+from .range_utils import range_len
 
 __all__ = ["RangeRequest"]
 
@@ -25,14 +27,117 @@ class RangeRequest:
     to wrap in a :class:`io.BytesIO` buffered stream.
     """
 
-    def __init__(self, byte_range: Range, url: str, client):
+    def __init__(
+        self, byte_range: Range, url: str, client, GET_got: tuple | None = None
+    ):
+        """
+        Make a new partial content request, or simulate one from a provided (completed)
+        streaming GET request.
+
+        The latter option should be used carefully to achieve improved performance from
+        this library (in particular where read operations on the stream are expected to
+        be linear, without large gaps between cursor positions which must be loaded
+        prior to subsequent read operations).
+
+        Args:
+          byte_range : The :class:`~ranges.Range` to request.
+          url        : The URL to be requested.
+          client     : The client to use for the request
+          GET_got    : A 2-tuple of the already-executed ``httpx.Request``
+                       and the received ``httpx.Response``, or ``None``
+                       (the default). If provided, the ``byte_range`` is not requested
+                       but instead is the range that was already requested, and the
+                       ``url`` is the requested URL.
+        """
         self.range = byte_range
         self.url = url
         self.client = client
         self.check_client()
-        self.setup_stream()
-        self.content_range = self.content_range_header()
+        # Allow a RangeRequest to be made from a pre-existing streamed GET request
+        self.is_simulated = GET_got is not None
+        if self.is_simulated:
+            assert GET_got is not None  # give mypy a clue
+            # "Simulating" a partial range request with pre-provided GET req. + response
+            self.request, self.response = GET_got
+            self._check_resp_req()  # Sphinx typing workaround
+            # This shouldn't need to be accessed but set it to be thorough
+            self.content_range = f"{self.range_header}/{range_len(byte_range)}"
+        else:
+            # Make and send a partial range request
+            self.setup_stream()
+            self.content_range = self.content_range_header()
         self._iterator = self.iter_raw()
+
+    @classmethod
+    def windowed_request(
+        cls, byte_range: Range, range_request: RangeRequest
+    ) -> RangeRequest:
+        """
+        Reuse the stream from an existing streaming request rather to create a new
+        'windowed' RangeRequest from an existing RangeRequest, but change the byte range
+        to be used on it. If the existing RangeRequest (``range_request``) is anything
+        other than a stream of the full file range, then relative ranges will need to be
+        calculated. This constructor was written on the assumption of a full file range.
+
+        Args:
+          byte_range : The :class:`~ranges.Range` provided by this request.
+          on_request : The sent ``httpx.Request``
+        """
+        # Build the request that this object pretends to have sent
+        request_headers = range_header(byte_range)
+        unsent_request = range_request.client.build_request(
+            method="GET",
+            url=range_request.url,
+            headers=request_headers,
+        )
+        content_byte_range = request_headers["range"].replace("=", " ")
+        total_content_length = range_request.total_content_length
+        # Avoid having to import ``httpx.Response`` by calling ``type`` on one
+        HttpxResp_cls = type(range_request.response)
+        windowed_response = HttpxResp_cls(
+            status_code=206,  # Partial Content
+            headers={
+                "accept-ranges": "bytes",
+                "content-length": f"{range_len(byte_range)}",
+                "content-range": f"{content_byte_range}/{total_content_length}",
+            },
+            stream=range_request.response.stream,
+            request=unsent_request,
+        )
+        windowed_range_request = cls(
+            byte_range=byte_range,
+            url=range_request.url,
+            client=range_request.client,
+            GET_got=(unsent_request, windowed_response),
+        )
+        return windowed_range_request
+
+    @classmethod
+    def from_get_stream(cls, byte_range: Range, client, req, resp) -> RangeRequest:
+        """
+        Avoid making a partial content request, instead interpret a streaming GET
+        request as equivalent to one when provided along with a ``byte_range``.
+
+        Does not call
+        :meth:`~range_streams.request.RangeRequest.raise_for_non_partial_content`
+        as is done after setting the :attr:`~range_streams.request.RangeRequest.request`
+        and :attr:`~range_streams.request.RangeRequest.response` in
+        :meth:`~range_streams.request.RangeRequest.setup_stream`.
+
+        Note: ``req`` and ``resp`` are type checked 'manually' at init (not via type
+        hints) due to Sphinx type hints bug with the ``httpx`` library.
+
+        Args:
+          byte_range : The :class:`~ranges.Range` provided by this request.
+          req        : The sent ``httpx.Request``
+          resp       : The received ``httpx.Response``
+        """
+        return cls(
+            byte_range=byte_range,
+            url=str(req.url),
+            client=client,
+            GET_got=(req, resp),
+        )
 
     @property
     def range_header(self):
@@ -92,6 +197,16 @@ class RangeRequest:
         """
         if not self.response.is_closed:
             self.response.close()
+
+    def _check_resp_req(self):
+        """
+        Type checking workaround (Sphinx type hint extension does not like httpx
+        so check the type manually with a method called at initialisation).
+        """
+        if not isinstance(self.request, httpx.Request):  # pragma: no cover
+            raise NotImplementedError("Only HTTPX responses currently supported")
+        if not isinstance(self.response, httpx.Response):  # pragma: no cover
+            raise NotImplementedError("Only HTTPX responses currently supported")
 
     def check_client(self):
         """
