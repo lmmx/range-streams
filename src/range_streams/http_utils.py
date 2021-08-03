@@ -54,7 +54,7 @@ def byte_range_from_range_obj(rng: Range) -> str:
       for "the last zero bytes" i.e. an empty range request.
     """
     if rng.isempty():
-        byte_range = "-0"
+        byte_range = "0-"
     else:
         start_byte, end_byte = range_termini(rng)
         byte_range = f"{start_byte}-{end_byte}"
@@ -62,8 +62,8 @@ def byte_range_from_range_obj(rng: Range) -> str:
 
 
 def range_header(rng: Range) -> dict[str, str]:
-    # """Prepare a :class:`dict` to pass as a :mod:`httpx` request header
-    """Prepare a :class:`dict` to pass as a ``httpx`` request header
+    """
+    Prepare a :class:`dict` to pass as a ``httpx`` request header
     with a single key ``ranges`` whose value is the byte range.
 
     For example:
@@ -71,6 +71,10 @@ def range_header(rng: Range) -> dict[str, str]:
       >>> from range_streams.http_utils import range_header
       >>> range_header(Range(0,2))
       {'range': 'bytes=0-1'}
+
+      >>> range_header(Range(0,0))
+      {'range': 'bytes=0-'}
+
 
     Args:
       rng : range of the bytes to be requested (0-based)

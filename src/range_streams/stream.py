@@ -23,7 +23,7 @@ if MYPY or not TYPE_CHECKING:  # pragma: no cover
 
 from ranges import Range, RangeDict
 
-from .http_utils import detect_header_value
+from .http_utils import detect_header_value, range_header
 from .overlaps import get_range_containing, overlap_whence
 from .range_utils import (
     most_recent_range,
@@ -560,21 +560,21 @@ class RangeStream:
         return RangeRequest.windowed_request(
             byte_range=byte_range,
             range_request=parent_range_request,
+            tail_mark=parent_range_response.tail_mark,
         )
 
     def get_monostream(self) -> None:
         """
-        Send a 'plain' (streaming) GET request without range headers, to obtain the
-        total range. Suitable for higher performance (to avoid repeated requests on
-        the :class:`~range_streams.stream.RangeStream` which accrue a time cost) or
-        for servers which do not support range requests.
+        Send a streaming GET request with an open-ended ``content-range`` header, to
+        obtain the total range. Suitable for higher performance (to avoid repeated
+        requests on the :class:`~range_streams.stream.RangeStream` which accrue a time
+        cost).
 
-        Called at initialisation (within the first) when
-        :class:`~range_streams.stream.RangeStream` is passed ``single_request`` as
-        ``True``.
+        Called at initialisation (within the first) when ``single_request`` is passed
+        to :class:`~range_streams.stream.RangeStream` as ``True``.
         """
-        # put this in the RangeRequest init procedure, if monostream=True:
-        req = self.client.build_request(method="GET", url=self.url)
+        rng_h = range_header(rng=Range(0, 0))  # Empty range -> open-ended range header
+        req = self.client.build_request(method="GET", url=self.url, headers=rng_h)
         resp = self.client.send(request=req, stream=True)
         resp.raise_for_status()
         total_length = self.check_response_length(headers=resp.headers, req=req.method)

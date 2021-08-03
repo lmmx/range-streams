@@ -167,6 +167,7 @@ def test_active_range_changes(empty_range_stream_fresh):
     rng2 = Range(4, 6)
     empty_range_stream_fresh.add(rng2)
     assert empty_range_stream_fresh._active_range == rng2
+    assert empty_range_stream_fresh.active_range_response.is_windowed is False
 
 
 def test_add_range_no_activate(empty_range_stream_fresh):

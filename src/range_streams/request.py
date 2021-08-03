@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import TYPE_CHECKING, Iterator
 
 MYPY = False  # when using mypy will be overrided as True
-if TYPE_CHECKING:  # pragma: no cover
-    from ranges import Range
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
+
+from ranges import Range
 
 from .http_utils import PartialContentStatusError, detect_header_value, range_header
 from .range_utils import range_len
@@ -28,7 +27,12 @@ class RangeRequest:
     """
 
     def __init__(
-        self, byte_range: Range, url: str, client, GET_got: tuple | None = None
+        self,
+        byte_range: Range,
+        url: str,
+        client,
+        GET_got: tuple | None = None,
+        window_on_range: Range = Range(0, 0),
     ):
         """
         Make a new partial content request, or simulate one from a provided (completed)
@@ -40,14 +44,19 @@ class RangeRequest:
         prior to subsequent read operations).
 
         Args:
-          byte_range : The :class:`~ranges.Range` to request.
-          url        : The URL to be requested.
-          client     : The client to use for the request
-          GET_got    : A 2-tuple of the already-executed ``httpx.Request``
-                       and the received ``httpx.Response``, or ``None``
-                       (the default). If provided, the ``byte_range`` is not requested
-                       but instead is the range that was already requested, and the
-                       ``url`` is the requested URL.
+          byte_range      : The :class:`~ranges.Range` to request.
+          url             : The URL to be requested.
+          client          : The client to use for the request
+          GET_got         : A 2-tuple of the already-executed ``httpx.Request``
+                            and the received ``httpx.Response``, or ``None``
+                            (the default). If provided, the ``byte_range`` is not
+                            requested but instead is the range that was already
+                            requested, and the ``url`` is the requested URL.
+          window_on_range : If a non-empty range is passed, this is taken as the stream
+                            this request is a window onto (indicating this is a
+                            simulated request). Any read operations will be
+                            restricted to this range of positions (as the underlying
+                            stream being 'windowed' is a larger one).
         """
         self.range = byte_range
         self.url = url
@@ -55,6 +64,8 @@ class RangeRequest:
         self.check_client()
         # Allow a RangeRequest to be made from a pre-existing streamed GET request
         self.is_simulated = GET_got is not None
+        self.window_on_range = window_on_range
+        self.is_windowed = not window_on_range.isempty()
         if self.is_simulated:
             assert GET_got is not None  # give mypy a clue
             # "Simulating" a partial range request with pre-provided GET req. + response
@@ -62,15 +73,20 @@ class RangeRequest:
             self._check_resp_req()  # Sphinx typing workaround
             # This shouldn't need to be accessed but set it to be thorough
             self.content_range = f"{self.range_header}/{range_len(byte_range)}"
+            # self._iterator = None # must overwrite after initialisation
+            self._iterator = None if self.is_windowed else self.iter_raw()
         else:
             # Make and send a partial range request
             self.setup_stream()
             self.content_range = self.content_range_header()
-        self._iterator = self.iter_raw()
+            self._iterator = self.iter_raw()
 
     @classmethod
     def windowed_request(
-        cls, byte_range: Range, range_request: RangeRequest
+        cls,
+        byte_range: Range,
+        range_request: RangeRequest,
+        tail_mark: int,
     ) -> RangeRequest:
         """
         Reuse the stream from an existing streaming request rather to create a new
@@ -82,9 +98,12 @@ class RangeRequest:
         Args:
           byte_range : The :class:`~ranges.Range` provided by this request.
           on_request : The sent ``httpx.Request``
+          tail_mark  : The :attr:`~range_streams.response.RangeResponse.tail_mark`
+                       to trim the ``byte_range`` (if any). Passed separately
         """
+        window_range = Range(byte_range.start, byte_range.end - tail_mark)
         # Build the request that this object pretends to have sent
-        request_headers = range_header(byte_range)
+        request_headers = range_header(window_range)
         unsent_request = range_request.client.build_request(
             method="GET",
             url=range_request.url,
@@ -92,31 +111,41 @@ class RangeRequest:
         )
         content_byte_range = request_headers["range"].replace("=", " ")
         total_content_length = range_request.total_content_length
+        window_on_range = range_request.range
+        window_len = range_len(window_range)
         # Avoid having to import ``httpx.Response`` by calling ``type`` on one
-        HttpxResp_cls = type(range_request.response)
-        windowed_response = HttpxResp_cls(
-            status_code=206,  # Partial Content
-            headers={
-                "accept-ranges": "bytes",
-                "content-length": f"{range_len(byte_range)}",
-                "content-range": f"{content_byte_range}/{total_content_length}",
-            },
-            stream=range_request.response.stream,
-            request=unsent_request,
-        )
+        # HttpxResp_cls = type(range_request.response)
+        # windowed_response = HttpxResp_cls(
+        #    status_code=206,  # Partial Content
+        #    headers={
+        #        "accept-ranges": "bytes",
+        #        "content-length": str(window_len),
+        #        "content-range": f"{content_byte_range}/{total_content_length}",
+        #    },
+        #    stream=None, # do not consume the stream the window is being placed onto
+        #    #stream=range_request.response.stream, # this consumes the parent's stream!
+        #    request=unsent_request,
+        # )
+        # When iterating the stream via iter_raw, supply the source stream's iterator!
+        # windowed_response.iter_raw = range_request.response.iter_raw
+        windowed_response = range_request.response
         windowed_range_request = cls(
-            byte_range=byte_range,
+            byte_range=window_range,
             url=range_request.url,
             client=range_request.client,
             GET_got=(unsent_request, windowed_response),
+            window_on_range=window_on_range,  # Keep a reference to the underlying range
         )
+        # Calling ``response.iter_raw()`` again raises ``httpx.StreamConsumed`` error
+        # so simply overwrite after initialisation with existing RangeRequest iterator
+        windowed_range_request._iterator = range_request._iterator
         return windowed_range_request
 
     @classmethod
     def from_get_stream(cls, byte_range: Range, client, req, resp) -> RangeRequest:
         """
-        Avoid making a partial content request, instead interpret a streaming GET
-        request as equivalent to one when provided along with a ``byte_range``.
+        Avoid making a new partial content request, instead interpret a streaming GET
+        request as one when provided along with a ``byte_range``.
 
         Does not call
         :meth:`~range_streams.request.RangeRequest.raise_for_non_partial_content`
@@ -132,12 +161,14 @@ class RangeRequest:
           req        : The sent ``httpx.Request``
           resp       : The received ``httpx.Response``
         """
-        return cls(
+        range_request = cls(
             byte_range=byte_range,
             url=str(req.url),
             client=client,
             GET_got=(req, resp),
         )
+        # range_request._iterator = resp.iter_raw()
+        return range_request
 
     @property
     def range_header(self):

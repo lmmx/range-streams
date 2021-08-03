@@ -85,3 +85,58 @@ def test_monostream_full_same_as_full_stream(monostream_fresh, full_range_stream
     assert monostream_fresh.isempty() == full_range_stream.isempty()
     assert monostream_fresh.tell() == full_range_stream.tell()
     assert monostream_fresh.domain == full_range_stream.domain
+
+
+def test_active_range_changes(monostream_fresh):
+    assert monostream_fresh._active_range is None
+    rng1 = Range(0, 1)
+    monostream_fresh.add(rng1)
+    assert monostream_fresh._active_range == rng1
+    rng2 = Range(4, 6)
+    monostream_fresh.add(rng2)
+    assert monostream_fresh._active_range == rng2
+    assert monostream_fresh.active_range_response.is_windowed is True
+
+
+@mark.parametrize(
+    "start1,stop1,read1,start2,stop2,read2", [(1, 3, b"\x00", 4, 6, b"\x03")]
+)
+def test_correct_range_changes_and_read(
+    monostream_fresh, start1, stop1, read1, start2, stop2, read2
+):
+    """
+    Replace the test above with this once working
+    """
+    rng1 = Range(start1, stop1)
+    monostream_fresh.add(rng1)
+    assert monostream_fresh._active_range == rng1
+    assert monostream_fresh.tell() == 0
+    read_val1 = monostream_fresh.read(1)
+    assert read_val1 == read1
+    assert monostream_fresh.active_range_response.told == 1
+    assert monostream_fresh.tell() == 1
+    assert monostream_fresh.active_range_response.is_consumed() is False
+    monostream_fresh.read(1)
+    assert monostream_fresh.active_range_response.told == 2
+    assert monostream_fresh.tell() == 2
+    assert monostream_fresh.active_range_response.is_consumed() is True
+
+    rng2 = Range(start2, stop2)
+    monostream_fresh.add(rng2)
+    assert monostream_fresh._active_range == rng2
+    assert monostream_fresh.active_range_response.told == 0
+    assert monostream_fresh.tell() == 0
+    print(f"{monostream_fresh.active_range_response._bytes.tell()=}")
+    assert monostream_fresh.read(1) == read2
+
+
+@mark.parametrize("start1,stop1,read1,expected1", [(1, 3, 2, b"\x00\x01")])
+def test_correct_window_read(monostream_fresh, start1, stop1, read1, expected1):
+    rng1 = Range(start1, stop1)
+    monostream_fresh.add(rng1)
+    assert monostream_fresh._active_range == rng1
+    assert monostream_fresh.tell() == 0
+    read_val1 = monostream_fresh.read(read1)
+    assert read_val1 == expected1
+    assert monostream_fresh.active_range_response.told == read1
+    assert monostream_fresh.tell() == read1
