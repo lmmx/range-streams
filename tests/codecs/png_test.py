@@ -14,12 +14,12 @@ from .data import (
 
 @fixture(scope="session")
 def example_png_stream():
-    return PngStream(url=EXAMPLE_PNG_URL)
+    return PngStream(url=EXAMPLE_PNG_URL, single_request=False)
 
 
 @fixture(scope="session")
 def example_semitransp_png_stream():
-    return PngStream(url=EXAMPLE_SEMITRANSPARENT_PNG_URL)
+    return PngStream(url=EXAMPLE_SEMITRANSPARENT_PNG_URL, single_request=False)
 
 
 @mark.parametrize("expected", [276])
@@ -82,7 +82,7 @@ def test_semitransp_png_chunks(
     "expected_len,expected_semitransp,expected_transp", [(921600, False, False)]
 )
 def test_multi_idat_png_chunk_parse(expected_len, expected_semitransp, expected_transp):
-    stream = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL)
+    stream = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL, single_request=False)
     idat = stream.get_idat_data()
     assert len(idat) == expected_len
     assert stream.any_semitransparent_idat(nonzero=True) == expected_semitransp

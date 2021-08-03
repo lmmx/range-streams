@@ -41,6 +41,7 @@ class TarStream(RangeStream):
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
         scan_headers: bool = True,
+        single_request: bool = False,
     ):
         """
         Set up a stream for the ZIP archive at ``url``, with either an initial
@@ -63,6 +64,14 @@ class TarStream(RangeStream):
         ranges, and ``2`` will raise an error when a new range is added
         which overlaps a pre-existing range).
 
+        If ``single_request`` is ``True`` (default: ``False``), then the behaviour when
+        an empty ``byte_range`` is passed instead becomes to send a standard streaming
+        GET request (not a partial content request at all), and instead the class will
+        then facilitate an interface that 'simulates' these calls, i.e. as if each time
+        :meth:`~range_streams.stream.RangeStream.add` was used the range requests were
+        being returned instantly (as everything needed was already obtained on the first
+        request at initialisation). More performant when reading a stream linearly.
+
         - See docs for the
           :meth:`~range_streams.stream.RangeStream.handle_overlap`
           method for further details.
@@ -77,9 +86,16 @@ class TarStream(RangeStream):
                           or ``2`` ('strict')
           scan_headers  : (:class:`bool`) Whether to scan the archive headers
                           upon initialisation and add the archive's file ranges
+          single_request : (:class:`bool`) Whether to use a single GET request and
+                           just add 'windows' onto this rather than create multiple
+                           partial content requests.
         """
         super().__init__(
-            url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
+            url=url,
+            client=client,
+            byte_range=byte_range,
+            pruning_level=pruning_level,
+            single_request=single_request,
         )
         self.data = TarData()
         if scan_headers:

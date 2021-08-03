@@ -32,50 +32,64 @@ class PngStream(RangeStream):
         client=None,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
+        single_request: bool = False,
         scan_ihdr: bool = True,
         enumerate_chunks: bool = True,
     ):
         """
-        Set up a stream for the PNG file at ``url``, with either an initial
-        range to be requested (HTTP partial content request), or if left
-        as the empty range (default: ``Range(0,0)``) a HEAD request will
-        be sent instead, so as to set the total size of the target
-        file on the :attr:`~range_streams.stream.RangeStream.total_bytes`
-        property.
+        Set up a stream for the PNG file at ``url``, with either an initial range to be
+        requested (HTTP partial content request), or if left as the empty range
+        (default: ``Range(0,0)``) a HEAD request will be sent instead, so as to set the
+        total size of the target file on the
+        :attr:`~range_streams.stream.RangeStream.total_bytes` property.
 
-        By default (if ``client`` is left as ``None``) a fresh
-        :class:`httpx.Client` will be created for each stream.
+        By default (if ``client`` is left as ``None``) a fresh :class:`httpx.Client`
+        will be created for each stream.
 
-        The ``byte_range`` can be specified as either a :class:`~ranges.Range`
-        object, or 2-tuple of integers (``(start, end)``), interpreted
-        either way as a half-closed interval ``[start, end)``, as given by
-        Python's built-in :class:`range`.
+        The ``byte_range`` can be specified as either a :class:`~ranges.Range` object,
+        or 2-tuple of integers (``(start, end)``), interpreted either way as a
+        half-closed interval ``[start, end)``, as given by Python's built-in
+        :class:`range`.
 
-        The ``pruning_level`` controls the policy for overlap handling
-        (``0`` will resize overlapped ranges, ``1`` will delete overlapped
-        ranges, and ``2`` will raise an error when a new range is added
-        which overlaps a pre-existing range).
+        The ``pruning_level`` controls the policy for overlap handling (``0`` will
+        resize overlapped ranges, ``1`` will delete overlapped ranges, and ``2`` will
+        raise an error when a new range is added which overlaps a pre-existing range).
+
+        If ``single_request`` is ``True`` (default: ``False``), then the behaviour when
+        an empty ``byte_range`` is passed instead becomes to send a standard streaming
+        GET request (not a partial content request at all), and instead the class will
+        then facilitate an interface that 'simulates' these calls, i.e. as if each time
+        :meth:`~range_streams.stream.RangeStream.add` was used the range requests were
+        being returned instantly (as everything needed was already obtained on the first
+        request at initialisation). More performant when reading a stream linearly.
 
         - See docs for the
           :meth:`~range_streams.stream.RangeStream.handle_overlap`
           method for further details.
 
         Args:
-          url             : (:class:`str`) The URL of the file to be streamed
-          client          : (:class:`httpx.Client` | ``None``) The HTTPX client
-                            to use for HTTP requests
-          byte_range      : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
-                            of positions on the file to be requested
-          pruning_level   : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
-                            or ``2`` ('strict')
-          scan_ihdr       : (:class:`bool`) Whether to scan the IHDR chunk on
-                            initialisation
-          enumerate_chunks: (:class:`bool`) Whether to step through each chunk
-                            (read its metadata, and proceed until all chunks have
-                            been identified) upon initialisation
+          url              : (:class:`str`) The URL of the file to be streamed
+          client           : (:class:`httpx.Client` | ``None``) The HTTPX client
+                             to use for HTTP requests
+          byte_range       : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                             of positions on the file to be requested
+          pruning_level    : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                             or ``2`` ('strict')
+          single_request   : (:class:`bool`) Whether to use a single GET request and
+                             just add 'windows' onto this rather than create multiple
+                             partial content requests.
+          scan_ihdr        : (:class:`bool`) Whether to scan the IHDR chunk on
+                             initialisation
+          enumerate_chunks : (:class:`bool`) Whether to step through each chunk
+                             (read its metadata, and proceed until all chunks have
+                             been identified) upon initialisation
         """
         super().__init__(
-            url=url, client=client, byte_range=byte_range, pruning_level=pruning_level
+            url=url,
+            client=client,
+            byte_range=byte_range,
+            pruning_level=pruning_level,
+            single_request=single_request,
         )
         if enumerate_chunks:
             self.populate_chunks()

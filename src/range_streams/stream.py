@@ -83,8 +83,8 @@ class RangeStream:
         client=None,  # don't hint httpx.Client (Sphinx gives error)
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
-        force_async: bool = False,
         single_request: bool = False,
+        force_async: bool = False,
     ):
         """
         Set up a stream for the file at ``url``, with either an initial
@@ -113,7 +113,7 @@ class RangeStream:
         then facilitate an interface that 'simulates' these calls, i.e. as if each time
         :meth:`~range_streams.stream.RangeStream.add` was used the range requests were
         being returned instantly (as everything needed was already obtained on the first
-        request at initialisation).
+        request at initialisation). More performant when reading a stream linearly.
 
         Note: internally, this single request is known as 'the monostream', and is
         stored on the :attr:`~range_streams.stream.RangeStream.monostream` property.
@@ -137,16 +137,19 @@ class RangeStream:
           method for further details.
 
         Args:
-          url           : (:class:`str`) The URL of the file to be streamed
-          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
-                          to use for HTTP requests
-          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
-                          of positions on the file to be requested
-          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
-                          or ``2`` ('strict')
-          force_async   : (:class:`bool` | ``None``) Whether to require the client
-                          to be ``httpx.AsyncClient``, and if no client is given,
-                          to create one on initialisation.
+          url            : (:class:`str`) The URL of the file to be streamed
+          client         : (:class:`httpx.Client` | ``None``) The HTTPX client
+                           to use for HTTP requests
+          byte_range     : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                           of positions on the file to be requested
+          pruning_level  : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                           or ``2`` ('strict')
+          single_request : (:class:`bool`) Whether to use a single GET request and
+                           just add 'windows' onto this rather than create multiple
+                           partial content requests.
+          force_async    : (:class:`bool` | ``None``) Whether to require the client
+                           to be ``httpx.AsyncClient``, and if no client is given,
+                           to create one on initialisation. (Experimental/WIP)
         """
         self.url = url
         self.set_client(client=client, force_async=force_async)
