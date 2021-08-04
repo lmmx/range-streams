@@ -99,6 +99,29 @@ class RangeResponse:
 
     @property
     def is_active_buf_range(self) -> bool:
+        """
+        The active range is stored on the buffer the HTTP response stream writes to
+        (in the :attr:`~range_streams.response.RangeResponse._bytes.active_buf_range`
+        attribute) so that whenever the active range changes, it is detectable
+        immediately (all interfaces to read/seek/load the buffer are 'guarded' by a
+        call to :meth:`~range_streams.response.RangeResponse.buf_keep` to achieve this).
+
+        When this change is detected, since the cursor may be in another range of the
+        shared source buffer (where the previously active window was busy doing its
+        thing), the cursor is first moved to the last stored
+        :meth:`~range_streams.response.RangeResponse.tell` position, which is stored on
+        each :class:`~range_streams.response.RangeResponse` in the
+        :attr:`~range_streams.response.RangeResponse.told` attribute, and initialised as
+        ``0`` so that on first use it simply refers to the start position of the window
+        range.
+
+        Note that the active range only changes for 'windowed'
+        :class:`~range_streams.response.RangeResponse` objects sharing a 'source' buffer
+        with a source :class:`~range_streams.response.RangeResponse in the
+        :attr:`~range_streams.stream.RangeStream._ranges` :class:`~ranges.RangeDict`.
+        To clarify: the active range changes on first use for non-windowed ranges, since
+        the active range is initialised as the empty range (but after that it doesn't!)
+        """
         return self._bytes.active_buf_range == self.request.range
 
     @property
@@ -173,8 +196,12 @@ class RangeResponse:
         """
         if not self.is_active_buf_range:
             rng = self.request.range
+            if DEBUG_VERBOSE:
+                print(f"Buffer switch... {rng=}")
             if self.is_windowed:
                 cursor_dest = rng.start + self.told
+                if DEBUG_VERBOSE:
+                    print(f"... {self.told=}")
                 self._bytes.seek(cursor_dest)
             # Do not set `told` as it was just used (i.e. redundant to do so)
             self.set_active_buf_range(rng=rng)
@@ -209,6 +236,9 @@ class RangeResponse:
 
     @property
     def client(self):
+        """
+        The request's client.
+        """
         return self.request.client
 
     @property
@@ -275,10 +305,12 @@ class RangeResponse:
 
     def read(self, size=None):
         """
-        File-like reading within the range request stream.
+        File-like reading within the range request stream, with careful handling of
+        windowed ranges and tail marks.
         """
         self.buf_keep()
-        tail_mark = self.tail_mark
+        if DEBUG_VERBOSE:
+            print(f"Reading {self.request.range}")
         # ...
         if not self.read_ready:
             # Only run on the first use after init
@@ -296,12 +328,15 @@ class RangeResponse:
         # Rewind the cursor to the start position now the bytes to read are loaded
         self._bytes.seek(left_off_at)
         if self.is_windowed:
-            # Would need to offset this if source range is non-total range
-            # (also may need to take into account tail-mark for windows?)
-            window_end = self.request.range.end
+            # Convert absolute window end to relative offset on source range
+            # (should do this using window_offset to permit non-total ranges!)
+            window_end = self.request.range.end - self.tail_mark
             remaining_bytes = window_end - left_off_at
-            if size is None or size > remaining_bytes:
-                size = remaining_bytes
+        else:
+            rng_len = self.total_len_to_read
+            remaining_bytes = rng_len - left_off_at
+        if size is None or size > remaining_bytes:
+            size = remaining_bytes
         read_bytes = self._bytes.read(size)
         self.store_tell()
         return read_bytes
@@ -320,7 +355,7 @@ class RangeResponse:
 
     @property
     def total_len_to_read(self):
-        return range_len(self.request.range) + 1
+        return range_len(self.request.range) + 1 - self.tail_mark
 
     def is_consumed(self) -> bool:
         """
@@ -348,7 +383,6 @@ class RangeResponse:
         :meth:`~range_streams.stream.RangeStream.burn_range` and
         :meth:`~range_streams.stream.RangeStream.handle_overlap`).
         """
-        tail_mark = self.tail_mark
         if not self.is_in_window:
             # File cursor position may not be set to the start of the window but when it
             # is read it will be placed at the start (don't do this here: checking if
@@ -357,5 +391,5 @@ class RangeResponse:
             read_so_far = 0
         else:
             read_so_far = self.tell()
-        len_to_read = self.total_len_to_read - tail_mark
+        len_to_read = self.total_len_to_read
         return (len_to_read - read_so_far) <= 0  # should not go below!

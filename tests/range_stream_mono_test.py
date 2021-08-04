@@ -154,3 +154,22 @@ def test_correct_window_read_all(monostream_fresh, start1, stop1, read1, expecte
     assert monostream_fresh.active_range_response.told == read1
     assert monostream_fresh.tell() == read1
     assert len(monostream_fresh.read()) == 0
+
+
+@mark.parametrize("initial_range,expected1", [(Range(3, 7), b"\x02\x03")])
+@mark.parametrize("overlapping_range,expected2", [(Range(5, 8), b"\x04\x05\x06")])
+def test_overlapped_read(
+    monostream_fresh, initial_range, overlapping_range, expected1, expected2
+):
+    """
+    Partial overlap with tail of the centred range ``[3,7)`` covered on one range
+    ``[5,8)`` should increment the tail mark so ``[3,7)`` is reduced to ``[3,5)``
+    and subsequently when read it should only give two bytes rather than four.
+    """
+    stream = monostream_fresh
+    stream.add(byte_range=initial_range)
+    stream.add(byte_range=overlapping_range)
+    b1 = stream.ranges[initial_range.start].read()
+    assert b1 == expected1
+    b2 = stream.ranges[overlapping_range.start].read()
+    assert b2 == expected2

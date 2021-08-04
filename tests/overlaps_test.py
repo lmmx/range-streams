@@ -241,10 +241,10 @@ def test_partial_overlap_multiple_ranges(
     assert len(external_rng_list) == 3
 
 
-@mark.parametrize("initial_range", [Range(3, 7)])
-@mark.parametrize("overlapping_range,expected", [(Range(5, 8), b"\x02\x03")])
+@mark.parametrize("initial_range,expected1", [(Range(3, 7), b"\x02\x03")])
+@mark.parametrize("overlapping_range,expected2", [(Range(5, 8), b"\x04\x05\x06")])
 def test_overlapped_read(
-    empty_range_stream_fresh, initial_range, overlapping_range, expected
+    empty_range_stream_fresh, initial_range, overlapping_range, expected1, expected2
 ):
     """
     Partial overlap with tail of the centred range ``[3,7)`` covered on one range
@@ -254,5 +254,7 @@ def test_overlapped_read(
     stream = empty_range_stream_fresh
     stream.add(byte_range=initial_range)
     stream.add(byte_range=overlapping_range)
-    b = stream._ranges[initial_range.start].read()
-    assert b == expected
+    b1 = stream.ranges[initial_range.start].read()
+    assert b1 == expected1
+    b2 = stream.ranges[overlapping_range.start].read()
+    assert b2 == expected2
