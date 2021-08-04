@@ -32,7 +32,7 @@ class PngStream(RangeStream):
         client=None,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
-        single_request: bool = False,
+        single_request: bool = True,
         scan_ihdr: bool = True,
         enumerate_chunks: bool = True,
     ):
@@ -55,13 +55,14 @@ class PngStream(RangeStream):
         resize overlapped ranges, ``1`` will delete overlapped ranges, and ``2`` will
         raise an error when a new range is added which overlaps a pre-existing range).
 
-        If ``single_request`` is ``True`` (default: ``False``), then the behaviour when
+        If ``single_request`` is ``True`` (default: ``True``), then the behaviour when
         an empty ``byte_range`` is passed instead becomes to send a standard streaming
         GET request (not a partial content request at all), and instead the class will
         then facilitate an interface that 'simulates' these calls, i.e. as if each time
         :meth:`~range_streams.stream.RangeStream.add` was used the range requests were
         being returned instantly (as everything needed was already obtained on the first
-        request at initialisation). More performant when reading a stream linearly.
+        request at initialisation). More performant when reading a stream linearly,
+        and defaults to ``True`` in the PNG codec as chunks are read linearly.
 
         - See docs for the
           :meth:`~range_streams.stream.RangeStream.handle_overlap`
