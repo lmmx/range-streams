@@ -35,6 +35,7 @@ class PngStream(RangeStream):
         single_request: bool = True,
         scan_ihdr: bool = True,
         enumerate_chunks: bool = True,
+        chunk_size: int | None = None,
     ):
         """
         Set up a stream for the PNG file at ``url``, with either an initial range to be
@@ -84,6 +85,8 @@ class PngStream(RangeStream):
           enumerate_chunks : (:class:`bool`) Whether to step through each chunk
                              (read its metadata, and proceed until all chunks have
                              been identified) upon initialisation
+          chunk_size       : (:class:`int` | ``None``) The chunk size used for the
+                             ``httpx.Response.iter_raw`` response byte iterators
         """
         super().__init__(
             url=url,

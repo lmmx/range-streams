@@ -61,6 +61,7 @@ class RangeResponse:
     ):
         self.parent_stream = stream
         self.request = range_request
+        self.range_name = range_name
         self.is_windowed = self.check_is_windowed()
         self.read_ready = not self.is_windowed
         if self.is_windowed or ALWAYS_SET_TOLD:
@@ -70,7 +71,6 @@ class RangeResponse:
             self._bytes = self.source_range_response._bytes
         else:
             self._bytes = BufferLedger()
-        self.range_name = range_name
 
     def __repr__(self):
         rng_name = self.range_name if self.range_name == "" else f' "{self.range_name}"'

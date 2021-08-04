@@ -184,3 +184,13 @@ def test_add_range_no_activate(empty_range_stream_fresh):
     rng2 = Range(4, 6)
     empty_range_stream_fresh.add(rng2, activate=False)
     assert empty_range_stream_fresh._active_range is None
+
+
+@mark.parametrize("chunk_size,byte,expected", [(4, b"\x00", b"\x00\x01\x02\x03")])
+def test_iterator_chunk_size(chunk_size, byte, expected):
+    stream = RangeStream(url=EXAMPLE_URL, client=client, chunk_size=chunk_size)
+    stream.add((1, 9))
+    assert stream.active_range_response._bytes.getvalue() == b""
+    read_byte = stream.read(1)
+    assert read_byte == byte
+    assert stream.active_range_response._bytes.getvalue() == expected

@@ -15,6 +15,7 @@ class CondaStream(ZipStream):
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
         scan_contents: bool = True,
+        chunk_size: int | None = None,
     ):
         """
         Set up a stream for the conda (ZIP) archive at ``url``, with either an initial
@@ -51,6 +52,8 @@ class CondaStream(ZipStream):
                           or ``2`` ('strict')
           scan_contents : (:class:`bool`) Whether to scan the archive contents
                           upon initialisation and add the archive's file ranges
+          chunk_size    : (:class:`int` | ``None``) The chunk size used for the
+                          ``httpx.Response.iter_raw`` response byte iterators
         """
         super().__init__(
             url=url,

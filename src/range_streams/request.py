@@ -33,6 +33,7 @@ class RangeRequest:
         client,
         GET_got: tuple | None = None,
         window_on_range: Range = Range(0, 0),
+        chunk_size: int | None = None,
     ):
         """
         Make a new partial content request, or simulate one from a provided (completed)
@@ -57,6 +58,7 @@ class RangeRequest:
                             simulated request). Any read operations will be
                             restricted to this range of positions (as the underlying
                             stream being 'windowed' is a larger one).
+          chunk_size      : The chunk size to the ``httpx.Response.iter_raw`` iterator
         """
         self.range = byte_range
         self.url = url
@@ -66,6 +68,7 @@ class RangeRequest:
         self.is_simulated = GET_got is not None
         self.window_on_range = window_on_range
         self.is_windowed = not window_on_range.isempty()
+        self.chunk_size = chunk_size
         if self.is_simulated:
             assert GET_got is not None  # give mypy a clue
             # "Simulating" a partial range request with pre-provided GET req. + response
@@ -87,6 +90,7 @@ class RangeRequest:
         byte_range: Range,
         range_request: RangeRequest,
         tail_mark: int,
+        chunk_size: int | None,
     ) -> RangeRequest:
         """
         Reuse the stream from an existing streaming request rather to create a new
@@ -100,6 +104,7 @@ class RangeRequest:
           on_request : The sent ``httpx.Request``
           tail_mark  : The :attr:`~range_streams.response.RangeResponse.tail_mark`
                        to trim the ``byte_range`` (if any). Passed separately
+          chunk_size      : The chunk size to the ``httpx.Response.iter_raw`` iterator
         """
         window_range = Range(byte_range.start, byte_range.end - tail_mark)
         # Build the request that this object pretends to have sent
@@ -142,7 +147,9 @@ class RangeRequest:
         return windowed_range_request
 
     @classmethod
-    def from_get_stream(cls, byte_range: Range, client, req, resp) -> RangeRequest:
+    def from_get_stream(
+        cls, byte_range: Range, client, req, resp, chunk_size: int | None = None
+    ) -> RangeRequest:
         """
         Avoid making a new partial content request, instead interpret a streaming GET
         request as one when provided along with a ``byte_range``.
@@ -160,12 +167,14 @@ class RangeRequest:
           byte_range : The :class:`~ranges.Range` provided by this request.
           req        : The sent ``httpx.Request``
           resp       : The received ``httpx.Response``
+          chunk_size : The size of chunks to read the response into the buffer with
         """
         range_request = cls(
             byte_range=byte_range,
             url=str(req.url),
             client=client,
             GET_got=(req, resp),
+            chunk_size=chunk_size,
         )
         # range_request._iterator = resp.iter_raw()
         return range_request
@@ -219,7 +228,7 @@ class RangeRequest:
         object within the :class:`~range_streams.response.RangeResponse` in
         :attr:`~range_streams.request.RangeRequest.response`.
         """
-        return self.response.iter_raw()
+        return self.response.iter_raw(chunk_size=self.chunk_size)
 
     def close(self) -> None:
         """

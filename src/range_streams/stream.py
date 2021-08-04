@@ -100,6 +100,7 @@ class RangeStream:
         pruning_level: int = 0,
         single_request: bool = False,
         force_async: bool = False,
+        chunk_size: int | None = None,
     ):
         """
         Set up a stream for the file at ``url``, with either an initial
@@ -147,6 +148,9 @@ class RangeStream:
         ranges, and ``2`` will raise an error when a new range is added
         which overlaps a pre-existing range).
 
+        The ``chunk_size`` controls the size of the chunks that are read in from the
+        ``httpx.Response.iter_raw`` iterator on the streamed HTTP response.
+
         - See docs for the
           :meth:`~range_streams.stream.RangeStream.handle_overlap`
           method for further details.
@@ -165,11 +169,14 @@ class RangeStream:
           force_async    : (:class:`bool` | ``None``) Whether to require the client
                            to be ``httpx.AsyncClient``, and if no client is given,
                            to create one on initialisation. (Experimental/WIP)
+          chunk_size     : (:class:`int` | ``None``) The chunk size used for the
+                            ``httpx.Response.iter_raw`` response byte iterators
         """
         self.url = url
         self.set_client(client=client, force_async=force_async)
         self.pruning_level = pruning_level
         self.single_request = single_request
+        self.chunk_size = chunk_size
         self._ranges = RangeDict()
         self._range_windows = RangeDict()
         self.add(byte_range=byte_range)
@@ -572,6 +579,7 @@ class RangeStream:
             byte_range=byte_range,
             url=self.url,
             client=self.client,
+            chunk_size=self.chunk_size,
         )
 
     def simulate_request(
@@ -604,6 +612,7 @@ class RangeStream:
             byte_range=byte_range,
             range_request=parent_range_request,
             tail_mark=parent_range_response.tail_mark,
+            chunk_size=self.chunk_size,
         )
 
     def get_monostream(self) -> None:
@@ -629,6 +638,7 @@ class RangeStream:
             client=self.client,
             req=req,
             resp=resp,
+            chunk_size=self.chunk_size,
         )
 
         # then just use the req to create a RangeResponse and register as usual

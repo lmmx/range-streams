@@ -46,6 +46,7 @@ class ZipStream(RangeStream):
         pruning_level: int = 0,
         single_request: bool = False,
         scan_contents: bool = True,
+        chunk_size: int | None = None,
     ):
         """
         Set up a stream for the ZIP archive at ``url``, with either an initial range to
@@ -79,18 +80,20 @@ class ZipStream(RangeStream):
           method for further details.
 
         Args:
-          url           : (:class:`str`) The URL of the file to be streamed
-          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
-                          to use for HTTP requests
-          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
-                          of positions on the file to be requested
-          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
-                          or ``2`` ('strict')
+          url            : (:class:`str`) The URL of the file to be streamed
+          client         : (:class:`httpx.Client` | ``None``) The HTTPX client
+                           to use for HTTP requests
+          byte_range     : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                           of positions on the file to be requested
+          pruning_level  : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                           or ``2`` ('strict')
           single_request : (:class:`bool`) Whether to use a single GET request and
                            just add 'windows' onto this rather than create multiple
                            partial content requests.
-          scan_contents : (:class:`bool`) Whether to scan the archive contents
-                          upon initialisation and add the archive's file ranges
+          scan_contents  : (:class:`bool`) Whether to scan the archive contents
+                           upon initialisation and add the archive's file ranges
+          chunk_size     : (:class:`int` | ``None``) The chunk size used for the
+                           ``httpx.Response.iter_raw`` response byte iterators
         """
         super().__init__(
             url=url,
