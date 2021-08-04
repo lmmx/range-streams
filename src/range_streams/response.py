@@ -9,13 +9,22 @@ if TYPE_CHECKING:  # pragma: no cover
 
 from ranges import Range
 
-from .range_utils import range_len
+from .range_utils import ALWAYS_SET_TOLD, range_len
 
 __all__ = ["RangeResponse"]
 
 
 DEBUG_VERBOSE = False
-ALWAYS_SET_TOLD = True  # if False, only windowed range responses set `.told`
+
+
+class BufferLedger(BytesIO):
+    """
+    A thin wrapper to :class:`io.BytesIO` with an attribute
+    """
+
+    def __init__(self, active_rng: Range = Range(0, 0)):
+        super().__init__()
+        self.active_buf_range: Range = active_rng
 
 
 class RangeResponse:
@@ -38,7 +47,7 @@ class RangeResponse:
     (where `an existing range` is assumed here to only be considered a range
     if it is not 'consumed' yet).
     """
-    _bytes: BytesIO
+    _bytes: BufferLedger
 
     def __init__(
         self,
@@ -56,7 +65,7 @@ class RangeResponse:
             # Don't create a buffer, refer to the source range's RangeResponse buffer
             self._bytes = self.source_range_response._bytes
         else:
-            self._bytes = BytesIO()
+            self._bytes = BufferLedger()
         self.range_name = range_name
 
     def __repr__(self):
@@ -79,6 +88,18 @@ class RangeResponse:
         if not self.is_windowed:
             raise ValueError("source_range_response accessed for non-windowed range")
         return self.parent_stream._ranges[self.source_range.start]
+
+    def set_active_buf_range(self, rng: Range) -> None:
+        """
+        Update the :attr:`~range_streams.response.RangeResponse._bytes` buffer's
+        :attr:`~range_streams.response.RangeResponse._bytes.active_buf_range`
+        attribute with the given :~ranges.Range` (``rng``).
+        """
+        self._bytes.active_buf_range = rng
+
+    @property
+    def is_active_buf_range(self) -> bool:
+        return self._bytes.active_buf_range == self.request.range
 
     @property
     def source_iterator(self):
@@ -136,6 +157,28 @@ class RangeResponse:
         """
         return (self.told if live else self.tell()) + self.window_offset
 
+    def buf_keep(self) -> None:
+        """
+        If the currently set active buffer range on the
+        :attr:`~range_streams.response.RangeResponse._bytes` buffer
+        is not the range on this
+        :class:`~range_streams.response.RangeResponse`, then set it to be.
+
+        This is the mechanism by which windowed ranges are switched (the windows
+        share the same 'source' buffer, and the value of the active buffer range
+        stored on that buffer indicates the most recently active window).
+
+        At initialisation, all :class:`~range_streams.response.RangeResponse`
+        have their active buffer range set to the empty range, ``Range(0,0)``.
+        """
+        if not self.is_active_buf_range:
+            rng = self.request.range
+            if self.is_windowed:
+                cursor_dest = rng.start + self.told
+                self._bytes.seek(cursor_dest)
+            # Do not set `told` as it was just used (i.e. redundant to do so)
+            self.set_active_buf_range(rng=rng)
+
     def store_tell(self) -> None:
         """
         Store the [window-relative] tell value in
@@ -157,6 +200,7 @@ class RangeResponse:
         Prepare the stream cursor for reading (unclear if this should only be done on
         initialisation...) Should be done every time if the cursor is shared, but is it?
         """
+        # UPDATE: MAY BE REDUNDANT AFTER `buf_keep` IMPLEMENTED? TODO: TEST
         if not self.is_in_window:
             self.seek(position=0)  # Window offset is added in seek function
         self.read_ready = True  # Remove barrier flag attribute
@@ -188,8 +232,10 @@ class RangeResponse:
         If seeking on a windowed range, then 'loading all' will not really
         load to the end of the stream, just the end of the window onto it.
         """
+        self.buf_keep()
         if self.is_windowed:
             # Would need to offset this if source range is non-total range
+            # (also may need to take into account tail-mark for windows?)
             window_end = self.request.range.end
             self._load_until(window_end)
         else:
@@ -199,6 +245,7 @@ class RangeResponse:
         self.store_tell()
 
     def _load_until(self, goal_position):
+        self.buf_keep()
         current_position = self._bytes.seek(0, SEEK_END)
         while current_position < goal_position:
             try:
@@ -230,6 +277,9 @@ class RangeResponse:
         """
         File-like reading within the range request stream.
         """
+        self.buf_keep()
+        tail_mark = self.tail_mark
+        # ...
         if not self.read_ready:
             # Only run on the first use after init
             self.prepare_reading_window()
@@ -245,6 +295,13 @@ class RangeResponse:
 
         # Rewind the cursor to the start position now the bytes to read are loaded
         self._bytes.seek(left_off_at)
+        if self.is_windowed:
+            # Would need to offset this if source range is non-total range
+            # (also may need to take into account tail-mark for windows?)
+            window_end = self.request.range.end
+            remaining_bytes = window_end - left_off_at
+            if size is None or size > remaining_bytes:
+                size = remaining_bytes
         read_bytes = self._bytes.read(size)
         self.store_tell()
         return read_bytes
@@ -253,6 +310,7 @@ class RangeResponse:
         """
         File-like seeking within the range request stream.
         """
+        self.buf_keep()
         if whence == SEEK_END:
             self._load_all()
         if self.is_windowed:

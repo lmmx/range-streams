@@ -239,3 +239,20 @@ def test_partial_overlap_multiple_ranges(
     for init_rng in initial_ranges:
         assert init_rng not in external_rng_list
     assert len(external_rng_list) == 3
+
+
+@mark.parametrize("initial_range", [Range(3, 7)])
+@mark.parametrize("overlapping_range,expected", [(Range(5, 8), b"\x02\x03")])
+def test_overlapped_read(
+    empty_range_stream_fresh, initial_range, overlapping_range, expected
+):
+    """
+    Partial overlap with tail of the centred range ``[3,7)`` covered on one range
+    ``[5,8)`` should increment the tail mark so ``[3,7)`` is reduced to ``[3,5)``
+    and subsequently when read it should only give two bytes rather than four.
+    """
+    stream = empty_range_stream_fresh
+    stream.add(byte_range=initial_range)
+    stream.add(byte_range=overlapping_range)
+    b = stream._ranges[initial_range.start].read()
+    assert b == expected

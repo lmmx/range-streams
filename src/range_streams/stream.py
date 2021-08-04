@@ -26,6 +26,7 @@ from ranges import Range, RangeDict
 from .http_utils import detect_header_value, range_header
 from .overlaps import get_range_containing, overlap_whence
 from .range_utils import (
+    ALWAYS_SET_TOLD,
     most_recent_range,
     range_max,
     range_span,
@@ -37,6 +38,8 @@ from .request import RangeRequest
 from .response import RangeResponse
 
 __all__ = ["RangeStream"]
+
+DEBUG_VERBOSE = False
 
 
 class RangeStream:
@@ -218,17 +221,18 @@ class RangeStream:
         if rng not in self.total_range:
             raise ValueError(f"{rng} is not a sub-range of {self.total_range}")
 
-    def check_range_integrity(self) -> None:
+    def check_range_integrity(self, use_windows=False) -> None:
         """
         Every :class:`~ranges.RangeSet` in the
         :attr:`~range_streams.stream.RangeStream._ranges`
         :class:`~ranges.RangeDict` keys must contain 1 :class:`~ranges.Range` each
         """
-        if sum(len(rs._ranges) - 1 for rs in self._ranges.ranges()) != 0:
-            bad_rs = [rs for rs in self._ranges.ranges() if len(rs._ranges) - 1 != 0]
+        rng_dict = self._range_windows if use_windows else self._ranges
+        if sum(len(rs._ranges) - 1 for rs in rng_dict.ranges()) != 0:
+            bad_rs = [rs for rs in rng_dict.ranges() if len(rs._ranges) - 1 != 0]
             for rset in bad_rs:
                 for rng in rset:
-                    rng_resp = self._ranges[rng.start]
+                    rng_resp = rng_dict[rng.start]
                     rng_max = range_max(rng)
                     if rng_resp.tell() > rng_max:
                         rset.discard(rng)  # discard subrange
@@ -258,6 +262,8 @@ class RangeStream:
         (a.k.a. mock/dummy objects) of the range response that would be received from a
         partial content request (they in fact merely came from a streamed GET request).
         """
+        # if use_windows:
+        #    breakpoint()
         prepared_rangedict = RangeDict()
         internal_rangedict = self._range_windows if use_windows else self._ranges
         for rng_set, rng_response in internal_rangedict.items():
@@ -268,12 +274,21 @@ class RangeStream:
             #    ...
             if rng_response.is_consumed():
                 continue
-            if rng_response_tell := rng_response.tell():
+            told_is_set = rng_response.is_windowed or ALWAYS_SET_TOLD
+            if rng_response_tell := (
+                rng_response.told if told_is_set else rng_response.tell()
+            ):
                 # Access single range (assured by unique RangeResponse values of
                 # RangeDict) of singleton rangeset (assured by check_range_integrity)
                 rng.start += rng_response_tell
+                # if rng.start > rng.end:
+                #    breakpoint()
             if rng_response.tail_mark:
                 rng.end -= rng_response.tail_mark
+                # if rng.start > rng.end:
+                #   breakpoint()
+            if rng.start > rng.end:
+                raise ValueError(f"{rng} has been malformed (rng_response=)")
             prepared_rangedict.update({rng: rng_response})
         return prepared_rangedict
 
@@ -297,6 +312,10 @@ class RangeStream:
         consumed by reading).
         """
         self.check_range_integrity()
+        # Unclear if this is necessary but seems consistent to do here:
+        if self.single_request:
+            # Also check integrity of the range windows
+            self.check_range_integrity(use_windows=True)
         if self.freely_requestable:
             # Not limited to a single request
             ranges = self.compute_external_ranges()
@@ -308,9 +327,18 @@ class RangeStream:
     def overlap_whence(
         self, rng: Range, internal: bool = False, use_windows: bool = False
     ) -> int | None:
+        if DEBUG_VERBOSE:
+            print(f"IN {rng=} {internal=} {use_windows=}")
+            for k, v in self._range_windows.items():
+                print(f"{k}: {v} ({v.told})")
         internal_rng_dict = self._range_windows if use_windows else self._ranges
         rng_dict = internal_rng_dict if internal else self.ranges
-        return overlap_whence(rng_dict, rng)
+        # if use_windows:
+        #    print(rng)
+        #    breakpoint()
+        if DEBUG_VERBOSE:
+            print(f"OUT {rng}")
+        return overlap_whence(rng_dict=rng_dict, rng=rng)
 
     def register_range(
         self,
@@ -323,6 +351,8 @@ class RangeStream:
             self.check_is_subrange(rng)
         else:
             raise ValueError("Stream length must be set before registering a range")
+        if DEBUG_VERBOSE:
+            print(f"Hit {rng=} {value=} {activate=} {use_windows=}")
         if (
             self.overlap_whence(rng, internal=False, use_windows=use_windows)
             is not None
@@ -331,6 +361,7 @@ class RangeStream:
         # print(f"Pre: {self._ranges=}")
         # print(f"Adding: {rng=}")
         ranges = self._range_windows if use_windows else self._ranges
+        # This is where a previous tail mark is erased (if replacing an overlap)
         ranges.add(rng=rng, value=value)
         if activate:
             self.set_active_range(rng)

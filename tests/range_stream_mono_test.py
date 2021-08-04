@@ -131,12 +131,26 @@ def test_correct_range_changes_and_read(
 
 
 @mark.parametrize("start1,stop1,read1,expected1", [(1, 3, 2, b"\x00\x01")])
-def test_correct_window_read(monostream_fresh, start1, stop1, read1, expected1):
+def test_correct_window_read_size(monostream_fresh, start1, stop1, read1, expected1):
     rng1 = Range(start1, stop1)
     monostream_fresh.add(rng1)
     assert monostream_fresh._active_range == rng1
     assert monostream_fresh.tell() == 0
-    read_val1 = monostream_fresh.read(read1)
+    read_val1 = monostream_fresh.read(read1)  # read ``read1`` bytes
     assert read_val1 == expected1
     assert monostream_fresh.active_range_response.told == read1
     assert monostream_fresh.tell() == read1
+    assert len(monostream_fresh.read()) == 0
+
+
+@mark.parametrize("start1,stop1,read1,expected1", [(1, 3, 2, b"\x00\x01")])
+def test_correct_window_read_all(monostream_fresh, start1, stop1, read1, expected1):
+    rng1 = Range(start1, stop1)
+    monostream_fresh.add(rng1)
+    assert monostream_fresh._active_range == rng1
+    assert monostream_fresh.tell() == 0
+    read_val1 = monostream_fresh.read()  # read all bytes (implicitly ``read1``)
+    assert read_val1 == expected1
+    assert monostream_fresh.active_range_response.told == read1
+    assert monostream_fresh.tell() == read1
+    assert len(monostream_fresh.read()) == 0

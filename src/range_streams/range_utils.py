@@ -10,6 +10,7 @@ __all__ = [
     "range_max",
     "validate_range",
     "range_span",
+    "ALWAYS_SET_TOLD",
 ]
 
 from typing import TYPE_CHECKING
@@ -19,6 +20,8 @@ if TYPE_CHECKING:  # pragma: no cover
     import range_streams  # for RangeStream, RangeResponse
 
 from ranges import Range
+
+ALWAYS_SET_TOLD = True  # if False, only windowed range responses set `.told`
 
 
 def ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
