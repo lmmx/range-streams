@@ -159,15 +159,21 @@ def test_stream_seek_tell(full_range_stream_fresh, pos):
     assert full_range_stream_fresh.tell() == pos
 
 
-def test_active_range_changes(empty_range_stream_fresh):
+def test_active_range_changes_and_close(empty_range_stream_fresh):
     assert empty_range_stream_fresh._active_range is None
     rng1 = Range(0, 1)
     empty_range_stream_fresh.add(rng1)
     assert empty_range_stream_fresh._active_range == rng1
+    assert empty_range_stream_fresh.active_range_response.is_closed is False
+    empty_range_stream_fresh.active_range_response.close()
+    assert empty_range_stream_fresh.active_range_response.is_closed is True
     rng2 = Range(4, 6)
     empty_range_stream_fresh.add(rng2)
     assert empty_range_stream_fresh._active_range == rng2
     assert empty_range_stream_fresh.active_range_response.is_windowed is False
+    assert empty_range_stream_fresh.is_closed is False
+    empty_range_stream_fresh.close()
+    assert empty_range_stream_fresh.is_closed is True
 
 
 def test_add_range_no_activate(empty_range_stream_fresh):

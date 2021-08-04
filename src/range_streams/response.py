@@ -32,6 +32,10 @@ class RangeResponse:
     Adapted from `obskyr's ResponseStream demo code
     <https://gist.github.com/obskyr/b9d4b4223e7eaf4eedcd9defabb34f13>`_,
     this class handles the streamed partial request as a file-like object.
+
+    Don't forget to close the ``httpx.Response`` yourself! The
+    :meth:`~range_streams.response.RangeResponse.close` method is available
+    (or :meth:`~range_streams.stream.RangeStream.close`) to help you.
     """
 
     tail_mark: int = 0
@@ -393,3 +397,19 @@ class RangeResponse:
             read_so_far = self.tell()
         len_to_read = self.total_len_to_read
         return (len_to_read - read_so_far) <= 0  # should not go below!
+
+    @property
+    def is_closed(self):
+        """
+        True if the associated ``httpx.Response`` object is closed. For a windowed
+        response in single request mode, this will be shared with any/all other windowed
+        responses on the stream.
+        """
+        return self.request.response.is_closed
+
+    def close(self):
+        """
+        Close the associated ``httpx.Response`` object. In single request mode, there is
+        just the one (shared with all the 'windowed' responses).
+        """
+        self.request.response.close()

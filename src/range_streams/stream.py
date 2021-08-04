@@ -61,6 +61,10 @@ class RangeStream:
     (an external requirement installed alongside this package). Either
     way, the interval created is interpreted to be the standard Python
     convention of a half-open interval ``[start,stop)``.
+
+    Don't forget to close the ``httpx.Response`` yourself! The
+    :meth:`~range_streams.stream.RangeStream.close` method is available
+    (or :meth:`~range_streams.response.RangeResponse.close`) to help you.
     """
 
     _length_checked: bool = False
@@ -78,6 +82,14 @@ class RangeStream:
     `'Internal'` ranges attribute. Start position is not affected by
     reading in bytes from the :class:`RangeResponse` (unlike the
     'external' :attr:`~range_streams.stream.RangeStream.ranges` property)
+    """
+    _range_windows: RangeDict
+    """
+    `'Internal'` ranges attribute for windowed ranges. Start position is not affected by
+    reading in bytes from the :class:`RangeResponse` (unlike the 'external'
+    :attr:`~range_streams.stream.RangeStream.ranges` property). Used in single request
+    mode (when :attr:`~range_streams.stream.RangeStream.single_request` is set to
+    ``True`` at initialisation).
     """
 
     def __init__(
@@ -760,3 +772,21 @@ class RangeStream:
                         activate=activate,
                         use_windows=False,
                     )
+
+    @property
+    def is_closed(self):
+        """
+        True if the ``httpx.Response`` object(s) associated with the
+        :class:`~range_streams.response.RangeResponse` values in the internal
+        :attr:`~range_streams.stream.RangeStream._ranges` :class:`~ranges.RangeDict`
+        is/are all closed.
+        """
+        return all(range_response.is_closed for range_response in self._ranges.values())
+
+    def close(self):
+        """
+        Close any ``httpx.Response`` on the stream. In single request mode, there is
+        just the one (shared with all the 'windowed' responses).
+        """
+        for range_response in self._ranges.values():
+            range_response.close()
