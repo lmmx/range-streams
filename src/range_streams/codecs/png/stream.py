@@ -240,7 +240,7 @@ class PngStream(RangeStream):
         # To avoid handling palettes as done in PyPNG, give alpha "directly"
         # https://github.com/drj11/pypng/blob/main/code/png.py#L1948-L1953
         has_alpha = self.data.IHDR._has_alpha_channel  # based on colour type
-        if self.data.IHDR._has_colourmap:
+        if not has_alpha and self.data.IHDR._has_colourmap:
             # Allow alpha to switch on if tRNS chunk present
             has_alpha |= self.has_chunk(chunk_type="tRNS")
         return has_alpha
