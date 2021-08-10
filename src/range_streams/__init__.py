@@ -146,7 +146,7 @@ __url__ = "https://github.com/lmmx/range-streams"
 __uri__ = __url__
 __email__ = "louismmx@gmail.com"
 
-_EXAMPLE_DATA_URL = "https://github.com/lmmx/range-streams/raw/master/data/"
+_EXAMPLE_DATA_URL = "https://raw.githubusercontent.com/lmmx/range-streams/master/data/"
 _EXAMPLE_URL = f"{_EXAMPLE_DATA_URL}example_text_file.txt"
 _EXAMPLE_ZIP_URL = f"{_EXAMPLE_DATA_URL}example_text_file.txt.zip"
 _EXAMPLE_TAR_URL = f"{_EXAMPLE_DATA_URL}data.tar"

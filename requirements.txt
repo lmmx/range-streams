@@ -1,3 +1,4 @@
+aiostream
 httpx
 python-ranges
 pyzstd

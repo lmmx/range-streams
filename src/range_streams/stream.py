@@ -179,7 +179,11 @@ class RangeStream:
         self.chunk_size = chunk_size
         self._ranges = RangeDict()
         self._range_windows = RangeDict()
-        self.add(byte_range=byte_range)
+        if self.client_is_async:
+            # await self.async_add(byte_range=byte_range)
+            pass  # Can't call async_add from a synchronous init method
+        else:
+            self.add(byte_range=byte_range)
 
     def __repr__(self) -> str:
         return (
@@ -281,8 +285,6 @@ class RangeStream:
         (a.k.a. mock/dummy objects) of the range response that would be received from a
         partial content request (they in fact merely came from a streamed GET request).
         """
-        # if use_windows:
-        #    breakpoint()
         prepared_rangedict = RangeDict()
         internal_rangedict = self._range_windows if use_windows else self._ranges
         for rng_set, rng_response in internal_rangedict.items():
@@ -300,12 +302,8 @@ class RangeStream:
                 # Access single range (assured by unique RangeResponse values of
                 # RangeDict) of singleton rangeset (assured by check_range_integrity)
                 rng.start += rng_response_tell
-                # if rng.start > rng.end:
-                #    breakpoint()
             if rng_response.tail_mark:
                 rng.end -= rng_response.tail_mark
-                # if rng.start > rng.end:
-                #   breakpoint()
             if rng.start > rng.end:
                 raise ValueError(f"{rng} has been malformed (rng_response=)")
             prepared_rangedict.update({rng: rng_response})
@@ -352,9 +350,6 @@ class RangeStream:
                 print(f"{k}: {v} ({v.told})")
         internal_rng_dict = self._range_windows if use_windows else self._ranges
         rng_dict = internal_rng_dict if internal else self.ranges
-        # if use_windows:
-        #    print(rng)
-        #    breakpoint()
         if DEBUG_VERBOSE:
             print(f"OUT {rng}")
         return overlap_whence(rng_dict=rng_dict, rng=rng)
@@ -707,6 +702,17 @@ class RangeStream:
         """
         return [rngset.ranges()[0] for rngset in self.ranges.ranges()]
 
+    async def add_async(
+        self,
+        byte_range: Range | tuple[int, int] = Range("[0, 0)"),
+        activate: bool = True,
+        name: str = "",
+    ) -> None:
+        if not self.single_request:
+            raise NotImplementedError(
+                "Async RangeStreams are only available in single request mode (for now)"
+            )
+
     def add(
         self,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
@@ -746,6 +752,9 @@ class RangeStream:
         """
         # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
+        # Do not allow a non-single request async RangeStream to be created
+        if self.client_is_async:
+            raise ValueError("Add a range to an async RangeStream via add_async")
         # Do not request an empty range if total length already checked (at init)
         if not self._length_checked and byte_range.isempty():
             if self.single_request:
