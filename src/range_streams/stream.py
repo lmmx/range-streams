@@ -618,7 +618,7 @@ class RangeStream:
         cost).
 
         Should be called after the :class:`~range_streams.stream.RangeStream` is
-        initialised (with both ``single_request`` and ``force_async``as True), and
+        initialised (with both ``single_request`` and ``force_async`` as True), and
         [unlike the initialisation method] of course this method must be awaited.
         """
         rng_h = range_header(rng=Range(0, 0))  # Empty range -> open-ended range header
