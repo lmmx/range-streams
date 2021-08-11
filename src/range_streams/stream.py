@@ -14,7 +14,7 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Coroutine
 from urllib.parse import urlparse
 
 MYPY = False  # when using mypy will be overrided as True
@@ -610,6 +610,42 @@ class RangeStream:
             chunk_size=self.chunk_size,
         )
 
+    async def get_async_monostream(self) -> None:
+        """
+        Send a streaming GET request with an open-ended ``content-range`` header, to
+        obtain the total range. Suitable for higher performance (to avoid repeated
+        requests on the :class:`~range_streams.stream.RangeStream` which accrue a time
+        cost).
+
+        Should be called after the :class:`~range_streams.stream.RangeStream` is
+        initialised (with both ``single_request`` and ``force_async``as True), and
+        [unlike the initialisation method] of course this method must be awaited.
+        """
+        rng_h = range_header(rng=Range(0, 0))  # Empty range -> open-ended range header
+        req = self.client.build_request(method="GET", url=self.url, headers=rng_h)
+        resp = await self.client.send(request=req, stream=True)
+        resp.raise_for_status()
+        total_length = self.check_response_length(headers=resp.headers, req=req.method)
+        self.set_length(length=total_length)
+
+        # This is where self.send_request would give a RangeRequest...
+        range_req = RangeRequest.from_get_stream(
+            byte_range=self.total_range,
+            client=self.client,
+            req=req,
+            resp=resp,
+            chunk_size=self.chunk_size,
+        )
+
+        # then just use the req to create a RangeResponse and register as usual
+        resp = RangeResponse(stream=self, range_request=range_req, range_name="")
+        self.register_range(
+            rng=self.total_range,
+            value=resp,
+            activate=False,  # Don't set the active range as this is 'internal'
+            use_windows=False,
+        )
+
     def get_monostream(self) -> None:
         """
         Send a streaming GET request with an open-ended ``content-range`` header, to
@@ -708,10 +744,45 @@ class RangeStream:
         activate: bool = True,
         name: str = "",
     ) -> None:
+        byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         if not self.single_request:
             raise NotImplementedError(
                 "Async RangeStreams are only available in single request mode (for now)"
             )
+        # Do not request an empty range if total length already checked (at init)
+        if not self._length_checked and byte_range.isempty():
+            await self.get_async_monostream()
+        elif not byte_range.isempty():
+            self.add_window(byte_range=byte_range, activate=activate, name=name)
+
+    def add_window(
+        self,
+        byte_range: Range | tuple[int, int] = Range("[0, 0)"),
+        activate: bool = True,
+        name: str = "",
+    ) -> None:
+        """
+        Register a window onto the original range in the ``_ranges`` RangeDict rather
+        than add a new range entry to the dict (which would A) clash with the single
+        entire range B) require another request
+
+        Args:
+          byte_range : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                       of positions on the file to be read from the request on
+                       the stream.
+          activate   : (:class:`bool`) Whether to make this newly added
+                       :class:`~ranges.Range` the active range on the stream upon
+                       creating it.
+          name       : (:class:`str`) A name (default: ``''``) to give to the range.
+        """
+        req = self.simulate_request(byte_range=byte_range)
+        resp = RangeResponse(stream=self, range_request=req, range_name=name)
+        self.register_range(
+            rng=byte_range,
+            value=resp,
+            activate=activate,
+            use_windows=True,
+        )
 
     def add(
         self,
@@ -750,7 +821,6 @@ class RangeStream:
                        creating it.
           name       : (:class:`str`) A name (default: ``''``) to give to the range.
         """
-        # TODO remove edge case handling for empty range, now handled separately at init
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         # Do not allow a non-single request async RangeStream to be created
         if self.client_is_async:
@@ -763,17 +833,7 @@ class RangeStream:
                 self.send_head_request()
         elif not byte_range.isempty():
             if self.single_request:
-                # register a window onto the original range in the ``_ranges``
-                # RangeDict rather than add a new range entry to the dict (which would
-                # A) clash with the single entire range B) require another request
-                req = self.simulate_request(byte_range=byte_range)
-                resp = RangeResponse(stream=self, range_request=req, range_name=name)
-                self.register_range(
-                    rng=byte_range,
-                    value=resp,
-                    activate=activate,
-                    use_windows=True,
-                )
+                self.add_window(byte_range=byte_range, activate=activate, name=name)
             else:
                 req = self.send_request(byte_range=byte_range)
                 if not self._length_checked:
