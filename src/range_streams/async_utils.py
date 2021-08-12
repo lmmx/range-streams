@@ -154,7 +154,7 @@ class AsyncFetcher:
                 )
                 raise ValueError(msg)
             # assert self.client is not None # give mypy a clue
-            processed = await self.fetch_and_process(urls=urls, client=client)
+            processed = await self.fetch_and_process(urls=urls, client=self.client)
         return processed
 
     async def fetch_and_process(self, urls: Iterator[str], client):
