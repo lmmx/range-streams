@@ -92,6 +92,9 @@ class PngStream(RangeStream):
           chunk_size       : (:class:`int` | ``None``) The chunk size used for the
                              ``httpx.Response.iter_raw`` response byte iterators
         """
+        if force_async:
+            # Mutually exclusive
+            scan_ihdr = enumerate_chunks = False
         super().__init__(
             url=url,
             client=client,
