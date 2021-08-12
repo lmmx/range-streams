@@ -6,7 +6,7 @@ from asyncio.events import AbstractEventLoop
 from functools import partial
 from signal import SIGINT, SIGTERM, Signals
 from sys import stderr
-from typing import TYPE_CHECKING, Callable, Coroutine, Iterator
+from typing import TYPE_CHECKING, Callable, Coroutine, Iterator, Type
 
 from aiostream import stream
 from ranges import Range, RangeSet
@@ -19,7 +19,7 @@ import tqdm
 from tqdm.asyncio import tqdm_asyncio
 
 from .log_utils import log, set_up_logging
-from .stream import RangeStream
+from .types import _T as RangeStreamOrSubclass
 
 __all__ = ["SignalHaltError", "AsyncFetcher"]
 
@@ -27,14 +27,18 @@ __all__ = ["SignalHaltError", "AsyncFetcher"]
 class AsyncFetcher:
     def __init__(
         self,
+        stream_cls: Type[RangeStreamOrSubclass],
         urls: list[str],
         callback: Callable | None = None,
         verbose: bool = False,
         show_progress_bar: bool = True,
         timeout_s: float = 5.0,
         client=None,
+        **kwargs,
     ):
         """
+        Any kwargs are passed through to the stream class constructor.
+
         Args:
           callback : A function to be passed 3 values: the AsyncFetcher which is calling
                      it, the awaited RangeStream, and its source URL (a ``httpx.URL``,
@@ -42,6 +46,8 @@ class AsyncFetcher:
         """
         if urls == []:
             raise ValueError("The list of URLs to fetch cannot be empty")
+        self.stream_cls = stream_cls
+        self.stream_cls_kwargs = kwargs
         self.url_list = urls
         self.callback = callback
         self.n = len(urls)
@@ -64,21 +70,21 @@ class AsyncFetcher:
         if self.show_progress_bar:
             self.pbar.close()
 
-    async def process_stream(self, rstream: RangeStream):
+    async def process_stream(self, range_stream: RangeStreamOrSubclass):
         """
         Process an awaited RangeStream within an async fetch loop, calling the callback
         set on the `~range_streams.async_utils.AsyncFetcher.callback` attribute.
 
         Args:
-          rstream : The awaited RangeStream
+          range_stream : The awaited RangeStream (or one of its subclasses)
         """
-        monostream_response = rstream._ranges[rstream.total_range]
+        monostream_response = range_stream._ranges[range_stream.total_range]
         resp = monostream_response.request.response  # httpx.Response
         source_url = resp.history[0].url if resp.history else resp.url
         # Map the response back to the thing it came from in the url_list
         i = next(i for (i, u) in enumerate(self.url_list) if source_url == u)
         if self.callback is not None:
-            await self.callback(self, stream, source_url)
+            await self.callback(self, range_stream, source_url)
         if self.verbose:
             log.debug(f"Processed URL in async callback: {source_url}")
         if self.show_progress_bar:
@@ -109,9 +115,18 @@ class AsyncFetcher:
                 self.pbar.disable = True
                 self.pbar.close()
 
-    async def fetch(self, client: httpx.AsyncClient, url: httpx.URL) -> RangeStream:
-        s = RangeStream(
-            url=str(url), client=client, single_request=True, force_async=True
+    async def fetch(self, client, url) -> RangeStreamOrSubclass:
+        """
+        Args:
+          client : ``httpx.AsyncClient``
+          url    : ``httpx.URL``
+        """
+        s = self.stream_cls(
+            url=str(url),
+            client=client,
+            single_request=True,
+            force_async=True,
+            **self.stream_cls_kwargs,
         )
         await s.add_async()
         return s
@@ -137,7 +152,7 @@ class AsyncFetcher:
                     " after using the client in a contextmanager block (which implicitly"
                     " closes after exiting the block) perhaps?"
                 )
-            raise ValueError(msg)
+                raise ValueError(msg)
             # assert self.client is not None # give mypy a clue
             processed = await self.fetch_and_process(urls=urls, client=client)
         return processed

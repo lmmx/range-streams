@@ -33,6 +33,7 @@ class PngStream(RangeStream):
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
         single_request: bool = True,
+        force_async: bool = False,
         scan_ihdr: bool = True,
         enumerate_chunks: bool = True,
         chunk_size: int | None = None,
@@ -80,6 +81,9 @@ class PngStream(RangeStream):
           single_request   : (:class:`bool`) Whether to use a single GET request and
                              just add 'windows' onto this rather than create multiple
                              partial content requests.
+          force_async      : (:class:`bool` | ``None``) Whether to require the client
+                             to be ``httpx.AsyncClient``, and if no client is given,
+                             to create one on initialisation. (Experimental/WIP)
           scan_ihdr        : (:class:`bool`) Whether to scan the IHDR chunk on
                              initialisation
           enumerate_chunks : (:class:`bool`) Whether to step through each chunk
@@ -94,12 +98,16 @@ class PngStream(RangeStream):
             byte_range=byte_range,
             pruning_level=pruning_level,
             single_request=single_request,
+            force_async=force_async,
         )
-        if enumerate_chunks:
-            self.populate_chunks()
-        self.data = PngData()
-        if scan_ihdr:
-            self.scan_ihdr()
+        if force_async:
+            self.data = PngData()
+        else:
+            if enumerate_chunks:
+                self.populate_chunks()
+            self.data = PngData()
+            if scan_ihdr:
+                self.scan_ihdr()
 
     def populate_chunks(self):
         """
@@ -138,7 +146,10 @@ class PngStream(RangeStream):
         according to the spec.
         """
         ihdr_rng = Range(self.data.IHDR.start_pos, self.data.IHDR.end_pos)
-        self.add(ihdr_rng)
+        if self.client_is_async:
+            self.add_async(ihdr_rng)
+        else:
+            self.add(ihdr_rng)
         ihdr_bytes = self.active_range_response.read()
         ihdr_u = struct.unpack(self.data.IHDR.struct, ihdr_bytes)
         if None in ihdr_u:
@@ -151,7 +162,15 @@ class PngStream(RangeStream):
         self.data.IHDR.filter_method = ihdr_u[self.data.IHDR.parts._IHDR_FILTER_METHOD]
         self.data.IHDR.interlacing = ihdr_u[self.data.IHDR.parts._IHDR_INTERLACING]
 
-    def enumerate_chunks(self):
+    def verify_sync(self, msg=""):
+        if self.client_is_async:
+            raise ValueError(f"Synchronous client check failed{msg}")
+
+    def verify_async(self, msg=""):
+        if not self.client_is_async:
+            raise ValueError(f"Asynchronous client check failed{msg}")
+
+    def enumerate_chunks(self) -> dict[str, list[PngChunkInfo]]:
         """
         Parse the length and type chunks, then skip past the chunk data and CRC chunk,
         so as to enumerate all chunks in the PNG (but request and read as little as
@@ -166,6 +185,7 @@ class PngStream(RangeStream):
         Portable_Network_Graphics#%22Chunks%22_within_the_file>`_,
         or `the W3C <https://www.w3.org/TR/PNG/#5Chunk-layout>`_).
         """
+        self.verify_sync(msg=": call `enumerate_chunks_async` on an async PngStream")
         png_signature = 8  # PNG files start with an 8-byte signature
         chunk_preamble_size = 8  # 4-byte length chunk + 4-byte type chunk
         chunks: dict[str, list[PngChunkInfo]] = {}
@@ -189,8 +209,50 @@ class PngStream(RangeStream):
             chunks[chunk_type].append(chunk_info)
         return chunks
 
+    async def enumerate_chunks_async(self) -> dict[str, list[PngChunkInfo]]:
+        """
+        Parse the length and type chunks, then skip past the chunk data and CRC chunk,
+        so as to enumerate all chunks in the PNG (but request and read as little as
+        possible). Build a dictionary of all chunks with keys of the chunk type (four
+        letter strings) and values of lists (since some chunks e.g. IDAT can appear
+        multiple times in the PNG).
+
+        See `the official specification
+        <http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html>`_ for full details
+        (or `Wikipedia
+        <https://en.wikipedia.org/wiki/
+        Portable_Network_Graphics#%22Chunks%22_within_the_file>`_,
+        or `the W3C <https://www.w3.org/TR/PNG/#5Chunk-layout>`_).
+        """
+        self.verify_async(msg=": call `enumerate_chunks` on a synchronous PngStream")
+        png_signature = 8  # PNG files start with an 8-byte signature
+        chunk_preamble_size = 8  # 4-byte length chunk + 4-byte type chunk
+        chunks: dict[str, list[PngChunkInfo]] = {}
+        chunk_start = png_signature  # Skip PNG file signature to reach first chunk
+        chunk_type: str | None = None  # initialise for while loop condition
+        while chunk_type != "IEND":
+            if chunks:
+                # Increment chunk_start from last iteration
+                # (last chunk's end is this chunk's start)
+                chunk_start = chunk_info.end  # type: ignore
+            chunk_length_rng = Range(chunk_start, chunk_start + chunk_preamble_size)
+            await self.add_async(chunk_length_rng)
+            b = await self.active_range_response.aread()
+            chunk_len = struct.unpack(">I", b[:4])[0]
+            chunk_type = b[4:].decode("ascii")
+            assert chunk_type is not None  # appease mypy
+            chunks.setdefault(chunk_type, [])
+            chunk_info = PngChunkInfo(
+                start=chunk_start, type=chunk_type, length=chunk_len
+            )
+            chunks[chunk_type].append(chunk_info)
+        return chunks
+
     def get_chunk_data(self, chunk_info: PngChunkInfo) -> bytes:
-        self.add(chunk_info.data_range)
+        if self.client_is_async:
+            self.add_async(chunk_info.data_range)
+        else:
+            self.add(chunk_info.data_range)
         b = self.active_range_response.read()
         return b
 

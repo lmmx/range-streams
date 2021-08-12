@@ -48,9 +48,6 @@ def overlap_whence(
     Note: same convention as Python io module's
     :obj:`~io.SEEK_SET`, :obj:`~io.SEEK_CUR`, and :obj:`~io.SEEK_END`.
     """
-    # if rng.start == 3 and rng.end == 7:
-    #    breakpoint()
-    # print(f"Hit {rng=}")
     if rng in rng_dict:
         # Full overlap (i.e. in middle of pre-existing range)
         whence = 1  # type: int | None

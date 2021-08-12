@@ -42,6 +42,7 @@ class TarStream(RangeStream):
         pruning_level: int = 0,
         scan_headers: bool = True,
         single_request: bool = False,
+        force_async: bool = False,
         chunk_size: int | None = None,
     ):
         """
@@ -90,6 +91,9 @@ class TarStream(RangeStream):
           single_request : (:class:`bool`) Whether to use a single GET request and
                            just add 'windows' onto this rather than create multiple
                            partial content requests.
+          force_async    : (:class:`bool` | ``None``) Whether to require the client
+                           to be ``httpx.AsyncClient``, and if no client is given,
+                           to create one on initialisation. (Experimental/WIP)
           chunk_size     : (:class:`int` | ``None``) The chunk size used for the
                            ``httpx.Response.iter_raw`` response byte iterators
         """
@@ -153,7 +157,10 @@ class TarStream(RangeStream):
         file_name_rng_start = start_pos_offset + self.data.HEADER._H_FILENAME_START
         file_name_rng_end = file_name_rng_start + self.data.HEADER._H_FILENAME_SIZE
         file_name_rng = Range(file_name_rng_start, file_name_rng_end)
-        self.add(file_name_rng)
+        if self.client_is_async:
+            self.add_async(file_name_rng)
+        else:
+            self.add(file_name_rng)
         file_name_b = self.active_range_response.read().rstrip(b"\x00")
         if file_name_b == b"":
             raise StopIteration("Expected file name, got padding bytes")
@@ -167,7 +174,10 @@ class TarStream(RangeStream):
         file_size_rng_start = start_pos_offset + self.data.HEADER._H_FILE_SIZE_START
         file_size_rng_end = file_size_rng_start + self.data.HEADER._H_FILE_SIZE_SIZE
         file_size_rng = Range(file_size_rng_start, file_size_rng_end)
-        self.add(file_size_rng)
+        if self.client_is_async:
+            self.add_async(file_size_rng)
+        else:
+            self.add(file_size_rng)
         file_size_b = self.active_range_response.read()
         file_size = int(file_size_b, 8)  # convert octal number from bitstring
         return file_size
@@ -175,7 +185,10 @@ class TarStream(RangeStream):
     def add_file_ranges(self):
         for tf_info in self.tarred_files:
             assert tf_info.filename is not None
-            self.add(tf_info.file_range, name=tf_info.filename)
+            if self.client_is_async:
+                self.add_async(tf_info.file_range, name=tf_info.filename)
+            else:
+                self.add(tf_info.file_range, name=tf_info.filename)
 
     @property
     def filename_list(self) -> list[str]:

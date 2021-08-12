@@ -121,7 +121,7 @@ def test_range_update(full_range_stream_fresh):
 
 def test_range_stream_repr(full_range_stream):
     assert f"{full_range_stream!r}" == (
-        "RangeStream ⠶ [0, 11) @@ 'example_text_file.txt' from github.com"
+        "RangeStream ⠶ [0, 11) @@ 'example_text_file.txt' from raw.githubusercontent.com"
     )
 
 

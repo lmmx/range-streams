@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, AsyncIterator, Iterator
 
 MYPY = False  # when using mypy will be overrided as True
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
@@ -23,7 +23,10 @@ class RangeRequest:
     :meth:`~range_streams.response.RangeResponse.iter_raw`] on the
     underlying ``httpx.Response``, suitable for
     :class:`~range_streams.response.RangeResponse`
-    to wrap in a :class:`io.BytesIO` buffered stream.
+    to wrap in a :class:`io.BytesIO` buffered stream. For async clients,
+    :attr:`~range_streams.response.RangeResponse._aiterator` is set instead
+    [giving access to
+    :meth:`~range_streams.response.RangeResponse.aiter_raw`] on the
     """
 
     def __init__(
@@ -58,7 +61,8 @@ class RangeRequest:
                             simulated request). Any read operations will be
                             restricted to this range of positions (as the underlying
                             stream being 'windowed' is a larger one).
-          chunk_size      : The chunk size to the ``httpx.Response.iter_raw`` iterator
+          chunk_size      : The chunk size to the ``httpx.Response.iter_raw`` iterator (or
+                            ``httpx.Response.aiter_raw`` if using an async client)
         """
         self.range = byte_range
         self.url = url
@@ -76,13 +80,38 @@ class RangeRequest:
             self._check_resp_req()  # Sphinx typing workaround
             # This shouldn't need to be accessed but set it to be thorough
             self.content_range = f"{self.range_header}/{range_len(byte_range)}"
-            # self._iterator = None # must overwrite after initialisation
-            self._iterator = None if self.is_windowed else self.iter_raw()
+            if isinstance(self.client, httpx.AsyncClient):
+                # Note: _aiter_raw is 'stored' uncalled as cannot await here (not async)
+                # The Callable becomes a Coroutine once `await_aiterator` called
+                self._aiterator_preinit = None if self.is_windowed else self.aiter_raw
+            else:
+                self._iterator = None if self.is_windowed else self.iter_raw()
         else:
             # Make and send a partial range request
             self.setup_stream()
             self.content_range = self.content_range_header()
-            self._iterator = self.iter_raw()
+            if self.client_is_async:
+                # Note: _aiter_raw is 'stored' uncalled as cannot await here (not async)
+                self._aiterator_preinit = self.aiter_raw
+            else:
+                self._iterator = self.iter_raw()
+
+    async def await_aiterator(self) -> None:
+        """
+        Initialise the async iterator on the
+        :attr:`~range_streams.response.RangeResponse._aiterator` attribute from the
+        stored function which when called returns the ``typing.AsyncIterator[bytes]``.
+        """
+        assert self._aiterator_preinit is not None
+        self._aiterator = await self._aiterator_preinit()
+
+    @property
+    def client_is_async(self):
+        return isinstance(self.client, httpx.AsyncClient)
+
+    @property
+    def aiterator_initialised(self):
+        return self.client_is_async and hasattr(self, "_aiterator")
 
     @classmethod
     def windowed_request(
@@ -104,7 +133,8 @@ class RangeRequest:
           on_request : The sent ``httpx.Request``
           tail_mark  : The :attr:`~range_streams.response.RangeResponse.tail_mark`
                        to trim the ``byte_range`` (if any). Passed separately
-          chunk_size      : The chunk size to the ``httpx.Response.iter_raw`` iterator
+          chunk_size : The chunk size to the ``httpx.Response.iter_raw`` iterator (or
+                       ``httpx.Response.aiter_raw`` if using an async client)
         """
         window_range = Range(byte_range.start, byte_range.end - tail_mark)
         # Build the request that this object pretends to have sent
@@ -118,21 +148,6 @@ class RangeRequest:
         total_content_length = range_request.total_content_length
         window_on_range = range_request.range
         window_len = range_len(window_range)
-        # Avoid having to import ``httpx.Response`` by calling ``type`` on one
-        # HttpxResp_cls = type(range_request.response)
-        # windowed_response = HttpxResp_cls(
-        #    status_code=206,  # Partial Content
-        #    headers={
-        #        "accept-ranges": "bytes",
-        #        "content-length": str(window_len),
-        #        "content-range": f"{content_byte_range}/{total_content_length}",
-        #    },
-        #    stream=None, # do not consume the stream the window is being placed onto
-        #    #stream=range_request.response.stream, # this consumes the parent's stream!
-        #    request=unsent_request,
-        # )
-        # When iterating the stream via iter_raw, supply the source stream's iterator!
-        # windowed_response.iter_raw = range_request.response.iter_raw
         windowed_response = range_request.response
         windowed_range_request = cls(
             byte_range=window_range,
@@ -143,7 +158,14 @@ class RangeRequest:
         )
         # Calling ``response.iter_raw()`` again raises ``httpx.StreamConsumed`` error
         # so simply overwrite after initialisation with existing RangeRequest iterator
-        windowed_range_request._iterator = range_request._iterator
+        if range_request.client_is_async:
+            if not range_request.aiterator_initialised:
+                msg = "aiterator is not initialised"
+                msg += ": `await_aiterator` after instantiating an async RangeRequest"
+                raise ValueError(msg)
+            windowed_range_request._aiterator = range_request._aiterator
+        else:
+            windowed_range_request._iterator = range_request._iterator
         return windowed_range_request
 
     @classmethod
@@ -176,7 +198,6 @@ class RangeRequest:
             GET_got=(req, resp),
             chunk_size=chunk_size,
         )
-        # range_request._iterator = resp.iter_raw()
         return range_request
 
     @property
@@ -229,6 +250,14 @@ class RangeRequest:
         :attr:`~range_streams.request.RangeRequest.response`.
         """
         return self.response.iter_raw(chunk_size=self.chunk_size)
+
+    async def aiter_raw(self) -> AsyncIterator[bytes]:
+        """
+        Wrap the :meth:`iter_raw` method of the underlying :class:`httpx.Response`
+        object within the :class:`~range_streams.response.RangeResponse` in
+        :attr:`~range_streams.request.RangeRequest.response`.
+        """
+        return self.response.aiter_raw(chunk_size=self.chunk_size)
 
     def close(self) -> None:
         """

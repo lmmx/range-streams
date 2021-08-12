@@ -38,6 +38,21 @@ These helper functions help prepare HTTP requests to set up a stream.
    :show-inheritance:
 
 
+Asynchronous fetcher
+====================
+
+This helper class handles all of the details of asynchronously
+fetching streams, given a list of URLs.
+
+----
+
+
+.. automodule:: range_streams.async_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Overlap handling
 =================
 

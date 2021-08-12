@@ -52,7 +52,7 @@ Example
 .. code:: py
 
    RangeDict{
-     RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com
+     RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from raw.githubusercontent.com
    }
 
 Further ranges are requested by simply calling ``RangeStream.add`` with
@@ -71,6 +71,6 @@ interval.
 .. code:: py
 
    RangeDict{
-     RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
-     RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
+     RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from raw.githubusercontent.com,
+     RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from raw.githubusercontent.com
    }

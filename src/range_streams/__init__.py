@@ -39,7 +39,7 @@ The following example shows the basic setup for a single range.
     >>> rng = Range(0,3) # doctest: +SKIP
     >>> s.add(rng) # doctest: +SKIP
     >>> s.ranges # doctest: +SKIP
-    RangeDict{RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com}
+    RangeDict{RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from raw.githubusercontent.com}
 
 Once a request is made for a non-empty range, the :class:`~range_streams.stream.RangeStream`
 acquires the first entry in the :class:`~ranges.RangeDict` stored on the
@@ -58,8 +58,8 @@ as an ``[a,b)`` half-open interval.
     >>> s.add(byte_range=(7,9)) # doctest: +SKIP
     >>> s.ranges # doctest: +SKIP
     RangeDict{
-      RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from github.com,
-      RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from github.com
+      RangeSet{Range[0, 3)}: RangeResponse ⠶ [0, 3) @ 'example_text_file.txt' from raw.githubusercontent.com,
+      RangeSet{Range[7, 9)}: RangeResponse ⠶ [7, 9) @ 'example_text_file.txt' from raw.githubusercontent.com
     }
 
 Codecs are available for ``.zip`` (:class:`~range_streams.codecs.zip.ZipStream`) and ``.conda``
@@ -71,7 +71,7 @@ name the ranges corresponding to the archive's contents file list upon initialis
     >>> s = ZipStream(url=_EXAMPLE_ZIP_URL) # doctest: +SKIP
     >>> s.ranges # doctest: +SKIP
     RangeDict{
-      RangeSet{Range[51, 62)}: RangeResponse ⠶ "example_text_file.txt" [51, 62) @ 'example_text_file.txt.zip' from github.com
+      RangeSet{Range[51, 62)}: RangeResponse ⠶ "example_text_file.txt" [51, 62) @ 'example_text_file.txt.zip' from raw.githubusercontent.com
     }
 
 The ``.conda`` format is just a particular type of zip for Python packages on the conda

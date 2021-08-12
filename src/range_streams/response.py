@@ -128,16 +128,39 @@ class RangeResponse:
         """
         return self._bytes.active_buf_range == self.request.range
 
+    def verify_sync(self, msg=""):
+        if self.parent_stream.client_is_async:
+            raise ValueError(f"Synchronous client check failed{msg}")
+
+    def verify_async(self, msg=""):
+        if not self.parent_stream.client_is_async:
+            raise ValueError(f"Asynchronous client check failed{msg}")
+
     @property
     def source_iterator(self):
         """
         The iterator associated with the source range, for a windowed range.
         """
+        self.verify_sync(msg=" when accessing source_iterator property")
         return self.source_range_response.request._iterator
 
     @property
     def _iterator(self):
+        self.verify_sync(msg=" when accessing iterator property")
         return self.source_iterator if self.is_windowed else self.request._iterator
+
+    @property
+    def source_aiterator(self):
+        """
+        The async iterator associated with the source range, for a windowed range.
+        """
+        self.verify_async(msg=" when accessing source_aiterator property")
+        return self.source_range_response.request._aiterator
+
+    @property
+    def _aiterator(self):
+        self.verify_async(msg=" when accessing aiterator property")
+        return self.source_aiterator if self.is_windowed else self.request._aiterator
 
     def check_is_windowed(self) -> bool:
         """
@@ -226,7 +249,7 @@ class RangeResponse:
         has_offset = self.is_windowed and self.request.range > self.source_range
         return self.request.range.start - self.source_range.start if has_offset else 0
 
-    def prepare_reading_window(self):
+    def prepare_reading_window(self) -> None:
         """
         Prepare the stream cursor for reading (unclear if this should only be done on
         initialisation...) Should be done every time if the cursor is shared, but is it?
@@ -239,7 +262,7 @@ class RangeResponse:
             print("\n---READ_READY removed\n---")
 
     @property
-    def client(self):
+    def client(self):  # Returns: httpx.Client | httpx.AsyncClient
         """
         The request's client.
         """
@@ -266,6 +289,7 @@ class RangeResponse:
         If seeking on a windowed range, then 'loading all' will not really
         load to the end of the stream, just the end of the window onto it.
         """
+        self.verify_sync(msg=" when loading all")
         self.buf_keep()
         if self.is_windowed:
             # Would need to offset this if source range is non-total range
@@ -278,13 +302,44 @@ class RangeResponse:
                 self._bytes.write(chunk)
         self.store_tell()
 
-    def _load_until(self, goal_position):
+    async def _aload_all(self) -> None:
+        """
+        If seeking on a windowed range, then 'loading all' will not really
+        load to the end of the stream, just the end of the window onto it.
+        """
+        self.verify_async(msg=" when loading all")
+        self.buf_keep()
+        if self.is_windowed:
+            # Would need to offset this if source range is non-total range
+            # (also may need to take into account tail-mark for windows?)
+            window_end = self.request.range.end
+            await self._aload_until(window_end)
+        else:
+            self._bytes.seek(0, SEEK_END)
+            async for chunk in self._aiterator:
+                self._bytes.write(chunk)
+        self.store_tell()
+
+    def _load_until(self, goal_position: int) -> None:
+        self.verify_sync(msg=f" when loading until {goal_position}")
         self.buf_keep()
         current_position = self._bytes.seek(0, SEEK_END)
         while current_position < goal_position:
             try:
                 current_position += self._bytes.write(next(self._iterator))
             except StopIteration:
+                break
+        self.store_tell()
+
+    async def _aload_until(self, goal_position: int) -> None:
+        self.verify_async(msg=f" when loading until {goal_position}")
+        self.buf_keep()
+        current_position = self._bytes.seek(0, SEEK_END)
+        while current_position < goal_position:
+            try:
+                awaited_bytes = await self._aiterator.__anext__()
+                current_position += self._bytes.write(awaited_bytes)
+            except StopAsyncIteration:
                 break
         self.store_tell()
 
@@ -307,19 +362,27 @@ class RangeResponse:
                 print(f"{t=} (plain tell)")
         return t
 
-    def read(self, size=None):
+    def _prepare_to_read(self) -> int:
         """
-        File-like reading within the range request stream, with careful handling of
-        windowed ranges and tail marks.
+        Called at the start of :meth:`~range_streams.response.RangeResponse.read` to
+        ensure the reading window is prepared (on the first read of a windowed range)
+        and acquire the starting position.
         """
         self.buf_keep()
         if DEBUG_VERBOSE:
             print(f"Reading {self.request.range}")
-        # ...
         if not self.read_ready:
             # Only run on the first use after init
             self.prepare_reading_window()
-        left_off_at = self._bytes.tell()
+        return self._bytes.tell()
+
+    def read(self, size: int | None = None) -> bytes:
+        """
+        File-like reading within the range request stream, with careful handling of
+        windowed ranges and tail marks.
+        """
+        self.verify_sync(msg=f" when reading {size} bytes")
+        left_off_at = self._prepare_to_read()
         if size is None:
             self._load_all()
         else:
@@ -329,7 +392,34 @@ class RangeResponse:
             # Probably overshoots the cursor (loads a chunk at a time)
             self._load_until(goal_position)
 
-        # Rewind the cursor to the start position now the bytes to read are loaded
+        read_bytes = self._get_read_bytes(size=size, left_off_at=left_off_at)
+        return read_bytes
+
+    async def aread(self, size: int | None = None) -> bytes:
+        """
+        File-like reading within the range request stream, with careful handling of
+        windowed ranges and tail marks.
+        """
+        self.verify_async(msg=f" when reading {size} bytes")
+        left_off_at = self._prepare_to_read()
+        if size is None:
+            await self._aload_all()
+        else:
+            goal_position = left_off_at + size
+            if DEBUG_VERBOSE:
+                print(f"{goal_position=} = {left_off_at=} + {size=}")
+            # Probably overshoots the cursor (loads a chunk at a time)
+            await self._aload_until(goal_position)
+        read_bytes = self._get_read_bytes(size=size, left_off_at=left_off_at)
+        return read_bytes
+
+    def _get_read_bytes(self, size: int | None, left_off_at: int) -> bytes:
+        """
+        Called at the end of :meth:`~range_streams.response.RangeResponse.read` and
+        :meth:`~range_streams.response.RangeResponse.aread` to rewind the cursor to the
+        starting position after the bytes to read are loaded [from the a/sync iterator],
+        read said bytes and return them (ensuring to store the final cursor position).
+        """
         self._bytes.seek(left_off_at)
         if self.is_windowed:
             # Convert absolute window end to relative offset on source range
@@ -345,13 +435,17 @@ class RangeResponse:
         self.store_tell()
         return read_bytes
 
-    def seek(self, position, whence=SEEK_SET):
+    def seek(self, position: int, whence=SEEK_SET):
         """
-        File-like seeking within the range request stream.
+        File-like seeking within the range request stream. Synchronous only.
         """
+        msg = "No negative seek so `RangeResponse.seek` is synchronous (try `load_all`)"
         self.buf_keep()
         if whence == SEEK_END:
-            self._load_all()
+            if self.request.client_is_async:
+                raise NotImplementedError(msg)
+            else:
+                self._load_all()
         if self.is_windowed:
             position = position + self.window_offset
         self._bytes.seek(position, whence)
@@ -412,4 +506,13 @@ class RangeResponse:
         Close the associated ``httpx.Response`` object. In single request mode, there is
         just the one (shared with all the 'windowed' responses).
         """
+        self.verify_sync(msg=f" when closing the request response on {self}")
         self.request.response.close()
+
+    async def aclose(self):
+        """
+        Close the associated ``httpx.Response`` object. In single request mode, there is
+        just the one (shared with all the 'windowed' responses).
+        """
+        self.verify_async(msg=f" when closing the request response on {self}")
+        self.request.response.aclose()

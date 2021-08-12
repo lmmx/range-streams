@@ -14,8 +14,10 @@ class CondaStream(ZipStream):
         client=None,
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
-        scan_contents: bool = True,
+        single_request: bool = False,
+        force_async: bool = False,
         chunk_size: int | None = None,
+        scan_contents: bool = True,
     ):
         """
         Set up a stream for the conda (ZIP) archive at ``url``, with either an initial
@@ -43,23 +45,32 @@ class CondaStream(ZipStream):
           method for further details.
 
         Args:
-          url           : (:class:`str`) The URL of the file to be streamed
-          client        : (:class:`httpx.Client` | ``None``) The HTTPX client
-                          to use for HTTP requests
-          byte_range    : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
-                          of positions on the file to be requested
-          pruning_level : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
-                          or ``2`` ('strict')
-          scan_contents : (:class:`bool`) Whether to scan the archive contents
-                          upon initialisation and add the archive's file ranges
-          chunk_size    : (:class:`int` | ``None``) The chunk size used for the
-                          ``httpx.Response.iter_raw`` response byte iterators
+          url            : (:class:`str`) The URL of the file to be streamed
+          client         : (:class:`httpx.Client` | ``None``) The HTTPX client
+                           to use for HTTP requests
+          byte_range     : (:class:`~ranges.Range` | ``tuple[int,int]``) The range
+                           of positions on the file to be requested
+          pruning_level  : (:class:`int`) Either ``0`` ('replant'), ``1`` ('burn'),
+                           or ``2`` ('strict')
+          single_request : (:class:`bool`) Whether to use a single GET request and
+                           just add 'windows' onto this rather than create multiple
+                           partial content requests.
+          force_async    : (:class:`bool` | ``None``) Whether to require the client
+                           to be ``httpx.AsyncClient``, and if no client is given,
+                           to create one on initialisation. (Experimental/WIP)
+          chunk_size     : (:class:`int` | ``None``) The chunk size used for the
+                           ``httpx.Response.iter_raw`` response byte iterators
+          scan_contents  : (:class:`bool`) Whether to scan the archive contents
+                           upon initialisation and add the archive's file ranges
         """
         super().__init__(
             url=url,
             client=client,
             byte_range=byte_range,
             pruning_level=pruning_level,
+            single_request=single_request,
+            force_async=force_async,
+            chunk_size=chunk_size,
             scan_contents=scan_contents,
         )
         if scan_contents:

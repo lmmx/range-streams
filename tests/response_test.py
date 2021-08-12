@@ -65,7 +65,7 @@ def test_response(example_response):
 def test_response_repr(example_response):
     print(f"{example_response!r}")
     assert f"{example_response!r}" == (
-        "RangeResponse ⠶ [0, 1) @ 'example_text_file.txt' from github.com"
+        "RangeResponse ⠶ [0, 1) @ 'example_text_file.txt' from raw.githubusercontent.com"
     )
 
 
@@ -118,7 +118,7 @@ def test_example_response_seek_tell(example_response, seek, whence, expected):
         (-4, SEEK_END, 7),
     ],
 )
-def test_full_response_seek_tell(seek, whence, expected):
+def test_full_response_seek_tell(seek, whence, expected, empty_range_stream):
     req = make_request(0, EXAMPLE_FILE_LENGTH)
     full_response = RangeResponse(stream=empty_range_stream, range_request=req)
     full_response.seek(position=seek, whence=whence)

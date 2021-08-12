@@ -45,8 +45,9 @@ class ZipStream(RangeStream):
         byte_range: Range | tuple[int, int] = Range("[0, 0)"),
         pruning_level: int = 0,
         single_request: bool = False,
-        scan_contents: bool = True,
+        force_async: bool = False,
         chunk_size: int | None = None,
+        scan_contents: bool = True,
     ):
         """
         Set up a stream for the ZIP archive at ``url``, with either an initial range to
@@ -90,10 +91,13 @@ class ZipStream(RangeStream):
           single_request : (:class:`bool`) Whether to use a single GET request and
                            just add 'windows' onto this rather than create multiple
                            partial content requests.
-          scan_contents  : (:class:`bool`) Whether to scan the archive contents
-                           upon initialisation and add the archive's file ranges
+          force_async    : (:class:`bool` | ``None``) Whether to require the client
+                           to be ``httpx.AsyncClient``, and if no client is given,
+                           to create one on initialisation. (Experimental/WIP)
           chunk_size     : (:class:`int` | ``None``) The chunk size used for the
                            ``httpx.Response.iter_raw`` response byte iterators
+          scan_contents  : (:class:`bool`) Whether to scan the archive contents
+                           upon initialisation and add the archive's file ranges
         """
         super().__init__(
             url=url,
@@ -101,6 +105,8 @@ class ZipStream(RangeStream):
             byte_range=byte_range,
             pruning_level=pruning_level,
             single_request=single_request,
+            force_async=force_async,
+            chunk_size=chunk_size,
         )
         self.data = ZipData()
         if scan_contents:
@@ -110,7 +116,10 @@ class ZipStream(RangeStream):
     def check_head_bytes(self):
         start_sig = self.data.LOC_F_H.start_sig
         head_byte_range = Range(0, len(start_sig))
-        self.add(head_byte_range)
+        if self.client_is_async:
+            self.add_async(head_byte_range)
+        else:
+            self.add(head_byte_range)
         start_bytes = self.active_range_response.read()
         if start_bytes != start_sig:  # pragma: no cover
             # Actually think this will be if zip is empty
@@ -126,7 +135,10 @@ class ZipStream(RangeStream):
         """
         eocd_rng = self.total_range
         eocd_rng.start = eocd_rng.end - self.data.E_O_CTRL_DIR_REC.get_size()
-        self.add(eocd_rng)
+        if self.client_is_async:
+            self.add_async(eocd_rng)
+        else:
+            self.add(eocd_rng)
         eocd_bytes = self.active_range_response.read()
         start_sig = self.data.E_O_CTRL_DIR_REC.start_sig
         start_found = eocd_bytes[: len(start_sig)] == start_sig
@@ -146,7 +158,10 @@ class ZipStream(RangeStream):
             self.check_end_of_central_dir_start()
         eocd_rng = self.total_range
         eocd_rng.start = self.data.E_O_CTRL_DIR_REC.start_pos
-        self.add(eocd_rng)
+        if self.client_is_async:
+            self.add_async(eocd_rng)
+        else:
+            self.add(eocd_rng)
         b = self.active_range_response.read()[: self.data.E_O_CTRL_DIR_REC.get_size()]
         u = struct.unpack(self.data.E_O_CTRL_DIR_REC.struct, b)
         _ECD_ENTRIES_TOTAL = 4
@@ -173,7 +188,10 @@ class ZipStream(RangeStream):
             cd_size = self.data.CTRL_DIR_REC.get_size()
             cd_end = cd_start + cd_size
             cd_rng = Range(cd_start, cd_end)
-            self.add(cd_rng)
+            if self.client_is_async:
+                self.add_async(cd_rng)
+            else:
+                self.add(cd_rng)
             cd_bytes = self.active_range_response.read()
             u = struct.unpack(self.data.CTRL_DIR_REC.struct, cd_bytes[:cd_size])
             zf_info = ZippedFileInfo.from_central_directory_entry(u)
@@ -183,25 +201,31 @@ class ZipStream(RangeStream):
                 raise ValueError(f"Bad Central Directory signature at {cd_start}")
             fn_len = zf_info.filename_length
             fn_rng = Range(cd_end, cd_end + fn_len)
-            self.add(fn_rng)
+            if self.client_is_async:
+                self.add_async(fn_rng)
+            else:
+                self.add(fn_rng)
             filename = self.active_range_response.read()
             flags = zf_info.flags
             if flags & 0x800:  # pragma: no cover
                 # UTF-8 file names extension
-                filename = filename.decode("utf-8")
+                fn_str = filename.decode("utf-8")
             else:
                 # Historical ZIP filename encoding
-                filename = filename.decode("cp437")
+                fn_str = filename.decode("cp437")
             extra_len = zf_info.extra_field_length
             comment_len = zf_info.comment_length
             cd_read_offset += cd_size + fn_len + extra_len + comment_len
-            zf_info = ZippedFileInfo.from_central_directory_entry(u, filename=filename)
+            zf_info = ZippedFileInfo.from_central_directory_entry(u, filename=fn_str)
             self.zipped_files.append(zf_info)
         return
 
     def add_file_ranges(self):
         for zf_info in self.zipped_files:
-            self.add(zf_info.file_range, name=zf_info.filename)
+            if self.client_is_async:
+                self.add_async(zf_info.file_range, name=zf_info.filename)
+            else:
+                self.add(zf_info.file_range, name=zf_info.filename)
 
     def get_central_dir_bytes(self, step=20):
         """
@@ -215,13 +239,19 @@ class ZipStream(RangeStream):
             self.check_end_of_central_dir_rec()
         pre_eocd = self.data.E_O_CTRL_DIR_REC.start_pos
         cent_dir_rng = Range(pre_eocd - step, pre_eocd)
-        self.add(cent_dir_rng)
+        if self.client_is_async:
+            self.add_async(cent_dir_rng)
+        else:
+            self.add(cent_dir_rng)
         target = self.data.CTRL_DIR_REC.start_sig
         byte_cache = b""
         cd_byte_store = b""
         cache_miss_size = len(target) - 1
         while cent_dir_rng.start > 0:
-            self.add(cent_dir_rng)
+            if self.client_is_async:
+                self.add_async(cent_dir_rng)
+            else:
+                self.add(cent_dir_rng)
             cd_bytes = self.active_range_response.read()
             cd_byte_store = cd_bytes + cd_byte_store
             byte_cache = cd_bytes + byte_cache[:cache_miss_size]
@@ -305,7 +335,10 @@ class ZipStream(RangeStream):
         assert method is not None  # because mypy can't follow my logic
         zf_rng = zf_info.file_range
         if zf_rng not in self.ranges:  # pragma: no cover
-            self.add(zf_rng)
+            if self.client_is_async:
+                self.add_async(zf_rng)
+            else:
+                self.add(zf_rng)
         else:
             self.set_active_range(zf_rng)
         zf_bytes = self.active_range_response.read()

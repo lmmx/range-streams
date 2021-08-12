@@ -14,7 +14,7 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
-from typing import TYPE_CHECKING, Coroutine
+from typing import TYPE_CHECKING, Callable, Coroutine, Type
 from urllib.parse import urlparse
 
 MYPY = False  # when using mypy will be overrided as True
@@ -23,6 +23,7 @@ if MYPY or not TYPE_CHECKING:  # pragma: no cover
 
 from ranges import Range, RangeDict
 
+from .async_utils import AsyncFetcher
 from .http_utils import detect_header_value, range_header
 from .overlaps import get_range_containing, overlap_whence
 from .range_utils import (
@@ -636,6 +637,7 @@ class RangeStream:
             resp=resp,
             chunk_size=self.chunk_size,
         )
+        await range_req.await_aiterator()  # Initialise its async stream iterator
 
         # then just use the req to create a RangeResponse and register as usual
         resp = RangeResponse(stream=self, range_request=range_req, range_name="")
@@ -869,3 +871,25 @@ class RangeStream:
         """
         for range_response in self._ranges.values():
             range_response.close()
+
+    @classmethod
+    def make_async_fetcher(
+        cls,
+        urls: list[str],
+        callback: Callable | None = None,
+        verbose: bool = False,
+        show_progress_bar: bool = True,
+        timeout_s: float = 5.0,
+        client=None,
+        **kwargs,
+    ):
+        return AsyncFetcher(
+            stream_cls=cls,
+            urls=urls,
+            callback=callback,
+            verbose=verbose,
+            show_progress_bar=show_progress_bar,
+            timeout_s=timeout_s,
+            client=client,
+            **kwargs,  # Any other kwargs can be passed through to RangeStream subclass
+        )
