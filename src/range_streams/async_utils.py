@@ -89,8 +89,33 @@ class AsyncFetcher:
             log.debug(f"Processed URL in async callback: {source_url}")
         if self.show_progress_bar:
             self.pbar.update()
-        self.completed.add(Range(i, i + 1))
+        self.complete_row(row_index=i)
         await resp.aclose()
+
+    def mark_url_complete(self, url: str):
+        """
+        Add the row index for the given URL in the
+        :attr:`~range_streams.async_utils.AsyncFetcher.url_list` to the
+        :attr:`~range_streams.async_utils.AsyncFetcher.completed`
+        :class:`~ranges.RangeSet`, meaning it will be omitted on any further call to
+        :meth:`~range_streams.async_utils.AsyncFetcher.make_calls`. This should be done
+        to indicate the URL has been processed (either successfully or unsuccessfully,
+        e.g. it gave a 404).
+        """
+        url_row_index = self.url_list.index(url)
+        self.complete_row(row_index=url_row_index)
+
+    def complete_row(self, row_index: int):
+        """
+        Add the range corresponding to the range at row ``row_index`` to the
+        :attr:`~range_streams.async_utils.AsyncFetcher.completed`
+        :class:`~ranges.RangeSet`, meaning it will be omitted on any further call to
+        :meth:`~range_streams.async_utils.AsyncFetcher.make_calls`. This should be done
+        to indicate the URL at that row has been processed (either successfully or
+        unsuccessfully, e.g. it gave a 404).
+        """
+        row_range = Range(row_index, row_index + 1)
+        self.completed.add(row_range)
 
     @property
     def filtered_url_list(self) -> list[str]:
@@ -136,7 +161,7 @@ class AsyncFetcher:
         urls: Iterator[str],
     ) -> Coroutine:
         """
-        If the `~range_streams.async_utils.AsyncFetcher.client` is ``None``, create one
+        If the :attr:`~range_streams.async_utils.AsyncFetcher.client` is ``None``, create one
         in a contextmanager block (i.e. close it immediately after use), otherwise use
         the one provided, not in a contextmanager block (i.e. leave it up to the user to
         close the client).
