@@ -34,10 +34,10 @@ class PngStream(RangeStream):
         pruning_level: int = 0,
         single_request: bool = True,
         force_async: bool = False,
-        scan_ihdr: bool = True,
-        enumerate_chunks: bool = True,
         chunk_size: int | None = None,
         raise_response: bool = True,
+        scan_ihdr: bool = True,
+        enumerate_chunks: bool = True,
     ):
         """
         Set up a stream for the PNG file at ``url``, with either an initial range to be
@@ -104,6 +104,8 @@ class PngStream(RangeStream):
             pruning_level=pruning_level,
             single_request=single_request,
             force_async=force_async,
+            chunk_size=chunk_size,
+            raise_response=raise_response,
         )
         if force_async:
             self.data = PngData()

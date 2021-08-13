@@ -109,6 +109,7 @@ class ZipStream(RangeStream):
             single_request=single_request,
             force_async=force_async,
             chunk_size=chunk_size,
+            raise_response=raise_response,
         )
         self.data = ZipData()
         if scan_contents:

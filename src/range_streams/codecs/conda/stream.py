@@ -73,6 +73,7 @@ class CondaStream(ZipStream):
             single_request=single_request,
             force_async=force_async,
             chunk_size=chunk_size,
+            raise_response=raise_response,
             scan_contents=scan_contents,
         )
         if scan_contents:

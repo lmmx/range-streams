@@ -105,6 +105,9 @@ class TarStream(RangeStream):
             byte_range=byte_range,
             pruning_level=pruning_level,
             single_request=single_request,
+            force_async=force_async,
+            chunk_size=chunk_size,
+            raise_response=raise_response,
         )
         self.data = TarData()
         if scan_headers:
