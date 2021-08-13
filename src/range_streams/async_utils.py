@@ -50,7 +50,12 @@ class AsyncFetcher:
         self.stream_cls_kwargs = kwargs
         self.url_list = urls
         self.callback = callback
-        self.n = len(urls)
+        n_urls = len(urls)
+        n_unique_urls = len(set(urls))
+        if n_urls != n_unique_urls:
+            msg = f"List of URLs is not unique (only {n_unique_urls} of {n_urls})"
+            raise ValueError(msg)
+        self.n = n_urls
         self.verbose = verbose
         self.show_progress_bar = show_progress_bar and not self.verbose
         self.client = client
