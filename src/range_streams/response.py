@@ -515,4 +515,4 @@ class RangeResponse:
         just the one (shared with all the 'windowed' responses).
         """
         self.verify_async(msg=f" when closing the request response on {self}")
-        self.request.response.aclose()
+        await self.request.response.aclose()
