@@ -92,7 +92,11 @@ class AsyncFetcher:
         self.complete_row(row_index=i)
         await resp.aclose()
 
-    def mark_url_complete(self, url: str):
+    @property
+    def total_complete(self) -> int:
+        return sum([r.length() for r in self.completed.ranges()])
+
+    def mark_url_complete(self, url: str) -> None:
         """
         Add the row index for the given URL in the
         :attr:`~range_streams.async_utils.AsyncFetcher.url_list` to the
@@ -105,7 +109,7 @@ class AsyncFetcher:
         url_row_index = self.url_list.index(url)
         self.complete_row(row_index=url_row_index)
 
-    def complete_row(self, row_index: int):
+    def complete_row(self, row_index: int) -> None:
         """
         Add the range corresponding to the range at row ``row_index`` to the
         :attr:`~range_streams.async_utils.AsyncFetcher.completed`
