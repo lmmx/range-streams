@@ -898,6 +898,7 @@ class RangeStream:
         show_progress_bar: bool = True,
         timeout_s: float = 5.0,
         client=None,
+        close_client: bool = False,
         **kwargs,
     ):
         return AsyncFetcher(
@@ -908,5 +909,6 @@ class RangeStream:
             show_progress_bar=show_progress_bar,
             timeout_s=timeout_s,
             client=client,
+            close_client=close_client,
             **kwargs,  # Any other kwargs can be passed through to RangeStream subclass
         )

@@ -9,6 +9,7 @@ from sys import stderr
 from typing import TYPE_CHECKING, Callable, Coroutine, Iterator, Type
 
 from aiostream import stream
+from aiostream.core import StreamEmpty
 from ranges import Range, RangeSet
 
 MYPY = False  # when using mypy will be overrided as True
@@ -34,15 +35,32 @@ class AsyncFetcher:
         show_progress_bar: bool = True,
         timeout_s: float = 5.0,
         client=None,
+        close_client: bool = False,
         **kwargs,
     ):
         """
         Any kwargs are passed through to the stream class constructor.
 
         Args:
-          callback : A function to be passed 3 values: the AsyncFetcher which is calling
-                     it, the awaited RangeStream, and its source URL (a ``httpx.URL``,
-                     which can be coerced to a string).
+          stream_cls        : The :class:`~range_streams.stream.RangeStream` class or a
+                              subclass (i.e. one of its codecs or a custom subclass)
+                              to instantiate for each of the URLs. Note: these classes
+                              also have a helper method
+                              :meth:`~range_streams.stream.RangeStream.make_async_fetcher`
+          urls              : The list of URLs to fetch until completion
+          callback          : A function to be passed 3 values: the AsyncFetcher which
+                              is calling it, the awaited RangeStream, and its source URL
+                              (a ``httpx.URL``, which can be coerced to a string).
+          verbose           : Whether to log to console
+          show_progress_bar : Whether to show a tqdm progress bar (async-compatible)
+          timeout_s         : The timeout to set on the client (converted into
+                              ``httpx.Timeout`` configuration on instantiation)
+          client            : The client to pass, if any, or one will be instantiated
+                              and closed on each usage (note: not each instantiation!)
+          close_client      : Whether to close the client upon completion (only if
+                              provided: if no client is provided, one will be created
+                              and closed by the standard `async with httpx.AsyncClient`
+                              contextmanager block).
         """
         if urls == []:
             raise ValueError("The list of URLs to fetch cannot be empty")
@@ -59,6 +77,7 @@ class AsyncFetcher:
         self.verbose = verbose
         self.show_progress_bar = show_progress_bar and not self.verbose
         self.client = client
+        self.close_client_on_completion = close_client
         self.timeout = httpx.Timeout(timeout=timeout_s)
         self.completed = RangeSet()
         set_up_logging(quiet=not verbose)
@@ -71,14 +90,22 @@ class AsyncFetcher:
         urlset = (u for u in self.filtered_url_list)  # single use URL generator
         if self.show_progress_bar:
             self.set_up_progress_bar()
-        self.fetch_things(urls=urlset)
+        try:
+            self.fetch_things(urls=urlset)
+        except StreamEmpty as exc:
+            # Treat this like a StopIteration (was called despite completed URLs)
+            if self.close_client_on_completion:
+                asyncio.run(self.client.aclose())
+            else:
+                raise
+            # Note: to avoid throwing exception, check `total_complete` before calling
         if self.show_progress_bar:
             self.pbar.close()
 
     async def process_stream(self, range_stream: RangeStreamOrSubclass):
         """
         Process an awaited RangeStream within an async fetch loop, calling the callback
-        set on the `~range_streams.async_utils.AsyncFetcher.callback` attribute.
+        set on the :attr:`~range_streams.async_utils.AsyncFetcher.callback` attribute.
 
         Args:
           range_stream : The awaited RangeStream (or one of its subclasses)
@@ -94,8 +121,12 @@ class AsyncFetcher:
             log.debug(f"Processed URL in async callback: {source_url}")
         if self.show_progress_bar:
             self.pbar.update()
-        self.complete_row(row_index=i)
+        if i not in self.completed:
+            # Don't bother putting in if already been marked as complete in the callback
+            self.complete_row(row_index=i)
         await resp.aclose()
+        if self.total_complete == self.n and self.close_client_on_completion:
+            await self.client.aclose()
 
     @property
     def total_complete(self) -> int:
@@ -174,6 +205,9 @@ class AsyncFetcher:
         in a contextmanager block (i.e. close it immediately after use), otherwise use
         the one provided, not in a contextmanager block (i.e. leave it up to the user to
         close the client).
+
+        Args:
+          urls         : The URLs to fetch, as an exhaustible iterator (not a Sequence)
         """
         await self.set_async_signal_handlers()
         if self.client is None:
