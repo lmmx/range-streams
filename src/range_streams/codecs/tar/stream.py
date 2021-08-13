@@ -44,6 +44,7 @@ class TarStream(RangeStream):
         single_request: bool = False,
         force_async: bool = False,
         chunk_size: int | None = None,
+        raise_response: bool = True,
     ):
         """
         Set up a stream for the ZIP archive at ``url``, with either an initial
@@ -96,6 +97,7 @@ class TarStream(RangeStream):
                            to create one on initialisation. (Experimental/WIP)
           chunk_size     : (:class:`int` | ``None``) The chunk size used for the
                            ``httpx.Response.iter_raw`` response byte iterators
+          raise_response : (:class:`bool`) Whether to raise HTTP status code exceptions
         """
         super().__init__(
             url=url,

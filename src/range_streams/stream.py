@@ -102,6 +102,7 @@ class RangeStream:
         single_request: bool = False,
         force_async: bool = False,
         chunk_size: int | None = None,
+        raise_response: bool = True,
     ):
         """
         Set up a stream for the file at ``url``, with either an initial
@@ -172,12 +173,14 @@ class RangeStream:
                            to create one on initialisation. (Experimental/WIP)
           chunk_size     : (:class:`int` | ``None``) The chunk size used for the
                             ``httpx.Response.iter_raw`` response byte iterators
+          raise_response : (:class:`bool`) Whether to raise HTTP status code exceptions
         """
         self.url = url
         self.set_client(client=client, force_async=force_async)
         self.pruning_level = pruning_level
         self.single_request = single_request
         self.chunk_size = chunk_size
+        self.raise_response = raise_response
         self._ranges = RangeDict()
         self._range_windows = RangeDict()
         if self.client_is_async:
@@ -625,7 +628,8 @@ class RangeStream:
         rng_h = range_header(rng=Range(0, 0))  # Empty range -> open-ended range header
         req = self.client.build_request(method="GET", url=self.url, headers=rng_h)
         resp = await self.client.send(request=req, stream=True)
-        resp.raise_for_status()
+        if self.raise_response:
+            resp.raise_for_status()
         total_length = self.check_response_length(headers=resp.headers, req=req.method)
         self.set_length(length=total_length)
 
@@ -661,7 +665,8 @@ class RangeStream:
         rng_h = range_header(rng=Range(0, 0))  # Empty range -> open-ended range header
         req = self.client.build_request(method="GET", url=self.url, headers=rng_h)
         resp = self.client.send(request=req, stream=True)
-        resp.raise_for_status()
+        if self.raise_response:
+            resp.raise_for_status()
         total_length = self.check_response_length(headers=resp.headers, req=req.method)
         self.set_length(length=total_length)
 
@@ -695,6 +700,10 @@ class RangeStream:
         """
         req = self.sync_client.build_request(method="HEAD", url=self.url)
         resp = self.sync_client.send(request=req)
+        # Not advisable to allow this to be skipped as the rest of function would error
+        # (could refactor rest of method into its own method, to skip now/call later?)
+        # Primarily `raise_response` is for async (since try/catch won't wrap a single
+        # request), so only implementing it for the monostream methods accordingly
         resp.raise_for_status()
         total_length = self.check_response_length(headers=resp.headers, req=req.method)
         self.set_length(length=total_length)

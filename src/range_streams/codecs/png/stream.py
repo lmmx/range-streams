@@ -37,6 +37,7 @@ class PngStream(RangeStream):
         scan_ihdr: bool = True,
         enumerate_chunks: bool = True,
         chunk_size: int | None = None,
+        raise_response: bool = True,
     ):
         """
         Set up a stream for the PNG file at ``url``, with either an initial range to be
@@ -91,6 +92,7 @@ class PngStream(RangeStream):
                              been identified) upon initialisation
           chunk_size       : (:class:`int` | ``None``) The chunk size used for the
                              ``httpx.Response.iter_raw`` response byte iterators
+          raise_response : (:class:`bool`) Whether to raise HTTP status code exceptions
         """
         if force_async:
             # Mutually exclusive

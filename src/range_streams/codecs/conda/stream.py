@@ -17,6 +17,7 @@ class CondaStream(ZipStream):
         single_request: bool = False,
         force_async: bool = False,
         chunk_size: int | None = None,
+        raise_response: bool = True,
         scan_contents: bool = True,
     ):
         """
@@ -60,6 +61,7 @@ class CondaStream(ZipStream):
                            to create one on initialisation. (Experimental/WIP)
           chunk_size     : (:class:`int` | ``None``) The chunk size used for the
                            ``httpx.Response.iter_raw`` response byte iterators
+          raise_response : (:class:`bool`) Whether to raise HTTP status code exceptions
           scan_contents  : (:class:`bool`) Whether to scan the archive contents
                            upon initialisation and add the archive's file ranges
         """
