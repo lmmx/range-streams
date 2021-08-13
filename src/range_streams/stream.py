@@ -864,13 +864,21 @@ class RangeStream:
         """
         return all(range_response.is_closed for range_response in self._ranges.values())
 
-    def close(self):
+    def close(self) -> None:
         """
         Close any ``httpx.Response`` on the stream. In single request mode, there is
         just the one (shared with all the 'windowed' responses).
         """
         for range_response in self._ranges.values():
             range_response.close()
+
+    async def aclose(self) -> None:
+        """
+        Close any ``httpx.Response`` on the async stream. In single request mode, there
+        is just the one (shared with all the 'windowed' responses).
+        """
+        for range_response in self._ranges.values():
+            await range_response.aclose()
 
     @classmethod
     def make_async_fetcher(
