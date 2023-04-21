@@ -184,7 +184,10 @@ class TarStream(RangeStream):
         else:
             self.add(file_size_rng)
         file_size_b = self.active_range_response.read()
-        file_size = int(file_size_b, 8)  # convert octal number from bitstring
+        try:
+            file_size = int(file_size_b, 8)  # convert octal number from bitstring
+        except ValueError:
+            file_size = int(file_size_b.rstrip(b"\x00"), 8)  # may be null-terminated
         return file_size
 
     def add_file_ranges(self):
