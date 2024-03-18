@@ -10,6 +10,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 __all__ = ["get_range_containing", "overlap_whence"]
 
+
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
 def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
