@@ -13,7 +13,13 @@ authors = [
   {name = "Louis Maddox", email = "louismmx@gmail.com"}
 ]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "aiostream>=0.6.4",
+    "httpx>=0.28.1",
+    "python-ranges>=1.2.2",
+    "pyzstd>=0.16.2",
+    "tqdm>=4.67.1",
+]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -32,7 +38,8 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-  "pre-commit>=4.1.0"
+  "pre-commit>=4.1.0",
+  "pytest>=8.3.4",
 ]
 
 [tool.coverage.paths]
