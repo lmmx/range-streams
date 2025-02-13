@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from struct import calcsize
 
-from ..share import COMPRESSIONS
 
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
 

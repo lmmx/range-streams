@@ -125,10 +125,10 @@ of the PyPNG library.
 # Get classes into package namespace but exclude from __all__ so Sphinx can access types
 
 from . import codecs, http_utils, overlaps, range_utils
-from .async_utils import AsyncFetcher
-from .request import RangeRequest
-from .response import RangeResponse
-from .stream import RangeStream
+from .async_utils import AsyncFetcher  # noqa: F401
+from .request import RangeRequest  # noqa: F401
+from .response import RangeResponse  # noqa: F401
+from .stream import RangeStream  # noqa: F401
 
 __all__ = [
     "stream",

@@ -89,9 +89,10 @@ class CondaStream(ZipStream):
         alphabetically by filename and check file prefixes/suffixes.
         """
         info_tzst, meta_json, pkg_tzst = sorted(
-            self.zipped_files, key=lambda f: f.filename
+            self.zipped_files,
+            key=lambda f: f.filename,
         )
-        prefixes = ["info-", "pkg-"]
+        # prefixes = ["info-", "pkg-"]
         info_tzst_fn = info_tzst.filename
         pkg_tzst_fn = pkg_tzst.filename
         if not (

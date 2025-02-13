@@ -67,7 +67,7 @@ def find_meta(meta):
     meta_match = re.search(rf"^__{meta}__ = ['\"]([^'\"]*)['\"]", META_FILE, re.M)
     if meta_match:
         return meta_match.group(1)
-    raise RuntimeError("Unable to find __{meta}__ string.".format(meta=meta))
+    raise RuntimeError(f"Unable to find __{meta}__ string.")
 
 
 if __name__ == "__main__":

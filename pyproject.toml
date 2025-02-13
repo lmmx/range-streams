@@ -1,14 +1,39 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
-build-backend = "setuptools.build_meta"
+build-backend = "pdm.backend"
+requires = [
+  "pdm-backend"
+]
 
-[tool.isort]
-profile = "black"
+[project]
+name = "range-streams"
+version = "1.3.0"
+description = "Streaming via range requests in Python"
+readme = "README.md"
+authors = [
+  {name = "Louis Maddox", email = "louismmx@gmail.com"}
+]
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13"
+]
 
-[tool.coverage.run]
-parallel = true
-branch = true
-source = ["range_streams"]
+[project.optional-dependencies]
+dev = [
+  "pre-commit>=4.1.0"
+]
 
 [tool.coverage.paths]
 source = ["src", ".tox/*/site-packages"]
@@ -16,3 +41,11 @@ source = ["src", ".tox/*/site-packages"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+
+[tool.coverage.run]
+parallel = true
+branch = true
+source = ["range_streams"]
+
+[tool.isort]
+profile = "black"

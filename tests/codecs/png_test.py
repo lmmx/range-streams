@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from pytest import fixture, mark, raises
-from ranges import Range
+from pytest import fixture, mark
 
 from range_streams.codecs import PngStream
 
@@ -58,10 +57,14 @@ def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
 
 
 @mark.parametrize(
-    "expected_len,expected_semitransp,expected_transp", [(40000, True, True)]
+    "expected_len,expected_semitransp,expected_transp",
+    [(40000, True, True)],
 )
 def test_semitransp_png_chunks(
-    example_semitransp_png_stream, expected_len, expected_semitransp, expected_transp
+    example_semitransp_png_stream,
+    expected_len,
+    expected_semitransp,
+    expected_transp,
 ):
     """
     Method should be self-testing but do so explicitly here to ensure
@@ -79,7 +82,8 @@ def test_semitransp_png_chunks(
 
 
 @mark.parametrize(
-    "expected_len,expected_semitransp,expected_transp", [(921600, False, False)]
+    "expected_len,expected_semitransp,expected_transp",
+    [(921600, False, False)],
 )
 def test_multi_idat_png_chunk_parse(expected_len, expected_semitransp, expected_transp):
     stream = PngStream(url=EXAMPLE_MULTI_IDAT_PNG_URL, single_request=False)

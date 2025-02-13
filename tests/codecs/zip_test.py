@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import fixture, mark, raises
+from pytest import fixture, mark
 from ranges import Range
 
 from range_streams.codecs import ZipStream
@@ -48,7 +48,13 @@ def test_zip_central_dir_list_files(example_zip_stream, expected):
     [("example_text_file.txt", 21, 0, 11, 51, 62)],
 )
 def test_zipped_file_contents(
-    example_zip_stream, fname, fname_len, com_len, size, rng_start, rng_end
+    example_zip_stream,
+    fname,
+    fname_len,
+    com_len,
+    size,
+    rng_start,
+    rng_end,
 ):
     zf_l = example_zip_stream.zipped_files
     assert len(zf_l) == 1

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import io
-import struct
 
 from ranges import Range
 
 from ...stream import RangeStream
-from .data import COMPRESSIONS, TarData
+from .data import TarData
 
 __all__ = ["TarStream", "TarredFileInfo"]
 

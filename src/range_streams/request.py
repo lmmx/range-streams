@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncIterator, Iterator
+from typing import TYPE_CHECKING
+from collections.abc import AsyncIterator, Iterator
 
 MYPY = False  # when using mypy will be overrided as True
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
@@ -170,7 +171,12 @@ class RangeRequest:
 
     @classmethod
     def from_get_stream(
-        cls, byte_range: Range, client, req, resp, chunk_size: int | None = None
+        cls,
+        byte_range: Range,
+        client,
+        req,
+        resp,
+        chunk_size: int | None = None,
     ) -> RangeRequest:
         """
         Avoid making a new partial content request, instead interpret a streaming GET
@@ -210,7 +216,9 @@ class RangeRequest:
         rather than using a context manager
         """
         self.request = self.client.build_request(
-            method="GET", url=self.url, headers=self.range_header
+            method="GET",
+            url=self.url,
+            headers=self.range_header,
         )
         self.response = self.client.send(request=self.request, stream=True)
         self.raise_for_non_partial_content()
@@ -222,7 +230,8 @@ class RangeRequest:
         """
         if self.response.status_code != 206:
             raise PartialContentStatusError(
-                request=self.request, response=self.response
+                request=self.request,
+                response=self.response,
             )
 
     def content_range_header(self) -> str:

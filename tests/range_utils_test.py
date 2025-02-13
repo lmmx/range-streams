@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from pytest import fixture, mark, raises
 from ranges import Range
 
@@ -10,12 +8,9 @@ from range_streams.range_utils import (
     range_min,
     range_span,
     range_termini,
-    ranges_in_reg_order,
-    response_ranges_in_reg_order,
     validate_range,
 )
 
-from .range_stream_core_test import empty_range_stream, full_range_stream
 
 termini_test_triples = [(0, 3, (0, 2)), (1, 4, (1, 3))]
 
@@ -84,7 +79,8 @@ def test_range_span(first_rng, last_rng, span_rng):
 
 
 @mark.parametrize(
-    "error_msg", ["Ranges must be discrete: use integers for start and end"]
+    "error_msg",
+    ["Ranges must be discrete: use integers for start and end"],
 )
 @mark.parametrize("float_range", [Range(1.5, 4.5)])
 def test_validate_float_range(float_range, error_msg):
@@ -95,7 +91,7 @@ def test_validate_float_range(float_range, error_msg):
 @mark.parametrize(
     "error_msg",
     [
-        "byte_range=.* must be a Range from the python-ranges package or an integer 2-tuple"
+        "byte_range=.* must be a Range from the python-ranges package or an integer 2-tuple",
     ],
 )
 @mark.parametrize("list_range", [(1, 2.5), (1, 2, 3), [0, 3]])

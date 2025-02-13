@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from pytest import fixture, mark, raises
-from ranges import Range
+from pytest import fixture, mark
 
 from range_streams.codecs import TarStream
 
@@ -19,7 +18,8 @@ def test_tar_total_bytes(example_tar_stream, expected):
 
 
 @mark.parametrize(
-    "expected", [(["red_square_rgba_semitransparent.png", "example_text_file.txt"])]
+    "expected",
+    [(["red_square_rgba_semitransparent.png", "example_text_file.txt"])],
 )
 def test_tar_list_files(example_tar_stream, expected):
     assert example_tar_stream.filename_list == expected
@@ -33,7 +33,13 @@ def test_tar_list_files(example_tar_stream, expected):
     ],
 )
 def test_tarred_file_contents(
-    example_tar_stream, file_i, size, padded_size, fname, fname_len, header_offset
+    example_tar_stream,
+    file_i,
+    size,
+    padded_size,
+    fname,
+    fname_len,
+    header_offset,
 ):
     tf_l = example_tar_stream.tarred_files
     assert len(tf_l) == 2

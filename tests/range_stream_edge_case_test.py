@@ -6,11 +6,6 @@ from range_streams.range_utils import ranges_in_reg_order
 
 from .data import EXAMPLE_FILE_LENGTH
 from .range_stream_core_test import (
-    centred_range_stream_fresh,
-    empty_range_stream,
-    empty_range_stream_fresh,
-    full_range_stream,
-    full_range_stream_fresh,
     make_range_stream,
 )
 from .share import client
@@ -98,11 +93,13 @@ def test_nonduplicate_range_add(full_range_stream_fresh):
 @mark.parametrize("test_pos", [0])
 @mark.parametrize("overlapping_range", [Range(3, 7)])
 @mark.parametrize(
-    "pruning_level,expected_count", [(-1, None), (0, 1), (1, 1), (2, None)]
+    "pruning_level,expected_count",
+    [(-1, None), (0, 1), (1, 1), (2, None)],
 )
 @mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
 @mark.parametrize(
-    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+    "error_msg_strict",
+    ["Range overlap not registered due to strict pruning policy"],
 )
 def test_nonduplicate_range_add_with_pruning_Head_To_Tail(
     full_range_stream_fresh,
@@ -161,7 +158,8 @@ def test_nonduplicate_range_add_with_pruning_Head_To_Tail(
 )
 @mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
 @mark.parametrize(
-    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+    "error_msg_strict",
+    ["Range overlap not registered due to strict pruning policy"],
 )
 def test_nonduplicate_range_add_with_pruning_Head(
     centred_range_stream_fresh,
@@ -219,7 +217,8 @@ def test_nonduplicate_range_add_with_pruning_Head(
 )
 @mark.parametrize("error_msg_invalid", ["Pruning level must be 0, 1, or 2"])
 @mark.parametrize(
-    "error_msg_strict", ["Range overlap not registered due to strict pruning policy"]
+    "error_msg_strict",
+    ["Range overlap not registered due to strict pruning policy"],
 )
 def test_nonduplicate_range_add_with_pruning_Tail(
     centred_range_stream_fresh,
@@ -259,7 +258,8 @@ def test_nonduplicate_range_add_with_pruning_Tail(
 
 
 @mark.parametrize(
-    "error_msg", ["Cannot get active range response.*self._active_range=.*"]
+    "error_msg",
+    ["Cannot get active range response.*self._active_range=.*"],
 )
 def test_bad_active_range_response(full_range_stream_fresh, error_msg):
     """

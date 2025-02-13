@@ -1,15 +1,13 @@
 import asyncio
-from functools import partial
 from signal import SIGINT
 
-from pytest import fixture, mark, raises
-from ranges import Range
+from pytest import mark, raises
 
 from range_streams import _EXAMPLE_PNG_URL, _EXAMPLE_ZIP_URL, RangeStream
-from range_streams.async_utils import AsyncFetcher, SignalHaltError
+from range_streams.async_utils import AsyncFetcher
 from range_streams.codecs import PngStream
 
-from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_SMALL_PNG_URL, EXAMPLE_URL
+from .data import EXAMPLE_SMALL_PNG_URL, EXAMPLE_URL
 
 # https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html
 
@@ -125,7 +123,7 @@ def test_fetcher_classmethod(urls, error_msg, cb, stream_cls):
     else:
         fetched = stream_cls.make_async_fetcher(**kwargs)
         fetched.make_calls()
-        expected_values = set() if cb is None else set([stream_cls])
+        expected_values = set() if cb is None else {stream_cls}
         stored_classes = list(map(type, getattr(CallbackMutatedClass, "values")))
         assert set(stored_classes) == set(expected_values)
         CallbackMutatedClass.reset()
@@ -142,7 +140,7 @@ def test_fetcher_classmethod_read_png(urls, cb):
     stream_cls = PngStream
     fetched = stream_cls.make_async_fetcher(**kwargs)
     fetched.make_calls()
-    expected_values = set() if cb is None else set([stream_cls])
+    expected_values = set() if cb is None else {stream_cls}
     stored_classes = list(map(type, getattr(CallbackMutatedClass, "values")))
     assert set(stored_classes) == set(expected_values)
     CallbackMutatedClass.reset()

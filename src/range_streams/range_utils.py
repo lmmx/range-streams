@@ -51,7 +51,8 @@ def response_ranges_in_reg_order(ranges: RangeDict) -> list[Range]:
 
 
 def most_recent_range(
-    stream: range_streams.stream.RangeStream, internal: bool = True
+    stream: range_streams.stream.RangeStream,
+    internal: bool = True,
 ) -> Range | None:
     """
     For all of the :class:`~range_streams.response.RangeResponse`
@@ -131,7 +132,8 @@ def range_max(rng: Range) -> int:
 
 
 def validate_range(
-    byte_range: Range | tuple[int, int], allow_empty: bool = True
+    byte_range: Range | tuple[int, int],
+    allow_empty: bool = True,
 ) -> Range:
     """Validate ``byte_range`` and convert to a half-closed (i.e.
     not inclusive of the end position) ``[start,end)`` :class:`~ranges.Range`

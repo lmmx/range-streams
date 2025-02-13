@@ -1,4 +1,3 @@
-import httpx
 from pytest import fixture, mark, raises
 from ranges import Range
 
@@ -18,7 +17,8 @@ def make_request(start, stop):
 
 
 @mark.parametrize(
-    "start,stop,expected", [(0, i + 1, {"range": f"bytes=0-{i}"}) for i in range(3)]
+    "start,stop,expected",
+    [(0, i + 1, {"range": f"bytes=0-{i}"}) for i in range(3)],
 )
 def test_range_headers(start, stop, expected):
     rng = make_request(start, stop)
@@ -48,8 +48,8 @@ def test_request_iter_raw(example_request):
 @mark.parametrize(
     "stop,expected",
     [
-        (0, {"range": f"bytes=0-"}),
-        (1, {"range": f"bytes=0-1"}),
+        (0, {"range": "bytes=0-"}),
+        (1, {"range": "bytes=0-1"}),
     ],
 )
 def test_range_length(start, stop, expected):
