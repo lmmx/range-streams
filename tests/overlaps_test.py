@@ -3,18 +3,11 @@ from ranges import Range
 
 from range_streams.overlaps import get_range_containing
 from range_streams.range_utils import (
-    most_recent_range,
     ranges_in_reg_order,
     response_ranges_in_reg_order,
 )
 
 from .range_stream_core_test import (
-    centred_range_stream,
-    centred_range_stream_fresh,
-    empty_range_stream,
-    empty_range_stream_fresh,
-    full_range_stream,
-    full_range_stream_fresh,
     make_range_stream,
 )
 from .share import client
@@ -80,7 +73,7 @@ def test_handle_overlap_int_ext_rngdict_Head(
     centred_range_stream_fresh.pruning_level = pruning_level
     centred_range_stream_fresh.handle_overlap(rng=overlapping_range)
     ext_count_changed, int_count_changed = count_rangedict_mutation(
-        centred_range_stream_fresh
+        centred_range_stream_fresh,
     )
     assert int_count_changed == 0
     assert ext_count_changed == 0  # re-requested if replant, deleted if burn
@@ -199,7 +192,9 @@ def test_no_overlap_empty_range(full_range_stream_fresh, empty_range, error_msg)
 @mark.parametrize("error_msg", ["Range overlap not detected at termini.*"])
 @mark.parametrize("nonoverlapping_range", [Range(0, 5)])
 def test_no_overlap_empty_range_stream(
-    empty_range_stream_fresh, nonoverlapping_range, error_msg
+    empty_range_stream_fresh,
+    nonoverlapping_range,
+    error_msg,
 ):
     """
     Non-overlapping range [0,5) cannot overlap with the empty range [0,0)
@@ -207,14 +202,17 @@ def test_no_overlap_empty_range_stream(
     """
     with raises(ValueError, match=error_msg):
         empty_range_stream_fresh.handle_overlap(
-            rng=nonoverlapping_range, internal=False
+            rng=nonoverlapping_range,
+            internal=False,
         )
 
 
 @mark.parametrize("initial_ranges", [[(2, 4), (6, 9)]])
 @mark.parametrize("overlapping_range", [Range(3, 7)])
 def test_partial_overlap_multiple_ranges(
-    empty_range_stream_fresh, initial_ranges, overlapping_range
+    empty_range_stream_fresh,
+    initial_ranges,
+    overlapping_range,
 ):
     """
     Partial overlap with termini of the centred range [3,7) covered on multiple
@@ -244,7 +242,11 @@ def test_partial_overlap_multiple_ranges(
 @mark.parametrize("initial_range,expected1", [(Range(3, 7), b"\x02\x03")])
 @mark.parametrize("overlapping_range,expected2", [(Range(5, 8), b"\x04\x05\x06")])
 def test_overlapped_read(
-    empty_range_stream_fresh, initial_range, overlapping_range, expected1, expected2
+    empty_range_stream_fresh,
+    initial_range,
+    overlapping_range,
+    expected1,
+    expected2,
 ):
     """
     Partial overlap with tail of the centred range ``[3,7)`` covered on one range

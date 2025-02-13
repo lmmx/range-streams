@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from asyncio.events import AbstractEventLoop
+from collections.abc import Callable, Coroutine, Iterator
 from functools import partial
 from signal import SIGINT, SIGTERM, Signals
 from sys import stderr
-from typing import TYPE_CHECKING, Callable, Coroutine, Iterator, Type
+from typing import TYPE_CHECKING
 
 from aiostream import stream
 from aiostream.core import StreamEmpty
@@ -16,11 +16,10 @@ MYPY = False  # when using mypy will be overrided as True
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
-import tqdm
-from tqdm.asyncio import tqdm_asyncio
+from tqdm.asyncio import tqdm_asyncio  # noqa: E402
 
-from .log_utils import log, set_up_logging
-from .types import _T as RangeStreamOrSubclass
+from .log_utils import log, set_up_logging  # noqa: E402
+from .types import _T as RangeStreamOrSubclass  # noqa: E402
 
 __all__ = ["SignalHaltError", "AsyncFetcher"]
 
@@ -28,7 +27,7 @@ __all__ = ["SignalHaltError", "AsyncFetcher"]
 class AsyncFetcher:
     def __init__(
         self,
-        stream_cls: Type[RangeStreamOrSubclass],
+        stream_cls: type[RangeStreamOrSubclass],
         urls: list[str],
         callback: Callable | None = None,
         verbose: bool = False,
@@ -92,7 +91,7 @@ class AsyncFetcher:
             self.set_up_progress_bar()
         try:
             self.fetch_things(urls=urlset)
-        except StreamEmpty as exc:
+        except StreamEmpty:
             # Treat this like a StopIteration (was called despite completed URLs)
             if self.close_client_on_completion:
                 asyncio.run(self.client.aclose())
@@ -175,7 +174,7 @@ class AsyncFetcher:
     def fetch_things(self, urls: Iterator[str]):
         try:
             return asyncio.run(self.async_fetch_urlset(urls))
-        except SignalHaltError as exc:
+        except SignalHaltError:
             if self.show_progress_bar:
                 self.pbar.disable = True
                 self.pbar.close()

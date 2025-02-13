@@ -1,11 +1,9 @@
-import httpx
 from pytest import fixture, mark, raises
 from ranges import Range
 
 from range_streams import RangeStream
 
-from .data import EXAMPLE_FILE_LENGTH, EXAMPLE_URL
-from .range_stream_core_test import empty_range_stream, full_range_stream
+from .data import EXAMPLE_URL
 from .share import client
 
 
@@ -35,7 +33,9 @@ def test_monostream_init(monostream, full_range_stream):
 
 
 def test_monostream_init_same_as_empty_stream(
-    monostream, empty_range_stream, full_range_stream
+    monostream,
+    empty_range_stream,
+    full_range_stream,
 ):
     assert repr(monostream.ranges) == repr(empty_range_stream.ranges)
     assert repr(monostream._ranges) == repr(full_range_stream._ranges)
@@ -76,7 +76,7 @@ def test_monostream_full_same_as_full_stream(monostream_fresh, full_range_stream
     assert monostream_fresh._active_range == full_range_stream._active_range
     # Further properties and methods
     assert repr(monostream_fresh.active_range_response) == repr(
-        full_range_stream.active_range_response
+        full_range_stream.active_range_response,
     )
     assert monostream_fresh.name == full_range_stream.name
     assert monostream_fresh.spanning_range == full_range_stream.spanning_range
@@ -99,10 +99,17 @@ def test_active_range_changes(monostream_fresh):
 
 
 @mark.parametrize(
-    "start1,stop1,read1,start2,stop2,read2", [(1, 3, b"\x00", 4, 6, b"\x03")]
+    "start1,stop1,read1,start2,stop2,read2",
+    [(1, 3, b"\x00", 4, 6, b"\x03")],
 )
 def test_correct_range_changes_and_read(
-    monostream_fresh, start1, stop1, read1, start2, stop2, read2
+    monostream_fresh,
+    start1,
+    stop1,
+    read1,
+    start2,
+    stop2,
+    read2,
 ):
     """
     Replace the test above with this once working
@@ -159,7 +166,11 @@ def test_correct_window_read_all(monostream_fresh, start1, stop1, read1, expecte
 @mark.parametrize("initial_range,expected1", [(Range(3, 7), b"\x02\x03")])
 @mark.parametrize("overlapping_range,expected2", [(Range(5, 8), b"\x04\x05\x06")])
 def test_overlapped_read(
-    monostream_fresh, initial_range, overlapping_range, expected1, expected2
+    monostream_fresh,
+    initial_range,
+    overlapping_range,
+    expected1,
+    expected2,
 ):
     """
     Partial overlap with tail of the centred range ``[3,7)`` covered on one range

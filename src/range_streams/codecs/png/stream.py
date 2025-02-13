@@ -211,7 +211,9 @@ class PngStream(RangeStream):
             assert chunk_type is not None  # appease mypy
             chunks.setdefault(chunk_type, [])
             chunk_info = PngChunkInfo(
-                start=chunk_start, type=chunk_type, length=chunk_len
+                start=chunk_start,
+                type=chunk_type,
+                length=chunk_len,
             )
             chunks[chunk_type].append(chunk_info)
         return chunks
@@ -250,7 +252,9 @@ class PngStream(RangeStream):
             assert chunk_type is not None  # appease mypy
             chunks.setdefault(chunk_type, [])
             chunk_info = PngChunkInfo(
-                start=chunk_start, type=chunk_type, length=chunk_len
+                start=chunk_start,
+                type=chunk_type,
+                length=chunk_len,
             )
             chunks[chunk_type].append(chunk_info)
         return chunks
@@ -280,12 +284,15 @@ class PngStream(RangeStream):
         b = zlib.decompress(
             b"".join(
                 self.get_chunk_data(chunk_info) for chunk_info in self.chunks["IDAT"]
-            )
+            ),
         )
         if len(b) != expected_length:
             raise ValueError(f"Expected {expected_length} but got {len(b)}")
         return reconstruct_idat(
-            idat_bytes=b, channels=channels, height=height, width=width
+            idat_bytes=b,
+            channels=channels,
+            height=height,
+            width=width,
         )
 
     def has_chunk(self, chunk_type: str) -> bool:

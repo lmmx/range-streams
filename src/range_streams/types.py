@@ -7,5 +7,6 @@ import range_streams
 all__ = ["_T"]
 
 _T = TypeVar(
-    "_T", bound="range_streams.stream.RangeStream"
+    "_T",
+    bound="range_streams.stream.RangeStream",
 )  # RangeStream or a subclass

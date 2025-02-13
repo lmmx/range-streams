@@ -10,6 +10,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 __all__ = ["get_range_containing", "overlap_whence"]
 
+
 # This could be written more clearly by using a range_utils helper function shared with
 # most_recent_range
 def get_range_containing(rng_dict: RangeDict, position: int) -> Range:
@@ -53,7 +54,7 @@ def overlap_whence(
         whence = 1  # type: int | None
     else:
         # If minimum (max.) terminus overlaps a range, it's a tail (head) overlap
-        tail_over, head_over = [t in rng_dict for t in range_termini(rng)]
+        tail_over, head_over = (t in rng_dict for t in range_termini(rng))
         if tail_over:
             whence = 2
         elif head_over:

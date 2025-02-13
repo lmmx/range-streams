@@ -4,7 +4,10 @@ __all__ = ["PaethPredictor"]
 
 
 def reconstruct_idat(
-    idat_bytes: bytes, channels: int, height: int, width: int
+    idat_bytes: bytes,
+    channels: int,
+    height: int,
+    width: int,
 ) -> list[int]:  # pragma: no cover
     """
     Parse a list of (zlib-decompressed) bytes into a flat list of integers (the pixel

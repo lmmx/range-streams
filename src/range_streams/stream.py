@@ -14,7 +14,8 @@ from __future__ import annotations
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Coroutine, Type
+from typing import TYPE_CHECKING
+from collections.abc import Callable
 from urllib.parse import urlparse
 
 MYPY = False  # when using mypy will be overrided as True
@@ -346,7 +347,10 @@ class RangeStream:
         return ranges
 
     def overlap_whence(
-        self, rng: Range, internal: bool = False, use_windows: bool = False
+        self,
+        rng: Range,
+        internal: bool = False,
+        use_windows: bool = False,
     ) -> int | None:
         if DEBUG_VERBOSE:
             print(f"IN {rng=} {internal=} {use_windows=}")
@@ -478,7 +482,7 @@ class RangeStream:
             raise ValueError("Range overlap not detected as the range is empty")
         if self.pruning_level == 2:  # 2: strict
             raise ValueError(
-                "Range overlap not registered due to strict pruning policy"
+                "Range overlap not registered due to strict pruning policy",
             )
         rng_min, rng_max = range_termini(rng)
         if rng not in ranges:
@@ -516,7 +520,7 @@ class RangeStream:
                         )
                         new_o_rng = Range(new_o_rng_min, new_o_rng_max + 1)
                         self.add(
-                            new_o_rng
+                            new_o_rng,
                         )  # head-overlapped range has been 'replanted'
             else:
                 info = f"{rng=} and {ranges=}"
@@ -582,7 +586,9 @@ class RangeStream:
         )
 
     def simulate_request(
-        self, byte_range: Range, parent_range_request: RangeRequest | None = None
+        self,
+        byte_range: Range,
+        parent_range_request: RangeRequest | None = None,
     ) -> RangeRequest:
         """
         Simulate the :class:`~range_streams.request.RangeRequest` obtained from a
@@ -718,7 +724,9 @@ class RangeStream:
           req     : The request method (to be reported in any :class:`KeyError` raised)
         """
         total_length = detect_header_value(
-            headers=headers, key="content-length", source=f"{req} request response"
+            headers=headers,
+            key="content-length",
+            source=f"{req} request response",
         )
         return int(total_length)
 
@@ -758,7 +766,7 @@ class RangeStream:
         byte_range = validate_range(byte_range=byte_range, allow_empty=True)
         if not self.single_request:
             raise NotImplementedError(
-                "Async RangeStreams are only available in single request mode (for now)"
+                "Async RangeStreams are only available in single request mode (for now)",
             )
         # Do not request an empty range if total length already checked (at init)
         if not self._length_checked and byte_range.isempty():
@@ -854,7 +862,9 @@ class RangeStream:
                 elif not byte_range.isempty():
                     # bytes are available in the RangeRequest.response stream
                     resp = RangeResponse(
-                        stream=self, range_request=req, range_name=name
+                        stream=self,
+                        range_request=req,
+                        range_name=name,
                     )
                     self.register_range(
                         rng=byte_range,

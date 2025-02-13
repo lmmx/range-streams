@@ -127,7 +127,7 @@ class ZipStream(RangeStream):
         if start_bytes != start_sig:  # pragma: no cover
             # Actually think this will be if zip is empty
             raise ValueError(
-                f"Invalid zip header sequence {start_bytes=!r}: expected {start_sig!r}"
+                f"Invalid zip header sequence {start_bytes=!r}: expected {start_sig!r}",
             )
 
     def check_end_of_central_dir_start(self):
@@ -266,7 +266,7 @@ class ZipStream(RangeStream):
                 cent_dir_rng.start -= step
                 cent_dir_rng.end -= step
         else:  # pragma: no cover
-            raise ValueError(f"No central directory start signature found")
+            raise ValueError("No central directory start signature found")
         # cent_dir_rng.end = self.data.E_O_CTRL_DIR_REC.start_pos
         cd_byte_store = cd_byte_store[offset:]
         return cd_byte_store
@@ -317,7 +317,7 @@ class ZipStream(RangeStream):
                 if zf_info.filename is None:  # pragma: no cover
                     raise NotImplementedError(
                         "Cannot detect compression method from file extension"
-                        " (no file name provided)"
+                        " (no file name provided)",
                     )
                 try:
                     ext, method = next(
@@ -376,7 +376,7 @@ def decompress(b: bytes, method: str, archive: str | None = None):
             d = ZstdFile(io.BytesIO(b))
     else:  # pragma: no cover
         raise TypeError(
-            f"Decompression not implemented for {method} (accepted_compression_types=)"
+            f"Decompression not implemented for {method} (accepted_compression_types=)",
         )
     return d
 

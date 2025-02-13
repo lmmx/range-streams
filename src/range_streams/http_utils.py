@@ -14,6 +14,7 @@ determine the total length of a file (as the `Content-Range
 <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range>`_ header
 returned by the server contains the total size of the file from which the range was taken).
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -23,7 +24,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from ranges import Range
 
     if not MYPY:  # Sphinx docstring import
-        import range_streams
+        pass
 
 from .range_utils import range_termini
 

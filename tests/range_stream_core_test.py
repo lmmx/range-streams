@@ -1,4 +1,3 @@
-import httpx
 from pytest import fixture, mark
 from ranges import Range
 

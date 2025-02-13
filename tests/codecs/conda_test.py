@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import fixture, mark, raises
+from pytest import fixture, mark
 from ranges import Range
 
 from range_streams.codecs import CondaStream
@@ -38,7 +38,7 @@ def test_conda_cd_meta(example_conda_stream, entries, size, start_c, start_e):
             "metadata.json",
             "info-tqdm-4.61.1-pyhd3eb1b0_1.tar.zst",
             "pkg-tqdm-4.61.1-pyhd3eb1b0_1.tar.zst",
-        ]
+        ],
     ],
 )
 def test_conda_zip_files(example_conda_stream, expected):
@@ -159,7 +159,7 @@ def test_zipped_file_contents(
             "info/licenses/LICENCE",
             "site-packages/tqdm-4.61.1.dist-info/top_level.txt",
             "site-packages/tqdm-4.61.1.dist-info/entry_points.txt",
-        ]
+        ],
     ],
 )
 def test_tar_zst_decompression(example_conda_stream, expected):
