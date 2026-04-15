@@ -12,7 +12,7 @@ test = [
 
 [project]
 name = "range-streams"
-version = "1.4.0"
+version = "1.4.1"
 description = "Streaming via range requests in Python"
 readme = "README.md"
 authors = [

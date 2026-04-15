@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.10"
 
 [options]
-exclude-newer = "2026-04-12T23:48:58.954164786Z"
+exclude-newer = "2026-04-12T23:51:33.405272307Z"
 exclude-newer-span = "P3D"
 
 [[package]]
@@ -335,7 +335,7 @@ wheels = [
 
 [[package]]
 name = "range-streams"
-version = "1.4.0"
+version = "1.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiostream" },
