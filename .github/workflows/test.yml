@@ -80,8 +80,8 @@ jobs:
 
       - name: Run tests
         run: |
-           for attempt in 1 2; do
-             if timeout --kill-after=10s 20s $(uv python find) -m pytest; then
+           for attempt in {1..5}; do
+             if timeout --kill-after=6s 12s $(uv python find) -m pytest; then
                exit 0
              fi
              echo "Attempt $attempt failed/timed out, retrying..."
