@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from struct import calcsize
 
-
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
 
 
-__all__ = ["ZipData", "CentralDirectory"]
+__all__ = ["ZipData", "CentralDirectoryRec"]
 
 
 class SimpleDataClass:

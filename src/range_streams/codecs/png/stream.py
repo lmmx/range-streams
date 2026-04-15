@@ -202,7 +202,7 @@ class PngStream(RangeStream):
             if chunks:
                 # Increment chunk_start from last iteration
                 # (last chunk's end is this chunk's start)
-                chunk_start = chunk_info.end  # type: ignore
+                chunk_start = chunk_info.end  # noqa: F821
             chunk_length_rng = Range(chunk_start, chunk_start + chunk_preamble_size)
             self.add(chunk_length_rng)
             b = self.active_range_response.read()
@@ -243,7 +243,7 @@ class PngStream(RangeStream):
             if chunks:
                 # Increment chunk_start from last iteration
                 # (last chunk's end is this chunk's start)
-                chunk_start = chunk_info.end  # type: ignore
+                chunk_start = chunk_info.end  # noqa: F821
             chunk_length_rng = Range(chunk_start, chunk_start + chunk_preamble_size)
             await self.add_async(chunk_length_rng)
             b = await self.active_range_response.aread()

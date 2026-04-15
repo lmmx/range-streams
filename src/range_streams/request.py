@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from collections.abc import AsyncIterator, Iterator
+from typing import TYPE_CHECKING
 
 MYPY = False  # when using mypy will be overrided as True
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
@@ -145,10 +145,7 @@ class RangeRequest:
             url=range_request.url,
             headers=request_headers,
         )
-        content_byte_range = request_headers["range"].replace("=", " ")
-        total_content_length = range_request.total_content_length
         window_on_range = range_request.range
-        window_len = range_len(window_range)
         windowed_response = range_request.response
         windowed_range_request = cls(
             byte_range=window_range,
