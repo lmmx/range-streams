@@ -282,17 +282,6 @@ def test_total_range_sabotage_length(empty_range_stream_fresh, error_msg):
         empty_range_stream_fresh.total_range
 
 
-@mark.parametrize("error_msg", ["Cannot use total_range before setting _length"])
-def test_total_range_sabotage_length(empty_range_stream_fresh, error_msg):
-    """
-    RangeStream class's `total_range` property should not work if the _length
-    was somehow altered (not possible to access before initialisation).
-    """
-    empty_range_stream_fresh._length = None
-    with raises(AttributeError, match=error_msg):
-        empty_range_stream_fresh.total_range
-
-
 @mark.parametrize("error_msg", ["Cannot get active range response.*no active range.*"])
 def test_empty_stream_tell_init(empty_range_stream, error_msg):
     with raises(ValueError, match=error_msg):

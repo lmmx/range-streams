@@ -60,7 +60,7 @@ def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
     "expected_len,expected_semitransp,expected_transp",
     [(40000, True, True)],
 )
-def test_semitransp_png_chunks(
+def test_semitransp_png_chunks_more(
     example_semitransp_png_stream,
     expected_len,
     expected_semitransp,

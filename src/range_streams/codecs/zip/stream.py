@@ -182,7 +182,6 @@ class ZipStream(RangeStream):
         """
         if self.data.CTRL_DIR_REC.size is None:  # pragma: no cover
             self.check_end_of_central_dir_rec()
-        size_cd_full = self.data.CTRL_DIR_REC.size  # total size of CDR (all entries)
         cd_read_offset = 0  # byte offset incremented after each entry
         self.zipped_files = []
         entry_range = range(self.data.CTRL_DIR_REC.entry_count)  # type: ignore
@@ -298,7 +297,6 @@ class ZipStream(RangeStream):
           ext     : File extension to treat the bytes in the ``zf_info`` range as having
                     (an option if ``zf_info`` is not being provided)
         """
-        zf_range = zf_info.file_range
         if method is None:
             if ext:
                 try:  # pragma: no cover
@@ -358,7 +356,6 @@ def decompress(b: bytes, method: str, archive: str | None = None):
       archive : The archive method to extract (either 'zip', 'tar', or None).
     """
     accepted_archive_types = [None, "zip", "tar"]
-    accepted_compression_types = set(COMPRESSIONS.values())
     if archive not in accepted_archive_types:  # pragma: no cover
         raise TypeError(f"{archive=} is not one of {accepted_archive_types=}")
     if method == "gz":  # pragma: no cover
