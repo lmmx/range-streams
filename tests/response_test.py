@@ -74,11 +74,11 @@ def test_response_repr(example_response):
 
 
 def test_response_url(example_response, example_request):
-    assert example_response.url is example_request.url
+    assert example_response.url == example_request.url
 
 
 def test_response_name(example_response, empty_range_stream):
-    assert example_response.name is empty_range_stream.name
+    assert example_response.name == empty_range_stream.name
 
 
 @mark.parametrize("read_size,expected", [(0, 0), (1, 1), (None, 1)])
