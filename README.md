@@ -2,9 +2,11 @@
 
 [![Documentation](https://readthedocs.org/projects/range-streams/badge/?version=latest)](https://range-streams.readthedocs.io/en/latest/)
 [![CI Status](https://github.com/lmmx/range-streams/actions/workflows/master.yml/badge.svg)](https://github.com/lmmx/range-streams/actions/workflows/master.yml)
-[![Coverage](https://codecov.io/gh/lmmx/range-streams/branch/master/graph/badge.svg)](https://codecov.io/github/lmmx/range-streams)
-[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![PyPI](https://img.shields.io/pypi/v/range-streams.svg)](https://pypi.org/project/range-streams)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/range-streams.svg)](https://pypi.org/project/range-streams)
+[![License](https://img.shields.io/pypi/l/range-streams.svg)](https://pypi.python.org/pypi/range-streams)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/lmmx/range-streams/master.svg)](https://results.pre-commit.ci/latest/github/lmmx/range-streams/master)
 
 Streaming via range requests in Python
 
@@ -12,7 +14,7 @@ Streaming via range requests in Python
 
 ## Requires
 
-- Python 3.8+
+- Python 3.10+
 
 ## Installation
 
