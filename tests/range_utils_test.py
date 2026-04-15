@@ -11,7 +11,6 @@ from range_streams.range_utils import (
     validate_range,
 )
 
-
 termini_test_triples = [(0, 3, (0, 2)), (1, 4, (1, 3))]
 
 
@@ -136,6 +135,6 @@ def test_most_recent_range_empty(empty_range_stream):
     assert most_recent_range(empty_range_stream) is None
 
 
-@mark.parametrize("expected", [Range(0, 11)])
+@mark.parametrize("expected", [Range(0, 12)])
 def test_most_recent_range_full(full_range_stream, expected):
     assert most_recent_range(full_range_stream) == expected

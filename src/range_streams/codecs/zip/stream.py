@@ -7,8 +7,9 @@ from pyzstd import ZstdFile
 from ranges import Range
 
 from ...stream import RangeStream
+from ..share.data import COMPRESSIONS
 from ..zstd import ZstdTarFile
-from .data import COMPRESSIONS, ZipData
+from .data import ZipData
 
 __all__ = ["ZipStream", "ZippedFileInfo"]
 

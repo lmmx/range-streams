@@ -7,7 +7,7 @@ __all__ = [
     "EXAMPLE_MULTI_IDAT_PNG_URL",
 ]
 
-data_dir_URL = "https://github.com/lmmx/range-streams/raw/master/data/"
+data_dir_URL = "https://raw.githubusercontent.com/lmmx/range-streams/master/data/"
 
 EXAMPLE_ZIP_URL = f"{data_dir_URL}example_text_file.txt.zip"
 EXAMPLE_CONDA_URL = f"{data_dir_URL}tqdm-4.61.1-pyhd3eb1b0_1.conda"

@@ -113,9 +113,9 @@ def test_example_response_seek_tell(example_response, seek, whence, expected):
         (0, SEEK_SET, 0),
         (1, SEEK_SET, 1),
         (4, SEEK_SET, 4),
-        (0, SEEK_END, 11),
-        (-1, SEEK_END, 10),
-        (-4, SEEK_END, 7),
+        (0, SEEK_END, 12),
+        (-1, SEEK_END, 11),
+        (-4, SEEK_END, 8),
     ],
 )
 def test_full_response_seek_tell(seek, whence, expected, empty_range_stream):

@@ -81,6 +81,7 @@ def test_semitransp_png_chunks_more(
     )
 
 
+@mark.skip(reason="403")
 @mark.parametrize(
     "expected_len,expected_semitransp,expected_transp",
     [(921600, False, False)],
