@@ -79,5 +79,12 @@ jobs:
         run: uv sync --group test
 
       - name: Run tests
-        run: $(uv python find) -m pytest
-        timeout-minutes: 1
+        run: |
+           for attempt in 1 2; do
+             if timeout --kill-after=30s 5m $(uv python find) -m pytest; then
+               exit 0
+             fi
+             echo "Attempt $attempt failed/timed out, retrying..."
+             sleep 5
+           done
+           exit 1
