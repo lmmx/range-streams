@@ -103,4 +103,3 @@ class CondaStream(ZipStream):
         self.info_tzst = info_tzst
         self.meta_json = meta_json
         self.pkg_tzst = pkg_tzst
-        return

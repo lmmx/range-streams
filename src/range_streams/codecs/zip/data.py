@@ -5,7 +5,7 @@ from struct import calcsize
 # from zipfile: structCentralDir, structEndArchive, structEndArchive64, structFileHeader
 
 
-__all__ = ["ZipData", "CentralDirectoryRec"]
+__all__ = ["CentralDirectoryRec", "ZipData"]
 
 
 class SimpleDataClass:

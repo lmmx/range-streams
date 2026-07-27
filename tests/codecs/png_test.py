@@ -46,12 +46,18 @@ def test_semitransp_png_channels(example_semitransp_png_stream, expected):
     assert example_semitransp_png_stream.data.IHDR.channel_count == expected
 
 
-@mark.parametrize("expected", ["IHDR gAMA cHRM PLTE bKGD tIME IDAT tEXt IEND".split()])
+@mark.parametrize(
+    "expected",
+    [["IHDR", "gAMA", "cHRM", "PLTE", "bKGD", "tIME", "IDAT", "tEXt", "IEND"]],
+)
 def test_png_chunks(example_png_stream, expected):
     assert list(example_png_stream.chunks) == expected
 
 
-@mark.parametrize("expected", ["IHDR zTXt iCCP bKGD pHYs tIME tEXt IDAT IEND".split()])
+@mark.parametrize(
+    "expected",
+    [["IHDR", "zTXt", "iCCP", "bKGD", "pHYs", "tIME", "tEXt", "IDAT", "IEND"]],
+)
 def test_semitransp_png_chunks(example_semitransp_png_stream, expected):
     assert list(example_semitransp_png_stream.chunks) == expected
 

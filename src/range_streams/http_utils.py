@@ -29,10 +29,10 @@ if TYPE_CHECKING:  # pragma: no cover
 from .range_utils import range_termini
 
 __all__ = [
-    "byte_range_from_range_obj",
-    "range_header",
     "PartialContentStatusError",
+    "byte_range_from_range_obj",
     "detect_header_value",
+    "range_header",
 ]
 
 

@@ -1,10 +1,10 @@
 __all__ = [
-    "EXAMPLE_ZIP_URL",
     "EXAMPLE_CONDA_URL",
-    "EXAMPLE_TAR_URL",
+    "EXAMPLE_MULTI_IDAT_PNG_URL",
     "EXAMPLE_PNG_URL",
     "EXAMPLE_SEMITRANSPARENT_PNG_URL",
-    "EXAMPLE_MULTI_IDAT_PNG_URL",
+    "EXAMPLE_TAR_URL",
+    "EXAMPLE_ZIP_URL",
 ]
 
 data_dir_URL = "https://raw.githubusercontent.com/lmmx/range-streams/master/data/"

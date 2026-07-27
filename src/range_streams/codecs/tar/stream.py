@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from ranges import Range
 
 from ...stream import RangeStream

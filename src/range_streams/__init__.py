@@ -131,14 +131,14 @@ from .response import RangeResponse  # noqa: F401
 from .stream import RangeStream  # noqa: F401
 
 __all__ = [
-    "stream",
-    "request",
-    "response",
+    "async_utils",
+    "codecs",
     "http_utils",
     "overlaps",
     "range_utils",
-    "codecs",
-    "async_utils",
+    "request",
+    "response",
+    "stream",
 ]
 
 __author__ = "Louis Maddox"

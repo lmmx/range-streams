@@ -17,8 +17,8 @@ from .tar import TarStream
 from .zip import ZipStream
 
 __all__ = [
-    "ZipStream",
-    "TarStream",
     "CondaStream",
     "PngStream",
+    "TarStream",
+    "ZipStream",
 ]
