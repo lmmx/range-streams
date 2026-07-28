@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from struct import calcsize
 
-
 __all__ = ["TarData"]
 
 

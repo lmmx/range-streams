@@ -11,11 +11,11 @@ argument (``byte_range``).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from io import SEEK_SET
 from pathlib import Path
 from typing import TYPE_CHECKING
-from collections.abc import Callable
 from urllib.parse import urlparse
 
 MYPY = False  # when using mypy will be overrided as True

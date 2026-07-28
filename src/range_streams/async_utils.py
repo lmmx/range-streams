@@ -16,12 +16,12 @@ MYPY = False  # when using mypy will be overrided as True
 if MYPY or not TYPE_CHECKING:  # pragma: no cover
     import httpx  # avoid importing to Sphinx type checker
 
-from tqdm.asyncio import tqdm_asyncio  # noqa: E402
+from tqdm.asyncio import tqdm_asyncio
 
-from .log_utils import log, set_up_logging  # noqa: E402
-from .types import _T as RangeStreamOrSubclass  # noqa: E402
+from .log_utils import log, set_up_logging
+from .types import _T as RangeStreamOrSubclass
 
-__all__ = ["SignalHaltError", "AsyncFetcher"]
+__all__ = ["AsyncFetcher", "SignalHaltError"]
 
 
 class AsyncFetcher:
@@ -248,7 +248,7 @@ class AsyncFetcher:
 class SignalHaltError(SystemExit):
     def __init__(self, signal_enum: Signals):
         self.signal_enum = signal_enum
-        print("", file=stderr)  # Newline after the signal sequence printed to console
+        print(file=stderr)  # Newline after the signal sequence printed to console
         log.critical(msg=repr(self))
         super().__init__(self.exit_code)
 

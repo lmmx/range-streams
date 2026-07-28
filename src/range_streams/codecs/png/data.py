@@ -97,7 +97,6 @@ class IHDRChunk(SimpleDataClass):
             1 if (self._is_grayscale or self._has_colourmap) else 3
         )
         self._channels: int = self._colour_channel_count + int(self._has_alpha_channel)
-        return
 
 
 class PngData:

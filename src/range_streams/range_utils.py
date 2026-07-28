@@ -1,22 +1,23 @@
 from __future__ import annotations
 
 __all__ = [
+    "ALWAYS_SET_TOLD",
+    "most_recent_range",
+    "range_len",
+    "range_max",
+    "range_min",
+    "range_span",
+    "range_termini",
     "ranges_in_reg_order",
     "response_ranges_in_reg_order",
-    "most_recent_range",
-    "range_termini",
-    "range_len",
-    "range_min",
-    "range_max",
     "validate_range",
-    "range_span",
-    "ALWAYS_SET_TOLD",
 ]
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from ranges import RangeDict
+
     import range_streams  # for RangeStream, RangeResponse
 
 from ranges import Range

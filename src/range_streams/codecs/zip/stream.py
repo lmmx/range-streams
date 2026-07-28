@@ -174,7 +174,6 @@ class ZipStream(RangeStream):
         self.data.CTRL_DIR_REC.entry_count = u[_ECD_ENTRIES_TOTAL]
         self.data.CTRL_DIR_REC.size = u[_ECD_SIZE]
         self.data.CTRL_DIR_REC.start_pos = u[_ECD_OFFSET]
-        return
 
     def check_central_dir_rec(self):
         """
@@ -221,7 +220,6 @@ class ZipStream(RangeStream):
             cd_read_offset += cd_size + fn_len + extra_len + comment_len
             zf_info = ZippedFileInfo.from_central_directory_entry(u, filename=fn_str)
             self.zipped_files.append(zf_info)
-        return
 
     def add_file_ranges(self):
         for zf_info in self.zipped_files:

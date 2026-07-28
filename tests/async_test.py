@@ -76,7 +76,7 @@ def test_fetcher(urls, error_msg, verbose, cb):
         fetched = AsyncFetcher(**kwargs)
         fetched.make_calls()
         expected_values = set() if cb is None else set(urls)
-        stored_urls = getattr(CallbackMutatedClass, "values")
+        stored_urls = CallbackMutatedClass.values
         assert set(stored_urls) == set(expected_values)
         CallbackMutatedClass.reset()
 
@@ -95,7 +95,7 @@ def test_fetcher_sigint(urls, error_msg, cb):
     fetched = AsyncFetcher(**kwargs)
     # with raises(SignalHaltError, match=error_msg):
     fetched.make_calls()
-    stored_urls = getattr(CallbackMutatedClass, "values")
+    stored_urls = CallbackMutatedClass.values
     assert len(stored_urls) == 1
     assert set(stored_urls) < set(urls)
     CallbackMutatedClass.reset()
@@ -124,7 +124,7 @@ def test_fetcher_classmethod(urls, error_msg, cb, stream_cls):
         fetched = stream_cls.make_async_fetcher(**kwargs)
         fetched.make_calls()
         expected_values = set() if cb is None else {stream_cls}
-        stored_classes = list(map(type, getattr(CallbackMutatedClass, "values")))
+        stored_classes = list(map(type, CallbackMutatedClass.values))
         assert set(stored_classes) == set(expected_values)
         CallbackMutatedClass.reset()
 
@@ -141,6 +141,6 @@ def test_fetcher_classmethod_read_png(urls, cb):
     fetched = stream_cls.make_async_fetcher(**kwargs)
     fetched.make_calls()
     expected_values = set() if cb is None else {stream_cls}
-    stored_classes = list(map(type, getattr(CallbackMutatedClass, "values")))
+    stored_classes = list(map(type, CallbackMutatedClass.values))
     assert set(stored_classes) == set(expected_values)
     CallbackMutatedClass.reset()
