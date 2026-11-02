@@ -16,7 +16,7 @@ version = "1.4.1"
 description = "Streaming via range requests in Python"
 readme = "README.md"
 authors = [
-  {name = "Louis Maddox", email = "louismmx@gmail.com"}
+  { name = "Louis Maddox", email = "louismmx@gmail.com" }
 ]
 requires-python = ">=3.10"
 dependencies = [
